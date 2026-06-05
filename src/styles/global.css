@@ -1,0 +1,71 @@
+/* AX Tech Connect 시연용 — 흰 배경 / 큰 글씨 / 깔끔 */
+
+:root {
+  --bg:        #ffffff;
+  --fg:        #0f172a;
+  --muted:    #64748b;
+  --border:   #e2e8f0;
+  --primary:  #2563eb;
+  --accent:   #f59e0b;
+
+  --l1-1000:  #3b82f6;   /* My 정보 조회 */
+  --l1-2000:  #10b981;   /* 상품 탐색/가입 */
+  --l1-3000:  #eab308;   /* 셀프처리 */
+  --l1-4000:  #a855f7;   /* 혜택/프로모션 */
+  --l1-5000:  #ef4444;   /* 문제 해결/상담 */
+  --l1-6000:  #f97316;   /* 관계/공유 */
+  --l1-7000:  #475569;   /* 이탈/전환 */
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+h1 { font-size: 2.5rem; font-weight: 800; margin: 0 0 0.5rem; }
+h2 { font-size: 1.8rem; font-weight: 700; margin: 0 0 0.75rem; }
+h3 { font-size: 1.3rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--muted); }
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+}
+
+.btn {
+  border: 2px solid var(--border);
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn:hover {
+  border-color: var(--primary);
+  background: #f0f7ff;
+}
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
