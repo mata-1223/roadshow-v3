@@ -15,8 +15,11 @@ export default function SurveyPage() {
 
   if (!scenario) return null;
   const questions = scenario.survey.questions;
-  const staticQs = questions.filter((q) => q.type === 'static');
-  const behavioralQs = questions.filter((q) => q.type === 'behavioral');
+  // 새 survey.json은 block 필드(objective_fact/usage_behavior/behavioral_history/usage_context),
+  // 옛 양식은 type 필드(static/behavioral) — 둘 다 지원
+  const isStatic = (q) => q.type === 'static' || q.block === 'objective_fact';
+  const staticQs     = questions.filter(isStatic);
+  const behavioralQs = questions.filter((q) => !isStatic(q));
   const total = questions.length;
   const answered = Object.keys(answers).length;
   const ready = answered === total;
@@ -47,15 +50,15 @@ export default function SurveyPage() {
     <div className="survey-page">
       <div className="container">
         <div className="header">
-          <h2>설문 12문항</h2>
+          <h2>설문 {total}문항</h2>
           <div className="progress">
             <span>{answered} / {total}</span>
             <div className="bar"><div className="fill" style={{ width: `${(answered / total) * 100}%` }} /></div>
           </div>
         </div>
 
-        <QuestionGroup title="정적 정보 (객관 사실)" subtitle="5문항" questions={staticQs} answers={answers} setAnswers={setAnswers} />
-        <QuestionGroup title="성향 정보 (행동·체감)" subtitle="7문항" questions={behavioralQs} answers={answers} setAnswers={setAnswers} />
+        <QuestionGroup title="고객 상태 정보" subtitle={`${staticQs.length}문항`} questions={staticQs} answers={answers} setAnswers={setAnswers} />
+        <QuestionGroup title="사용 행동·이력·맥락" subtitle={`${behavioralQs.length}문항`} questions={behavioralQs} answers={answers} setAnswers={setAnswers} />
 
         <div className="submit-bar">
           <button className="btn btn-primary submit" disabled={!ready || busy} onClick={handleSubmit}>
