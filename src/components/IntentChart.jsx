@@ -1,4 +1,9 @@
-// Top-N Intent 차트 (Score 바 + L1 색상 + delta/rank 변화 표시)
+// Top-N Intent 차트 (Probability 바 + L1 색상 + Δ Probability·Rank Change 표시)
+//
+// 페이로드 양식 (서버 → 클라이언트):
+//   probability / baseline_probability / delta_probability (0~1)
+//   rank / baseline_rank / rank_change
+//   intent_nm_ko / L1_id / L1_name / L2_name / inference_type
 
 const L1_COLOR = {
   'INT-1000': 'var(--l1-1000)',
@@ -13,10 +18,10 @@ const L1_COLOR = {
 function DeltaBadge({ delta }) {
   if (delta === undefined || delta === null) return null;
   const v = Number(delta);
-  if (Math.abs(v) < 0.005) return null;
+  if (Math.abs(v) < 0.0005) return null;
   const sign = v > 0 ? '+' : '';
   const cls = v > 0 ? 'delta-up' : 'delta-down';
-  return <span className={`delta-badge ${cls}`}>Δ {sign}{v.toFixed(2)}</span>;
+  return <span className={`delta-badge ${cls}`}>Δ {sign}{(v * 100).toFixed(1)}%p</span>;
 }
 
 function RankChange({ change }) {
@@ -29,15 +34,24 @@ function RankChange({ change }) {
   );
 }
 
+// 새/옛 페이로드 양식 호환 헬퍼
+const pctOf = (t) => (t.probability ?? t.final_score ?? 0);
+const basePctOf = (t) => (t.baseline_probability ?? t.baseline_score);
+const deltaOf = (t) => (t.delta_probability ?? t.delta_score);
+const nameOf = (t) => (t.intent_nm_ko ?? t.intent_name ?? '');
+
 export default function IntentChart({ topN }) {
   if (!topN || topN.length === 0) {
     return <div className="empty">결과 없음</div>;
   }
-  const max = Math.max(...topN.map((t) => t.final_score));
+  const max = Math.max(...topN.map(pctOf));
 
   return (
     <div className="intent-chart">
-      {topN.map((t) => (
+      {topN.map((t) => {
+        const p = pctOf(t);
+        const baseP = basePctOf(t);
+        return (
         <div key={t.intent_id} className="row">
           <div className="meta">
             <div className="rank">
@@ -47,7 +61,7 @@ export default function IntentChart({ topN }) {
             <div className="info">
               <div className="name">
                 <span className="dot" style={{ background: L1_COLOR[t.L1_id] || '#94a3b8' }} />
-                {t.intent_name}
+                {nameOf(t)}
               </div>
               <div className="sub">
                 <span className="id">{t.intent_id}</span>
@@ -56,23 +70,24 @@ export default function IntentChart({ topN }) {
               </div>
             </div>
             <div className="score-block">
-              <div className="score">{t.final_score.toFixed(2)}</div>
-              <DeltaBadge delta={t.delta_score} />
+              <div className="score">{(p * 100).toFixed(1)}%</div>
+              <DeltaBadge delta={deltaOf(t)} />
             </div>
           </div>
           <div className="bar">
             <div className="fill" style={{
-              width: `${(t.final_score / Math.max(max, 0.01)) * 100}%`,
+              width: `${(p / Math.max(max, 0.001)) * 100}%`,
               background: L1_COLOR[t.L1_id] || '#94a3b8',
             }} />
-            {t.baseline_score !== undefined && (
+            {baseP !== undefined && (
               <div className="baseline-marker" style={{
-                left: `${(t.baseline_score / Math.max(max, 0.01)) * 100}%`,
+                left: `${(baseP / Math.max(max, 0.001)) * 100}%`,
               }} />
             )}
           </div>
         </div>
-      ))}
+        );
+      })}
       <style>{`
         .intent-chart { display: flex; flex-direction: column; gap: 1rem; }
         .row { background: #f8fafc; border-radius: 12px; padding: 0.75rem 1rem; }
