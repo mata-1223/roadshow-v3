@@ -2,18 +2,39 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSessionStore } from '../store/sessionStore.js';
 import { createWebSocket } from '../api/websocket.js';
+import { getIntentPositions } from '../api/http.js';
 import IntentChart from '../components/IntentChart.jsx';
 import BehaviorPanel from '../components/BehaviorPanel.jsx';
 import VectorSpace from '../components/VectorSpace.jsx';
 
 export default function DemoPage() {
   const navigate = useNavigate();
-  const { sessionId, scenario, topN, setTopN, stage, setStage } = useSessionStore();
+  const {
+    sessionId, scenarioId, scenario,
+    topN, others, stage,
+    intentPositions, l1Zones,
+    customerPosition, baselinePosition, customerPath,
+    applyIntentUpdate, setIntentPositions,
+  } = useSessionStore();
   const [stepIndex, setStepIndex] = useState(0);
   const [selectedBehaviors, setSelectedBehaviors] = useState([]);
   const [ackPending, setAckPending] = useState(false);
   const [wsReady, setWsReady] = useState(false);
   const wsRef = useRef(null);
+
+  // Vector Space 좌표 사전 fetch (1회)
+  useEffect(() => {
+    if (intentPositions || !scenarioId) return;
+    getIntentPositions(scenarioId)
+      .then((data) => {
+        const posMap = {};
+        (data.intents || []).forEach((p) => {
+          posMap[p.intent_id] = { x: p.x, y: p.y, L1_id: p.L1_id };
+        });
+        setIntentPositions(posMap, data.l1_zones || []);
+      })
+      .catch((e) => console.error('Failed to load intent positions', e));
+  }, [scenarioId, intentPositions, setIntentPositions]);
 
   useEffect(() => {
     if (!sessionId) { navigate('/'); return; }
@@ -21,8 +42,7 @@ export default function DemoPage() {
       SESSION_READY: () => setWsReady(true),
       EVENT_ACK:     () => {},
       INTENT_UPDATE: (msg) => {
-        setTopN(msg.top_n);
-        setStage(msg.stage);
+        applyIntentUpdate(msg);
         setAckPending(false);
       },
       error: (e)     => console.error('WS error', e),
@@ -89,7 +109,16 @@ export default function DemoPage() {
                 disabled={ackPending}
               />
               <div style={{ marginTop: '1.5rem' }}>
-                <VectorSpace allIntents={allIntents} topN={topN} />
+                <VectorSpace
+                  intentPositions={intentPositions}
+                  l1Zones={l1Zones}
+                  allIntents={allIntents}
+                  topN={topN}
+                  others={others}
+                  customerPosition={customerPosition}
+                  baselinePosition={baselinePosition}
+                  customerPath={customerPath}
+                />
               </div>
             </>
           ) : (

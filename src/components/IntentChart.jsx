@@ -1,4 +1,4 @@
-// Top-N Intent 차트 (Score 바 + L1 색상)
+// Top-N Intent 차트 (Score 바 + L1 색상 + delta/rank 변화 표시)
 
 const L1_COLOR = {
   'INT-1000': 'var(--l1-1000)',
@@ -9,6 +9,25 @@ const L1_COLOR = {
   'INT-6000': 'var(--l1-6000)',
   'INT-7000': 'var(--l1-7000)',
 };
+
+function DeltaBadge({ delta }) {
+  if (delta === undefined || delta === null) return null;
+  const v = Number(delta);
+  if (Math.abs(v) < 0.005) return null;
+  const sign = v > 0 ? '+' : '';
+  const cls = v > 0 ? 'delta-up' : 'delta-down';
+  return <span className={`delta-badge ${cls}`}>Δ {sign}{v.toFixed(2)}</span>;
+}
+
+function RankChange({ change }) {
+  if (change === undefined || change === null || change === 0) return null;
+  const up = change > 0;
+  return (
+    <span className={`rank-change ${up ? 'up' : 'down'}`}>
+      {up ? '▲' : '▼'} {Math.abs(change)}
+    </span>
+  );
+}
 
 export default function IntentChart({ topN }) {
   if (!topN || topN.length === 0) {
@@ -21,7 +40,10 @@ export default function IntentChart({ topN }) {
       {topN.map((t) => (
         <div key={t.intent_id} className="row">
           <div className="meta">
-            <div className="rank">#{t.rank}</div>
+            <div className="rank">
+              <div className="rank-num">#{t.rank}</div>
+              <RankChange change={t.rank_change} />
+            </div>
             <div className="info">
               <div className="name">
                 <span className="dot" style={{ background: L1_COLOR[t.L1_id] || '#94a3b8' }} />
@@ -33,15 +55,20 @@ export default function IntentChart({ topN }) {
                 <span className="l2">{t.L2_name}</span>
               </div>
             </div>
-            <div className="score">{t.final_score.toFixed(2)}</div>
+            <div className="score-block">
+              <div className="score">{t.final_score.toFixed(2)}</div>
+              <DeltaBadge delta={t.delta_score} />
+            </div>
           </div>
           <div className="bar">
             <div className="fill" style={{
               width: `${(t.final_score / Math.max(max, 0.01)) * 100}%`,
               background: L1_COLOR[t.L1_id] || '#94a3b8',
             }} />
-            {t.realtime_boost > 0 && (
-              <div className="boost-badge">boost +{t.realtime_boost.toFixed(2)}</div>
+            {t.baseline_score !== undefined && (
+              <div className="baseline-marker" style={{
+                left: `${(t.baseline_score / Math.max(max, 0.01)) * 100}%`,
+              }} />
             )}
           </div>
         </div>
@@ -50,18 +77,25 @@ export default function IntentChart({ topN }) {
         .intent-chart { display: flex; flex-direction: column; gap: 1rem; }
         .row { background: #f8fafc; border-radius: 12px; padding: 0.75rem 1rem; }
         .meta { display: flex; align-items: center; gap: 0.75rem; }
-        .rank { font-weight: 800; font-size: 1.1rem; color: var(--muted); width: 2.5rem; }
+        .rank { width: 3rem; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+        .rank-num { font-weight: 800; font-size: 1.1rem; color: var(--muted); }
+        .rank-change { font-size: 0.7rem; font-weight: 700; padding: 1px 4px; border-radius: 4px; }
+        .rank-change.up { background: #dcfce7; color: #15803d; }
+        .rank-change.down { background: #fee2e2; color: #b91c1c; }
         .info { flex: 1; }
         .name { font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
         .sub { color: var(--muted); font-size: 0.85rem; display: flex; gap: 0.75rem; margin-top: 0.2rem; }
         .id { font-weight: 600; }
         .type { background: white; padding: 0 0.5rem; border-radius: 4px; border: 1px solid var(--border); }
+        .score-block { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
         .score { font-size: 1.3rem; font-weight: 700; color: var(--fg); }
+        .delta-badge { font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+        .delta-badge.delta-up { background: #dcfce7; color: #15803d; }
+        .delta-badge.delta-down { background: #fef3c7; color: #92400e; }
         .bar { margin-top: 0.5rem; height: 8px; background: white; border-radius: 999px; overflow: hidden; position: relative; }
         .fill { height: 100%; transition: width 0.5s ease-out; }
-        .boost-badge { position: absolute; top: -22px; right: 0; background: var(--accent); color: white;
-                       font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 4px; }
+        .baseline-marker { position: absolute; top: -2px; width: 2px; height: 12px; background: rgba(15,23,42,0.5); }
         .empty { color: var(--muted); padding: 2rem; text-align: center; }
       `}</style>
     </div>

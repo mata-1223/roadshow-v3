@@ -338,7 +338,7 @@ function Pagination({ page, pageCount, pageSize, onPageChange, onPageSizeChange 
 function formatCell(col, val) {
   if (val === null || val === undefined) return '—';
   if (typeof val === 'number') {
-    if (col.endsWith('_score') || col === 'realtime_boost') return val.toFixed(3);
+    if (col.endsWith('_score') || col === 'delta_score') return val.toFixed(3);
     return String(val);
   }
   if (typeof val === 'boolean') return val ? 'true' : 'false';

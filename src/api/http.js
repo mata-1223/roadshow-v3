@@ -29,3 +29,9 @@ export async function getLatestIntents(sessionId, topN = 5) {
   if (!r.ok) throw new Error('Failed to get intents');
   return r.json();
 }
+
+export async function getIntentPositions(scenarioId = 'cs-myk-v3') {
+  const r = await fetch(`${BASE}/api/scenarios/${scenarioId}/intent-positions`);
+  if (!r.ok) throw new Error('Failed to load intent positions');
+  return r.json();
+}

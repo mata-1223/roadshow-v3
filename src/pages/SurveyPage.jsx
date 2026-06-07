@@ -5,7 +5,7 @@ import { useSessionStore } from '../store/sessionStore.js';
 
 export default function SurveyPage() {
   const navigate = useNavigate();
-  const { sessionId, scenario, setSurveyAnswers, setTopN, setStage, setBatchFeatures } = useSessionStore();
+  const { sessionId, scenario, setSurveyAnswers, setStage, setBatchFeatures, applyInitialResult } = useSessionStore();
   const [answers, setAnswers] = useState({});
   const [busy, setBusy] = useState(false);
 
@@ -27,9 +27,15 @@ export default function SurveyPage() {
     try {
       const res = await submitSurvey(sessionId, answers);
       setSurveyAnswers(answers);
-      setTopN(res.top_n);
       setStage(res.stage);
       setBatchFeatures(res.batch_features);
+      applyInitialResult({
+        top_n:             res.top_n,
+        others:            res.others,
+        all_probabilities: res.all_probabilities,
+        stage:             res.stage,
+        computed_at:       new Date().toISOString(),
+      });
       navigate('/demo');
     } catch (e) {
       alert(`설문 제출 실패: ${e.message}`);
