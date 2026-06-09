@@ -82,14 +82,11 @@ export default function DemoPage() {
       setMode('step1');
       setParent(null);
     } else if (mode === 'step1') {
-      // 1-X 클릭 → step 2
+      // 1-X 클릭 → step 2 (해당 섹션 진입)
       setMode('step2');
       setParent(b.id);
-    } else {
-      // 2-X 클릭 → step 1
-      setMode('step1');
-      setParent(null);
     }
+    // 2-X 클릭 → step2 유지: 섹션 내에서 연속 행동 가능. 메인 메뉴 복귀는 BACK으로.
   }
 
   function handleReset() {
@@ -118,7 +115,7 @@ export default function DemoPage() {
             <h2>행동 선택지</h2>
             <p className="caption">
               {mode === 'step1'   && 'Step 1: 6개 상위 메뉴 중 선택'}
-              {mode === 'step2'   && 'Step 2: 하위 행동 3개 + 뒤로가기 + 앱 이탈'}
+              {mode === 'step2'   && 'Step 2: 섹션 내 행동 선택 (연속 선택 가능 · 뒤로가기로 메뉴 복귀)'}
               {mode === 'ended'   && '시연 종료'}
             </p>
 
