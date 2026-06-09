@@ -6,11 +6,15 @@ import { getIntentPositions } from '../api/http.js';
 import IntentChart from '../components/IntentChart.jsx';
 import BehaviorPanel from '../components/BehaviorPanel.jsx';
 import VectorSpace from '../components/VectorSpace.jsx';
+import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
+import DBViewerPanel from '../components/DBViewerPanel.jsx';
+import SurveySummaryPanel from '../components/SurveySummaryPanel.jsx';
+import ActionPanel from '../components/ActionPanel.jsx';
 
 export default function DemoPage() {
   const navigate = useNavigate();
   const {
-    sessionId, scenarioId, scenario,
+    sessionId, scenarioId, scenario, surveyAnswers,
     topN, others, stage,
     intentPositions, l1Zones,
     customerPosition, baselinePosition, customerPath,
@@ -95,16 +99,69 @@ export default function DemoPage() {
 
   return (
     <div className="demo-page">
+      <div className="container">
+        <div className="badges">
+          <span className="badge stage">{stage}</span>
+          <span className="badge ws">{wsReady ? '🟢 연결됨' : '🔴 연결 끊김'}</span>
+          <span className="badge step">행동 누적 {history.length}회</span>
+          <Link to="/admin" className="badge admin-link" target="_blank">📊 DB 전체 보기 ↗</Link>
+        </div>
+      </div>
+
       <div className="container demo-grid">
 
-        <div className="left-col">
-          <div className="badges">
-            <span className="badge stage">{stage}</span>
-            <span className="badge ws">{wsReady ? '🟢 연결됨' : '🔴 연결 끊김'}</span>
-            <span className="badge step">행동 누적 {history.length}회</span>
-            <Link to="/admin" className="badge admin-link" target="_blank">📊 DB 조회</Link>
+        {/* ── 좌 · 입력 (설문 + 행동 + 시스템 구성) ──────────── */}
+        <div className="col col-input">
+          <SurveySummaryPanel survey={scenario.survey} answers={surveyAnswers} />
+
+          <div className="behavior-block">
+            <h2>행동 선택지</h2>
+            <p className="caption">
+              {mode === 'step1'   && 'Step 1: 6개 상위 메뉴 중 선택'}
+              {mode === 'step2'   && 'Step 2: 하위 행동 3개 + 뒤로가기 + 앱 이탈'}
+              {mode === 'ended'   && '시연 종료'}
+            </p>
+
+            {mode !== 'ended' ? (
+              <BehaviorPanel
+                mode={mode}
+                step1Block={step1Block}
+                step2Block={step2Block}
+                parent={parent}
+                onSelect={handleSelect}
+                disabled={ackPending}
+              />
+            ) : null}
+
+            {mode === 'ended' && (
+              <div className="final-panel">
+                <h3>👋 고객이 앱을 이탈했습니다</h3>
+                <p>이 시점의 Intent 분포·고객 위치가 최종 상태로 보존됩니다.</p>
+                <button className="btn" onClick={handleReset}>다시 시작</button>
+              </div>
+            )}
+
+            {history.length > 0 && (
+              <details className="history">
+                <summary>행동 이력 ({history.length}회)</summary>
+                <ol>
+                  {history.map((h) => (
+                    <li key={h.seq}>
+                      <span className="hstep">{h.from === 'step1' ? 'S1' : 'S2'}</span>
+                      <span className="hid">{h.behavior.id}</span>
+                      <span className="hname">{h.behavior.name}</span>
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            )}
           </div>
 
+          <SystemStatusPanel states={{ batch: 'done', realtime: 'active', infer: 'active' }} />
+        </div>
+
+        {/* ── 중 · 추론 (Intent + Vector + DB) ──────────────── */}
+        <div className="col col-infer">
           <h2>Intent — 실시간 Top 5</h2>
           <p className="caption">113개 Intent 중 분포 상위 5개. softmax(score/T) 정규화 분포.</p>
           <IntentChart topN={topN} />
@@ -121,35 +178,6 @@ export default function DemoPage() {
             </div>
           )}
 
-          {mode === 'ended' && (
-            <div className="final-panel">
-              <h3>👋 고객이 앱을 이탈했습니다</h3>
-              <p>이 시점의 Intent 분포·고객 위치가 최종 상태로 보존됩니다.</p>
-              <button className="btn" onClick={handleReset}>다시 시작</button>
-            </div>
-          )}
-        </div>
-
-        <div className="right-col">
-          <h2>행동 선택지</h2>
-          <p className="caption">
-            {mode === 'step1'   && 'Step 1: 6개 상위 메뉴 중 선택'}
-            {mode === 'step2'   && 'Step 2: 하위 행동 3개 + 뒤로가기 + 앱 이탈'}
-            {mode === 'ended'   && '시연 종료'}
-          </p>
-
-          {mode !== 'ended' ? (
-            <BehaviorPanel
-              mode={mode}
-              step1Block={step1Block}
-              step2Block={step2Block}
-              parent={parent}
-              onSelect={handleSelect}
-              disabled={ackPending}
-            />
-          ) : null}
-
-          {/* VectorSpace는 ended 상태에서도 계속 표시 */}
           <div style={{ marginTop: '1.5rem' }}>
             <VectorSpace
               intentPositions={intentPositions}
@@ -163,28 +191,25 @@ export default function DemoPage() {
             />
           </div>
 
-          {history.length > 0 && (
-            <details className="history">
-              <summary>행동 이력 ({history.length}회)</summary>
-              <ol>
-                {history.map((h) => (
-                  <li key={h.seq}>
-                    <span className="hstep">{h.from === 'step1' ? 'S1' : 'S2'}</span>
-                    <span className="hid">{h.behavior.id}</span>
-                    <span className="hname">{h.behavior.name}</span>
-                  </li>
-                ))}
-              </ol>
-            </details>
-          )}
+          <div style={{ marginTop: '1.5rem' }}>
+            <DBViewerPanel sessionId={sessionId} />
+          </div>
+        </div>
+
+        {/* ── 우 · 출력 (추천 액션 / 상담사 컨텍스트) ────────── */}
+        <div className="col col-output">
+          <ActionPanel actionsData={scenario.actions} topN={topN} />
         </div>
 
       </div>
 
       <style>{`
-        .demo-page { min-height: 100vh; }
-        .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding-top: 2rem; }
-        .badges { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .demo-page { min-height: 100vh; padding-bottom: 2rem; }
+        .demo-grid { display: grid; grid-template-columns: 1fr 1.25fr 1.1fr; gap: 1.75rem; padding-top: 1rem; align-items: start; }
+        .col { min-width: 0; }
+        .col-input { display: flex; flex-direction: column; gap: 1.5rem; }
+        .behavior-block h2 { margin-bottom: 0.25rem; }
+        .badges { display: flex; gap: 0.5rem; margin-bottom: 0; flex-wrap: wrap; padding-top: 1rem; }
         .badge { padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
         .stage { background: #eff6ff; color: var(--primary); }
         .ws { background: #f1f5f9; }
@@ -209,6 +234,7 @@ export default function DemoPage() {
         .hstep { background: var(--primary); color: white; padding: 0.1rem 0.45rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
         .hid { font-weight: 700; color: var(--muted); }
         .hname { font-weight: 500; }
+        @media (max-width: 1400px) { .demo-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 1024px) { .demo-grid { grid-template-columns: 1fr; } }
       `}</style>
     </div>

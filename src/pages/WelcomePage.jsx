@@ -1,58 +1,99 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSession, getScenario } from '../api/http.js';
 import { useSessionStore } from '../store/sessionStore.js';
+import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
+import DBViewerPanel from '../components/DBViewerPanel.jsx';
+
+// 시연 시나리오 3종. 현재는 CS만 활성, 나머지는 확장성 표현용 비활성 카드.
+const SCENARIOS = [
+  { id: 'cs',     name: 'CS · 고객센터 상담', active: true },
+  { id: 'bundle', name: '결합 상품 활성화',   active: false },
+  { id: 'worker', name: '직장인 라이프',       active: false },
+];
 
 export default function WelcomePage() {
   const navigate = useNavigate();
   const { setSession, setScenario, reset } = useSessionStore();
+  const [busy, setBusy] = useState(false);
 
-  async function start() {
-    reset();
-    const { session_id, scenario_id } = await createSession();
-    setSession(session_id, scenario_id);
-    const scn = await getScenario(scenario_id);
-    setScenario(scn);
-    navigate('/survey');
+  async function start(scn) {
+    if (!scn.active || busy) return;
+    setBusy(true);
+    try {
+      reset();
+      const { session_id, scenario_id } = await createSession();
+      setSession(session_id, scenario_id);
+      const scenario = await getScenario(scenario_id);
+      setScenario(scenario);
+      navigate('/survey');
+    } catch (e) {
+      alert(`세션 생성 실패: ${e.message}`);
+      setBusy(false);
+    }
   }
 
   return (
     <div className="welcome-page">
-      <div className="container welcome-content">
-        <div className="badge">AX Tech Connect 2026</div>
-        <h1>초개인화 Context Engine</h1>
-        <p className="lead">
-          고객의 상태 정보와 MyKT 앱 행동을 기반으로<br></br>실시간 Intent를 추론하고, 상황에 맞는 활용 방안을 제안합니다.
-        </p>
-        <p className="sub">
-          116개 Intent 전체에 대해 실시간 추론
-        </p>
+      <div className="container welcome-grid">
 
-        <button className="btn btn-primary cta" onClick={start}>
-          시작하기 →
-        </button>
+        <div className="left-col">
+          <div className="badge">AX Tech Connect 2026</div>
+          <h1>초개인화 Context Engine</h1>
+          <p className="lead">
+            고객의 상태 정보와 MyKT 앱 행동을 기반으로<br />실시간 Intent를 추론하고, 상황에 맞는 활용 방안을 제안합니다.
+          </p>
+          <p className="sub">113개 Intent 전체에 대해 실시간 추론</p>
+
+          <h3 className="pick">시나리오를 선택하세요</h3>
+          <div className="cards">
+            {SCENARIOS.map((scn) => (
+              <button
+                key={scn.id}
+                className={`scenario-card ${scn.active ? '' : 'disabled'}`}
+                onClick={() => start(scn)}
+                disabled={!scn.active || busy}
+              >
+                <span className="scn-name">{scn.name}</span>
+                {scn.active
+                  ? <span className="scn-go">{busy ? '준비 중…' : '시작 →'}</span>
+                  : <span className="scn-soon">준비 중</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="right-col">
+          <SystemStatusPanel states={{ batch: 'idle', realtime: 'idle', infer: 'idle' }} />
+          <DBViewerPanel tables={['sessions', 'event_log']} defaultTable="sessions" limit={5} title="DB 조회 — 적재 현황" />
+          <p className="hint">시나리오를 선택하면 배치 → 실시간 → 추론 순으로 컴포넌트가 활성화됩니다.</p>
+        </div>
 
       </div>
+
       <style>{`
-        .welcome-page {
-          min-height: 100vh;
-          display: flex; align-items: center; justify-content: center;
-          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-        }
-        .welcome-content { text-align: center; max-width: 800px; }
-        .badge {
-          display: inline-block;
-          background: #eff6ff; color: #1d4ed8;
-          padding: 0.4rem 1rem; border-radius: 999px;
-          font-weight: 600; font-size: 0.9rem;
-          margin-bottom: 2rem;
-        }
-        h1 { font-size: 3.5rem; margin-bottom: 1.5rem; }
-        .lead { font-size: 1.5rem; color: var(--fg); margin-bottom: 0.5rem; }
-        .sub  { font-size: 1.1rem; color: var(--muted); margin-bottom: 3rem; }
-        .cta {
-          font-size: 1.3rem; padding: 1.25rem 2.5rem;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-        }
+        .welcome-page { min-height: 100vh; display: flex; align-items: center;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); }
+        .welcome-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center; width: 100%; }
+        .right-col { display: flex; flex-direction: column; gap: 1rem; }
+        .badge { display: inline-block; background: #eff6ff; color: #1d4ed8;
+          padding: 0.4rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        h1 { font-size: 3rem; margin-bottom: 1.25rem; }
+        .lead { font-size: 1.4rem; color: var(--fg); margin-bottom: 0.5rem; }
+        .sub  { font-size: 1.05rem; color: var(--muted); margin-bottom: 2.5rem; }
+        .pick { color: var(--fg); font-size: 1.2rem; margin-bottom: 1rem; }
+        .cards { display: flex; flex-direction: column; gap: 0.75rem; max-width: 520px; }
+        .scenario-card { display: flex; align-items: center; justify-content: space-between;
+          border: 2px solid var(--border); background: white; border-radius: 14px;
+          padding: 1.1rem 1.4rem; text-align: left; transition: all 0.15s; }
+        .scenario-card:not(.disabled):hover { border-color: var(--primary); background: #f0f7ff;
+          box-shadow: 0 4px 12px rgba(37,99,235,0.12); }
+        .scenario-card.disabled { opacity: 0.5; cursor: not-allowed; }
+        .scn-name { font-size: 1.2rem; font-weight: 700; }
+        .scn-go { color: var(--primary); font-weight: 700; }
+        .scn-soon { font-size: 0.85rem; color: var(--muted); background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 999px; }
+        .hint { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
+        @media (max-width: 1024px) { .welcome-grid { grid-template-columns: 1fr; } }
       `}</style>
     </div>
   );
