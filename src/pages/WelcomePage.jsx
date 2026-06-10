@@ -5,11 +5,11 @@ import { useSessionStore } from '../store/sessionStore.js';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 
-// 시연 시나리오 3종. 현재는 CS만 활성, 나머지는 확장성 표현용 비활성 카드.
+// 시연 시나리오 3종 모두 활성.
 const SCENARIOS = [
-  { id: 'cs',     name: 'CS · 고객센터 상담', active: true },
-  { id: 'bundle', name: '결합 상품 활성화',   active: false },
-  { id: 'worker', name: '직장인 라이프',       active: false },
+  { id: 'cs',     scenarioId: 'cs-myk-v3', name: 'CS · 고객센터 상담', active: true },
+  { id: 'bundle', scenarioId: 'bundle-v3', name: '결합 상품 활성화',   active: true },
+  { id: 'worker', scenarioId: 'worker-v3', name: '직장인 라이프',       active: true },
 ];
 
 export default function WelcomePage() {
@@ -22,7 +22,7 @@ export default function WelcomePage() {
     setBusy(true);
     try {
       reset();
-      const { session_id, scenario_id } = await createSession();
+      const { session_id, scenario_id } = await createSession(scn.scenarioId);
       setSession(session_id, scenario_id);
       const scenario = await getScenario(scenario_id);
       setScenario(scenario);
@@ -43,7 +43,7 @@ export default function WelcomePage() {
           <p className="lead">
             고객의 상태 정보와 MyKT 앱 행동을 기반으로<br />실시간 Intent를 추론하고, 상황에 맞는 활용 방안을 제안합니다.
           </p>
-          <p className="sub">113개 Intent 전체에 대해 실시간 추론</p>
+          <p className="sub">도메인별 Intent Taxonomy 전체에 대해 실시간 추론</p>
 
           <h3 className="pick">시나리오를 선택하세요</h3>
           <div className="cards">

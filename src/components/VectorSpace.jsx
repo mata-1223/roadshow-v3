@@ -34,6 +34,10 @@ export default function VectorSpace({
     return m;
   }, [allIntents]);
 
+  // 시나리오별 Intent 총수 (좌표 우선, 없으면 메타 기준)
+  const intentCount = (intentPositions && Object.keys(intentPositions).length)
+    || (allIntents ? allIntents.length : 0);
+
   // topN 매칭용
   const topMap = useMemo(() => {
     const m = {};
@@ -82,8 +86,8 @@ export default function VectorSpace({
   return (
     <div className="vector-space">
       <div className="vs-header">
-        <h3>Vector Space — 113개 Intent</h3>
-        <p>고객 위치는 113개 정규화 분포의 가중 평균. 행동마다 이동 경로 누적.</p>
+        <h3>Vector Space — {intentCount}개 Intent</h3>
+        <p>고객 위치는 {intentCount}개 정규화 분포의 가중 평균. 행동마다 이동 경로 누적.</p>
       </div>
 
       <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="vs-svg">

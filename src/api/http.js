@@ -2,8 +2,12 @@
 // dev: Vite proxy (BASE=''), prod: 환경변수 VITE_API_BASE 사용
 const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 
-export async function createSession() {
-  const r = await fetch(`${BASE}/api/sessions`, { method: 'POST' });
+export async function createSession(scenarioId) {
+  const r = await fetch(`${BASE}/api/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(scenarioId ? { scenario_id: scenarioId } : {}),
+  });
   if (!r.ok) throw new Error('Failed to create session');
   return r.json();
 }
