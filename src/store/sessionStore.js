@@ -77,5 +77,6 @@ export const useSessionStore = create((set, get) => ({
     sessionId: null, scenarioId: null, scenario: null,
     surveyAnswers: {}, stage: 'initial', topN: [], others: null, batchFeatures: null,
     customerPosition: null, baselinePosition: null, customerPath: [],
+    intentPositions: null, l1Zones: [],   // 시나리오 전환 시 좌표 재로딩되도록 초기화
   }),
 }));
