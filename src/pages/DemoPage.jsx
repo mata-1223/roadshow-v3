@@ -211,7 +211,7 @@ export default function DemoPage() {
 
       <style>{`
         .demo-page { min-height: 100vh; padding-bottom: 2rem; }
-        .demo-grid { display: grid; grid-template-columns: 1fr 1.25fr 1.1fr; gap: 1.75rem; padding-top: 1rem; align-items: start; }
+        .demo-grid { display: grid; grid-template-columns: 1fr 1.25fr 1.1fr; gap: clamp(1rem, 1.5vw, 1.75rem); padding-top: 1rem; align-items: start; }
         .col { min-width: 0; }
         .col-input { display: flex; flex-direction: column; gap: 1.5rem; }
         .behavior-block h2 { margin-bottom: 0.25rem; }
