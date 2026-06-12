@@ -5,6 +5,7 @@
 // 좌표 범위 [-1, 1] → SVG viewBox로 변환
 
 import { useMemo } from 'react';
+import { intentName } from '../utils/intent.js';
 
 const VIEW_W = 800;
 const VIEW_H = 600;
@@ -130,7 +131,7 @@ export default function VectorSpace({
           const svg = toSvg(pos);
           return (
             <g key={t.intent_id} transform={`translate(${svg.x}, ${svg.y + 32})`}>
-              <text textAnchor="middle" className="vs-top-label">{t.intent_nm_ko || t.intent_name}</text>
+              <text textAnchor="middle" className="vs-top-label">{intentName(t)}</text>
             </g>
           );
         })}

@@ -2,10 +2,11 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { listTables, queryTable, getContextDetail } from '../api/admin.js';
 import { useSessionStore } from '../store/sessionStore.js';
+import { SCENARIOS } from '../constants/scenarios.js';
+import { formatCell, AUTO_REFRESH_MS } from '../utils/format.js';
 
 const DEFAULT_TABLE = 'intent_scores';
 const PAGE_SIZES   = [25, 50, 100, 200, 500];
-const AUTO_REFRESH_MS = 2000;
 
 export default function AdminPage() {
   const { sessionId } = useSessionStore();
@@ -138,9 +139,9 @@ export default function AdminPage() {
                 onChange={(e) => setFilterScenario(e.target.value)}
               >
                 <option value="">전체 시나리오</option>
-                <option value="cs-myk-v3">cs-myk-v3 (CS)</option>
-                <option value="bundle-v3">bundle-v3 (결합)</option>
-                <option value="worker-v3">worker-v3 (직장인)</option>
+                {SCENARIOS.map((s) => (
+                  <option key={s.id} value={s.id}>{s.id} ({s.tag})</option>
+                ))}
               </select>
               <input
                 className="session-filter"
@@ -348,15 +349,3 @@ function Pagination({ page, pageCount, pageSize, onPageChange, onPageSizeChange 
   );
 }
 
-function formatCell(col, val) {
-  if (val === null || val === undefined) return '—';
-  if (typeof val === 'number') {
-    if (col.endsWith('_score') || col === 'delta_score') return val.toFixed(3);
-    return String(val);
-  }
-  if (typeof val === 'boolean') return val ? 'true' : 'false';
-  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) {
-    return val.slice(0, 19).replace('T', ' ');
-  }
-  return String(val);
-}

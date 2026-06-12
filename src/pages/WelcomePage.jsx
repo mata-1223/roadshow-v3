@@ -2,15 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSession, getScenario } from '../api/http.js';
 import { useSessionStore } from '../store/sessionStore.js';
+import { SCENARIOS } from '../constants/scenarios.js';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
-
-// 시연 시나리오 3종 모두 활성.
-const SCENARIOS = [
-  { id: 'cs',     scenarioId: 'cs-myk-v3', name: 'CS · 고객센터 상담', active: true },
-  { id: 'bundle', scenarioId: 'bundle-v3', name: '결합 상품 활성화',   active: true },
-  { id: 'worker', scenarioId: 'worker-v3', name: '직장인 라이프',       active: true },
-];
 
 export default function WelcomePage() {
   const navigate = useNavigate();
@@ -22,7 +16,7 @@ export default function WelcomePage() {
     setBusy(true);
     try {
       reset();
-      const { session_id, scenario_id } = await createSession(scn.scenarioId);
+      const { session_id, scenario_id } = await createSession(scn.id);
       setSession(session_id, scenario_id);
       const scenario = await getScenario(scenario_id);
       setScenario(scenario);
@@ -41,7 +35,7 @@ export default function WelcomePage() {
           <div className="badge">AX Tech Connect 2026</div>
           <h1>초개인화 Context Engine</h1>
           <p className="lead">
-            고객의 상태 정보와 MyKT 앱 행동을 기반으로<br />실시간 Intent를 추론하고, 상황에 맞는 활용 방안을 제안합니다.
+            고객의 상태 정보와 실시간 행동을 기반으로<br />실시간 Intent를 추론하고, 고객 Context를 생성하여 상황에 맞는 활용 방안을 제안합니다.
           </p>
           <p className="sub">도메인별 Intent Taxonomy 전체에 대해 실시간 추론</p>
 
@@ -49,7 +43,7 @@ export default function WelcomePage() {
           <div className="cards">
             {SCENARIOS.map((scn) => (
               <button
-                key={scn.id}
+                key={scn.key}
                 className={`scenario-card ${scn.active ? '' : 'disabled'}`}
                 onClick={() => start(scn)}
                 disabled={!scn.active || busy}
@@ -74,7 +68,8 @@ export default function WelcomePage() {
       <style>{`
         .welcome-page { min-height: 100vh; display: flex; align-items: center;
           background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); }
-        .welcome-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center; width: 100%; }
+        .welcome-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center;
+          width: 100%; max-width: 1400px; margin: 0 auto; }
         .right-col { display: flex; flex-direction: column; gap: 1rem; }
         .badge { display: inline-block; background: #eff6ff; color: #1d4ed8;
           padding: 0.4rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem; }

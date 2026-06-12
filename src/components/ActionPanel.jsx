@@ -3,6 +3,7 @@
 // 앱 Push(휴대폰 푸시 알림) / 고객센터 상담사 컨텍스트 / AI Agent 3채널을 동시에 표출한다.
 
 import ktAppIcon from '../assets/kt-app-icon.png';
+import { intentName } from '../utils/intent.js';
 
 const FALLBACK_ICON = { push: '📱', call_center: '📞', agent: '🤖' };
 
@@ -81,7 +82,7 @@ export default function ActionPanel({ actionsData, topN = [] }) {
         <>
           <div className="ac-match">
             <span className="ac-rank">#{best.rank}</span>
-            <span className="ac-iname">{best.intent_nm_ko}</span>
+            <span className="ac-iname">{intentName(best)}</span>
             <span className="ac-iid">{best.intent_id}</span>
             <span className="ac-prob">{(best.probability * 100).toFixed(1)}%</span>
           </div>
