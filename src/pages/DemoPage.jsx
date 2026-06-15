@@ -59,8 +59,15 @@ export default function DemoPage() {
     return () => ws.close();
   }, [sessionId]);
 
+  const behaviorsData = scenario?.behaviors || {};
+  const isSingleSelect = behaviorsData.structure === 'single-select';
+
+  // 단일 선택 시나리오(직장인)는 시작 모드를 'single'로
+  useEffect(() => {
+    if (isSingleSelect) setMode('single');
+  }, [isSingleSelect]);
+
   if (!scenario) return null;
-  const behaviorsData = scenario.behaviors || {};
   const step1Block = behaviorsData.step1;
   const step2Block = behaviorsData.step2;
   const allIntents = scenario.intents?.intents || [];
@@ -114,7 +121,8 @@ export default function DemoPage() {
           <div className="behavior-block">
             <h2>행동 선택지</h2>
             <p className="caption">
-              {mode === 'step1'   && 'Step 1: 6개 상위 메뉴 중 선택'}
+              {mode === 'single'  && `앱을 선택하세요 (${behaviorsData?.apps?.length ?? ''}개 중 · 반복 선택할수록 의도가 또렷해집니다)`}
+              {mode === 'step1'   && `Step 1: ${step1Block?.behaviors?.length ?? ''}개 상위 메뉴 중 선택`}
               {mode === 'step2'   && 'Step 2: 섹션 내 행동 선택 (연속 선택 가능 · 뒤로가기로 메뉴 복귀)'}
               {mode === 'ended'   && '시연 종료'}
             </p>
@@ -124,6 +132,7 @@ export default function DemoPage() {
                 mode={mode}
                 step1Block={step1Block}
                 step2Block={step2Block}
+                appsBlock={behaviorsData}
                 parent={parent}
                 onSelect={handleSelect}
                 disabled={ackPending}
@@ -160,7 +169,7 @@ export default function DemoPage() {
         {/* ── 중 · 추론 (Intent + Vector + DB) ──────────────── */}
         <div className="col col-infer">
           <h2>Intent — 실시간 Top 5</h2>
-          <p className="caption">113개 Intent 중 분포 상위 5개. softmax(score/T) 정규화 분포.</p>
+          <p className="caption">{allIntents.length}개 Intent 중 분포 상위 5개. softmax(score/T) 정규화 분포.</p>
           <IntentChart topN={topN} />
 
           {others && (
@@ -202,7 +211,7 @@ export default function DemoPage() {
 
       <style>{`
         .demo-page { min-height: 100vh; padding-bottom: 2rem; }
-        .demo-grid { display: grid; grid-template-columns: 1fr 1.25fr 1.1fr; gap: 1.75rem; padding-top: 1rem; align-items: start; }
+        .demo-grid { display: grid; grid-template-columns: 1fr 1.25fr 1.1fr; gap: clamp(1rem, 1.5vw, 1.75rem); padding-top: 1rem; align-items: start; }
         .col { min-width: 0; }
         .col-input { display: flex; flex-direction: column; gap: 1.5rem; }
         .behavior-block h2 { margin-bottom: 0.25rem; }

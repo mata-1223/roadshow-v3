@@ -1,9 +1,15 @@
 // REST API 클라이언트
 // dev: Vite proxy (BASE=''), prod: 환경변수 VITE_API_BASE 사용
+import { DEFAULT_SCENARIO_ID } from '../constants/scenarios.js';
+
 const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 
-export async function createSession() {
-  const r = await fetch(`${BASE}/api/sessions`, { method: 'POST' });
+export async function createSession(scenarioId) {
+  const r = await fetch(`${BASE}/api/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(scenarioId ? { scenario_id: scenarioId } : {}),
+  });
   if (!r.ok) throw new Error('Failed to create session');
   return r.json();
 }
@@ -18,19 +24,13 @@ export async function submitSurvey(sessionId, answers) {
   return r.json();
 }
 
-export async function getScenario(scenarioId = 'cs-myk-v3') {
+export async function getScenario(scenarioId = DEFAULT_SCENARIO_ID) {
   const r = await fetch(`${BASE}/api/scenarios/${scenarioId}`);
   if (!r.ok) throw new Error('Failed to load scenario');
   return r.json();
 }
 
-export async function getLatestIntents(sessionId, topN = 5) {
-  const r = await fetch(`${BASE}/api/intents/latest?session_id=${sessionId}&top_n=${topN}`);
-  if (!r.ok) throw new Error('Failed to get intents');
-  return r.json();
-}
-
-export async function getIntentPositions(scenarioId = 'cs-myk-v3') {
+export async function getIntentPositions(scenarioId = DEFAULT_SCENARIO_ID) {
   const r = await fetch(`${BASE}/api/scenarios/${scenarioId}/intent-positions`);
   if (!r.ok) throw new Error('Failed to load intent positions');
   return r.json();

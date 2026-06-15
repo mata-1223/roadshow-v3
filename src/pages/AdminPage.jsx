@@ -2,10 +2,11 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { listTables, queryTable, getContextDetail } from '../api/admin.js';
 import { useSessionStore } from '../store/sessionStore.js';
+import { SCENARIOS } from '../constants/scenarios.js';
+import { formatCell, AUTO_REFRESH_MS } from '../utils/format.js';
 
 const DEFAULT_TABLE = 'intent_scores';
 const PAGE_SIZES   = [25, 50, 100, 200, 500];
-const AUTO_REFRESH_MS = 2000;
 
 export default function AdminPage() {
   const { sessionId } = useSessionStore();
@@ -13,6 +14,7 @@ export default function AdminPage() {
   const [active, setActive] = useState(DEFAULT_TABLE);
   const [data, setData] = useState(null);
   const [filterSession, setFilterSession] = useState(sessionId || '');
+  const [filterScenario, setFilterScenario] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -34,19 +36,20 @@ export default function AdminPage() {
     try {
       const d = await queryTable(active, {
         sessionId: filterSession || undefined,
+        scenarioId: filterScenario || undefined,
         limit:  pageSize,
         offset,
       });
       setData(d);
     } catch (e) { console.error(e); } finally { setLoading(false); }
-  }, [active, filterSession, pageSize, offset]);
+  }, [active, filterSession, filterScenario, pageSize, offset]);
 
   // 초기 로드 + 의존성 변경 시
   useEffect(() => { fetchTables(); }, [fetchTables]);
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // 테이블/세션 필터 변경 시 페이지 리셋
-  useEffect(() => { setPage(1); }, [active, filterSession, pageSize]);
+  useEffect(() => { setPage(1); }, [active, filterSession, filterScenario, pageSize]);
 
   // 자동 새로고침
   useEffect(() => {
@@ -130,6 +133,16 @@ export default function AdminPage() {
                        onChange={(e) => setAutoRefresh(e.target.checked)} />
                 자동 새로고침
               </label>
+              <select
+                className="scenario-filter"
+                value={filterScenario}
+                onChange={(e) => setFilterScenario(e.target.value)}
+              >
+                <option value="">전체 시나리오</option>
+                {SCENARIOS.map((s) => (
+                  <option key={s.id} value={s.id}>{s.id} ({s.tag})</option>
+                ))}
+              </select>
               <input
                 className="session-filter"
                 placeholder="세션 ID 필터 (선택)"
@@ -215,6 +228,7 @@ export default function AdminPage() {
         .filters { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
         .auto-refresh { display: flex; align-items: center; gap: 0.4rem; color: var(--muted); font-size: 0.9rem; }
         .session-filter { padding: 0.5rem 0.75rem; border: 2px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.9rem; width: 220px; }
+        .scenario-filter { padding: 0.5rem 0.75rem; border: 2px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: white; }
         .empty { text-align: center; color: var(--muted); padding: 4rem; flex: 1; display: flex; align-items: center; justify-content: center; }
 
         .ctx-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; justify-content: center; align-items: center; z-index: 100; padding: 2rem; }
@@ -335,15 +349,3 @@ function Pagination({ page, pageCount, pageSize, onPageChange, onPageSizeChange 
   );
 }
 
-function formatCell(col, val) {
-  if (val === null || val === undefined) return '—';
-  if (typeof val === 'number') {
-    if (col.endsWith('_score') || col === 'delta_score') return val.toFixed(3);
-    return String(val);
-  }
-  if (typeof val === 'boolean') return val ? 'true' : 'false';
-  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) {
-    return val.slice(0, 19).replace('T', ' ');
-  }
-  return String(val);
-}

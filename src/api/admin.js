@@ -8,9 +8,10 @@ export async function listTables() {
 }
 
 export async function queryTable(name, opts = {}) {
-  const { sessionId, limit = 50, offset = 0 } = opts;
+  const { sessionId, scenarioId, limit = 50, offset = 0 } = opts;
   const params = new URLSearchParams({ limit, offset });
   if (sessionId) params.set('session_id', sessionId);
+  if (scenarioId) params.set('scenario_id', scenarioId);
   const r = await fetch(`${BASE}/api/admin/tables/${name}?${params}`);
   if (!r.ok) throw new Error('Failed to query table');
   return r.json();

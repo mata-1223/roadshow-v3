@@ -1,9 +1,8 @@
 // DB 조회 패널 — 3-Layer Engine이 적재하는 데이터를 화면에 임베드해서 실시간으로 보여준다.
 // (기존 /admin 라우트의 경량 임베드 버전. 세션 필터 + 자동 새로고침)
-import { useEffect, useState, useCallback } from 'react';
-import { queryTable } from '../api/admin.js';
-
-const AUTO_REFRESH_MS = 2000;
+import { useState } from 'react';
+import { useTableQuery } from '../hooks/useTableQuery.js';
+import { formatCell } from '../utils/format.js';
 
 // 테이블별 탭 라벨
 const TAB_LABEL = {
@@ -39,17 +38,6 @@ function latestRankedBatch(rows) {
   return sorted.slice(0, cut).sort((a, b) => (a.rank ?? 1e9) - (b.rank ?? 1e9));
 }
 
-function fmt(col, val) {
-  if (val === null || val === undefined) return '—';
-  if (typeof val === 'number') {
-    if (col.endsWith('_score') || col === 'delta_score') return val.toFixed(3);
-    return String(val);
-  }
-  if (typeof val === 'boolean') return val ? 'true' : 'false';
-  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) return val.slice(11, 19);
-  return String(val);
-}
-
 export default function DBViewerPanel({
   sessionId,
   tables = ['event_log', 'intent_scores', 'customer_contexts'],
@@ -58,31 +46,14 @@ export default function DBViewerPanel({
   title = 'DB 조회',
 }) {
   const [active, setActive] = useState(defaultTable || tables[0]);
-  const [data, setData] = useState(null);
-  const [live, setLive] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      // intent_scores는 최근 배치(113개)를 통째로 받아 Rank순 재정렬해야 하므로 넉넉히 조회
-      const isIntent = active === 'intent_scores';
-      const d = await queryTable(active, {
-        sessionId: sessionId || undefined,
-        limit: isIntent ? 130 : limit,
-        offset: 0,
-      });
-      if (isIntent) d.rows = latestRankedBatch(d.rows);
-      setData(d);
-      setLive(true);
-    } catch {
-      setLive(false);
-    }
-  }, [active, sessionId, limit]);
-
-  useEffect(() => {
-    fetchData();
-    const t = setInterval(fetchData, AUTO_REFRESH_MS);
-    return () => clearInterval(t);
-  }, [fetchData]);
+  // intent_scores는 최근 배치(113개)를 통째로 받아 Rank순 재정렬해야 하므로 넉넉히 조회
+  const isIntent = active === 'intent_scores';
+  const { data, ok: live } = useTableQuery({
+    table: active,
+    params: { sessionId: sessionId || undefined, limit: isIntent ? 130 : limit, offset: 0 },
+    transform: (d) => (isIntent ? { ...d, rows: latestRankedBatch(d.rows) } : d),
+  });
 
   const cols = data ? (COLS[active] || data.columns).filter((c) => data.columns.includes(c)) : [];
 
@@ -122,7 +93,7 @@ export default function DBViewerPanel({
               {data.rows.map((r, i) => (
                 <tr key={i}>
                   {cols.map((c) => (
-                    <td key={c} className={typeof r[c] === 'number' ? 'num' : ''}>{fmt(c, r[c])}</td>
+                    <td key={c} className={typeof r[c] === 'number' ? 'num' : ''}>{formatCell(c, r[c], { date: 'time' })}</td>
                   ))}
                 </tr>
               ))}

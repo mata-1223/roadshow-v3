@@ -24,7 +24,8 @@ html, body, #root {
   background: var(--bg);
   color: var(--fg);
   font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", system-ui, sans-serif;
-  font-size: 18px;
+  /* 유동 타이포: 폰 ~14px · 노트북(1440) ~18px · 1920 ~20px · 대형/75" 최대 24px */
+  font-size: clamp(14px, 0.4vw + 12px, 24px);
   line-height: 1.5;
 }
 
@@ -39,9 +40,10 @@ h2 { font-size: 1.8rem; font-weight: 700; margin: 0 0 0.75rem; }
 h3 { font-size: 1.3rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--muted); }
 
 .container {
-  max-width: 1400px;
+  /* 큰 화면(75"/4K)에선 화면을 넓게 사용, 폰에선 여백 축소 */
+  max-width: min(2400px, 96vw);
   margin: 0 auto;
-  padding: 2rem 3rem;
+  padding: clamp(0.75rem, 2.5vw, 2rem) clamp(0.9rem, 1.6vw, 2rem);
 }
 
 .btn {

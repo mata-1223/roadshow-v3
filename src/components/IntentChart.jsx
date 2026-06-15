@@ -5,6 +5,8 @@
 //   rank / baseline_rank / rank_change
 //   intent_nm_ko / L1_id / L1_name / L2_name / inference_type
 
+import { intentName } from '../utils/intent.js';
+
 const L1_COLOR = {
   'INT-1000': 'var(--l1-1000)',
   'INT-2000': 'var(--l1-2000)',
@@ -38,7 +40,6 @@ function RankChange({ change }) {
 const pctOf = (t) => (t.probability ?? t.final_score ?? 0);
 const basePctOf = (t) => (t.baseline_probability ?? t.baseline_score);
 const deltaOf = (t) => (t.delta_probability ?? t.delta_score);
-const nameOf = (t) => (t.intent_nm_ko ?? t.intent_name ?? '');
 
 export default function IntentChart({ topN }) {
   if (!topN || topN.length === 0) {
@@ -61,7 +62,7 @@ export default function IntentChart({ topN }) {
             <div className="info">
               <div className="name">
                 <span className="dot" style={{ background: L1_COLOR[t.L1_id] || '#94a3b8' }} />
-                {nameOf(t)}
+                {intentName(t)}
               </div>
               <div className="sub">
                 <span className="id">{t.intent_id}</span>

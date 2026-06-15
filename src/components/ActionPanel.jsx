@@ -3,6 +3,7 @@
 // 앱 Push(휴대폰 푸시 알림) / 고객센터 상담사 컨텍스트 / AI Agent 3채널을 동시에 표출한다.
 
 import ktAppIcon from '../assets/kt-app-icon.png';
+import { intentName } from '../utils/intent.js';
 
 const FALLBACK_ICON = { push: '📱', call_center: '📞', agent: '🤖' };
 
@@ -81,7 +82,7 @@ export default function ActionPanel({ actionsData, topN = [] }) {
         <>
           <div className="ac-match">
             <span className="ac-rank">#{best.rank}</span>
-            <span className="ac-iname">{best.intent_nm_ko}</span>
+            <span className="ac-iname">{intentName(best)}</span>
             <span className="ac-iid">{best.intent_id}</span>
             <span className="ac-prob">{(best.probability * 100).toFixed(1)}%</span>
           </div>
@@ -98,7 +99,12 @@ export default function ActionPanel({ actionsData, topN = [] }) {
                     <span className="ac-ch-name">{c.name}</span>
                   </div>
                   {c.id === 'push' ? (
-                    <PhonePush message={body} />
+                    <>
+                      {act.service && (
+                        <div className="ac-service"><span className="ac-service-tag">추천 서비스</span>{act.service}</div>
+                      )}
+                      <PhonePush message={body} />
+                    </>
                   ) : c.id === 'agent' ? (
                     <AgentBubble message={body} />
                   ) : typeof body === 'object' ? (
@@ -134,6 +140,10 @@ export default function ActionPanel({ actionsData, topN = [] }) {
         .ac-ch-icon { font-size: 1.1rem; }
         .ac-ch-name { font-weight: 700; font-size: 0.95rem; }
         .ac-msg { font-size: 1rem; color: #1e293b; line-height: 1.45; }
+        .ac-service { display: flex; align-items: center; gap: 0.4rem; font-size: 0.92rem; font-weight: 700;
+                      color: #6d28d9; margin-bottom: 0.5rem; }
+        .ac-service-tag { font-size: 0.68rem; font-weight: 800; color: #6d28d9; background: #f3e8ff;
+                          padding: 0.12rem 0.45rem; border-radius: 5px; }
         .ch-agent .ac-msg { color: var(--primary); font-weight: 600; }
         .ac-ctx { display: flex; flex-direction: column; gap: 0.4rem; }
         .ac-ctx-row { display: grid; grid-template-columns: 2.6rem 1fr; gap: 0.5rem; align-items: start; font-size: 0.92rem; line-height: 1.4; }

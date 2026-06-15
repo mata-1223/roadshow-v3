@@ -1,13 +1,37 @@
 // 2단계 트리 행동 패널 (Step 1: 상위 메뉴 6개 / Step 2: Step1별 하위 3개 + BACK + EXIT)
 
 export default function BehaviorPanel({
-  mode,         // "step1" | "step2"
+  mode,         // "step1" | "step2" | "single"
   step1Block,   // { question, behaviors: [...6개] }
   step2Block,   // { question, by_parent, common }
+  appsBlock,    // 단일 선택: { question, apps: [...10개] }
   parent,       // 현재 Step 2의 부모 1-X
   onSelect,
   disabled,
 }) {
+  // single-select (직장인: 10개 앱 중 하나 선택, 반복 가능)
+  if (mode === 'single') {
+    if (!appsBlock) return null;
+    return (
+      <div className="behavior-panel">
+        <div className="step-head">
+          <div className="step-num single">앱 선택</div>
+          <div className="step-q">{appsBlock.question}</div>
+        </div>
+        <div className="app-grid">
+          {appsBlock.apps.map((a) => (
+            <button key={a.id} className="appbtn" disabled={disabled} onClick={() => onSelect(a)}>
+              <span className="app-icon">{a.icon}</span>
+              <span className="app-apps">{a.examples}</span>
+              <span className="app-cat">{a.name}</span>
+            </button>
+          ))}
+        </div>
+        <style>{STYLES}</style>
+      </div>
+    );
+  }
+
   // step1
   if (mode === 'step1') {
     if (!step1Block) return null;
@@ -77,6 +101,15 @@ const STYLES = `
   .step-num { color: white; padding: 0.25rem 0.75rem; border-radius: 8px; font-weight: 700; }
   .step-num.step1 { background: var(--primary); }
   .step-num.step2 { background: #16a34a; }
+  .step-num.single { background: #7c3aed; }
+  .app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; }
+  .appbtn { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.9rem 0.6rem;
+            background: white; border: 2px solid var(--border); border-radius: 12px; text-align: center; }
+  .appbtn:hover:not(:disabled) { border-color: #7c3aed; background: #f5f3ff; }
+  .appbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .app-icon { font-size: 1.7rem; line-height: 1; }
+  .app-apps { font-weight: 700; font-size: 0.9rem; line-height: 1.25; color: #1e293b; }
+  .app-cat { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
   .step-q { font-weight: 600; }
   .parent-hint { color: var(--muted); font-weight: 500; margin-left: 0.5rem; font-size: 0.9rem; }
   .behavior-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
