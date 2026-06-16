@@ -5,7 +5,9 @@
 //   rank / baseline_rank / rank_change
 //   intent_nm_ko / L1_id / L1_name / L2_name / inference_type
 
+import { useState, useRef } from 'react';
 import { intentName } from '../utils/intent.js';
+import ActionPanel from './ActionPanel.jsx';
 
 const L1_COLOR = {
   'INT-1000': 'var(--l1-1000)',
@@ -41,11 +43,34 @@ const pctOf = (t) => (t.probability ?? t.final_score ?? 0);
 const basePctOf = (t) => (t.baseline_probability ?? t.baseline_score);
 const deltaOf = (t) => (t.delta_probability ?? t.delta_score);
 
-export default function IntentChart({ topN }) {
+// 활용 예시 hover 팝업 — 기존 ActionPanel 화면을 해당 Intent 기준으로 화면 중앙에 크게 표출.
+// 대형 모달이라 컬럼 overflow에 잘리지 않도록 position:fixed, hover 이동 간 닫힘 방지를 위해 200ms 지연.
+function ActionExample({ actionsData, intent }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef(null);
+  const show = () => { clearTimeout(timer.current); setOpen(true); };
+  const hide = () => { timer.current = setTimeout(() => setOpen(false), 200); };
+  return (
+    <div className="ax-wrap" onMouseEnter={show} onMouseLeave={hide}>
+      <button type="button" className="ax-btn">활용 예시</button>
+      {open && (
+        <>
+          <div className="ax-backdrop" onClick={() => setOpen(false)} />
+          <div className="ax-modal" role="tooltip" onMouseEnter={show} onMouseLeave={hide}>
+            <ActionPanel actionsData={actionsData} topN={[intent]} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function IntentChart({ topN, actionsData }) {
   if (!topN || topN.length === 0) {
     return <div className="empty">결과 없음</div>;
   }
   const max = Math.max(...topN.map(pctOf));
+  const actionsMap = actionsData?.actions || {};
 
   return (
     <div className="intent-chart">
@@ -70,6 +95,9 @@ export default function IntentChart({ topN }) {
                 <span className="l2">{t.L2_name}</span>
               </div>
             </div>
+            {actionsMap[t.intent_id] && (
+              <ActionExample actionsData={actionsData} intent={t} />
+            )}
             <div className="score-block">
               <div className="score">{(p * 100).toFixed(1)}%</div>
               <DeltaBadge delta={deltaOf(t)} />
@@ -90,8 +118,8 @@ export default function IntentChart({ topN }) {
         );
       })}
       <style>{`
-        .intent-chart { display: flex; flex-direction: column; gap: 1rem; }
-        .row { background: #f8fafc; border-radius: 12px; padding: 0.75rem 1rem; }
+        .intent-chart { display: flex; flex-direction: column; gap: 0.55rem; }
+        .row { background: #f8fafc; border-radius: 12px; padding: 0.55rem 0.9rem; }
         .meta { display: flex; align-items: center; gap: 0.75rem; }
         .rank { width: 3rem; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
         .rank-num { font-weight: 800; font-size: 1.1rem; color: var(--muted); }
@@ -113,6 +141,27 @@ export default function IntentChart({ topN }) {
         .fill { height: 100%; transition: width 0.5s ease-out; }
         .baseline-marker { position: absolute; top: -2px; width: 2px; height: 12px; background: rgba(15,23,42,0.5); }
         .empty { color: var(--muted); padding: 2rem; text-align: center; }
+        /* 활용 예시 버튼 + 화면 중앙 대형 모달 (기존 ActionPanel 화면을 한눈에 크게) */
+        .ax-wrap { position: relative; display: inline-flex; }
+        .ax-btn { font-size: 0.74rem; font-weight: 700; color: var(--primary); background: #eff6ff;
+                  border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.25rem 0.55rem; cursor: pointer; white-space: nowrap; }
+        .ax-btn:hover { background: #dbeafe; }
+        .ax-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 190; }
+        .ax-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
+                    width: max-content; max-width: 94vw; max-height: 92vh; overflow: auto; text-align: left;
+                    background: #fff; border-radius: 20px; padding: 1.6rem 1.9rem;
+                    box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+        .ax-modal h2 { font-size: 1.55rem; margin: 0 0 0.4rem; }
+        .ax-modal .caption { font-size: 1rem; margin-bottom: 1.25rem; max-width: 640px; }
+        .ax-modal .ac-match { font-size: 1.15rem; padding: 0.8rem 1.1rem; margin-bottom: 1.25rem; }
+        .ax-modal .ac-iname { font-size: 1.35rem; }
+        /* 채널을 가로로 나열 → 넓고 낮게 (한눈에) */
+        .ax-modal .ac-channels { flex-direction: row; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: stretch; }
+        .ax-modal .ac-ch { width: 360px; flex: 0 0 auto; }
+        .ax-modal .phone-push { width: 250px; }
+        .ax-modal .pp-nmsg { font-size: 12.5px; }
+        .ax-modal .ac-msg, .ax-modal .ab-msg { font-size: 1.06rem; }
+        .ax-modal .ac-service { font-size: 1rem; }
       `}</style>
     </div>
   );

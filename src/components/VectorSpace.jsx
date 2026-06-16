@@ -203,11 +203,11 @@ export default function VectorSpace({
       </div>
 
       <style>{`
-        .vector-space { background: white; border: 2px solid var(--border); border-radius: 16px; padding: 1rem; }
-        .vs-header { margin-bottom: 0.5rem; }
-        .vs-header h3 { margin: 0 0 0.2rem; }
-        .vs-header p { color: var(--muted); margin: 0; font-size: 0.85rem; }
-        .vs-svg { width: 100%; height: auto; max-height: 540px; }
+        .vector-space { background: white; border: 2px solid var(--border); border-radius: 16px; padding: 0.7rem; }
+        .vs-header { margin-bottom: 0.35rem; }
+        .vs-header h3 { margin: 0 0 0.15rem; }
+        .vs-header p { color: var(--muted); margin: 0; font-size: 0.82rem; }
+        .vs-svg { width: 100%; height: auto; max-height: min(34vh, 380px); }
         .vs-zone-label { font-size: 14px; font-weight: 700; opacity: 0.75; }
         .vs-top-label { font-size: 11px; font-weight: 600; fill: #0f172a; pointer-events: none; }
         .vs-customer-label { font-size: 12px; font-weight: 700; fill: #0f172a; pointer-events: none; }

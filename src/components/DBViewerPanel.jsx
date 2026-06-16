@@ -115,7 +115,7 @@ export default function DBViewerPanel({
         .db-tab.on { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
         .db-total { background: var(--primary); color: white; border-radius: 999px; padding: 0 0.4rem; font-size: 0.7rem; }
         .db-caption { margin: 0 0 0.5rem; font-size: 0.78rem; color: var(--muted); font-weight: 600; }
-        .db-table-wrap { overflow-x: auto; max-height: 32vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+        .db-table-wrap { overflow-x: auto; max-height: 22vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
         .db-table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
         .db-table th, .db-table td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
         .db-table th { background: #f1f5f9; position: sticky; top: 0; font-weight: 700; color: var(--muted);

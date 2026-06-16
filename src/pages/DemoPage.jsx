@@ -9,7 +9,6 @@ import VectorSpace from '../components/VectorSpace.jsx';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 import SurveySummaryPanel from '../components/SurveySummaryPanel.jsx';
-import ActionPanel from '../components/ActionPanel.jsx';
 
 export default function DemoPage() {
   const navigate = useNavigate();
@@ -114,9 +113,9 @@ export default function DemoPage() {
 
       <div className="container demo-grid">
 
-        {/* ── 좌 · 입력 (설문 + 행동 + 시스템 구성) ──────────── */}
+        {/* ── 좌 · 입력 (시스템 구성 + 행동 + 설문) ──────────── */}
         <div className="col col-input">
-          <SurveySummaryPanel survey={scenario.survey} answers={surveyAnswers} />
+          <SystemStatusPanel states={{ batch: 'done', realtime: 'active', infer: 'active' }} />
 
           <div className="behavior-block">
             <h2>행동 선택지</h2>
@@ -163,14 +162,14 @@ export default function DemoPage() {
             )}
           </div>
 
-          <SystemStatusPanel states={{ batch: 'done', realtime: 'active', infer: 'active' }} />
+          <SurveySummaryPanel survey={scenario.survey} answers={surveyAnswers} />
         </div>
 
         {/* ── 중 · 추론 (Intent + Vector + DB) ──────────────── */}
         <div className="col col-infer">
           <h2>Intent — 실시간 Top 5</h2>
-          <p className="caption">{allIntents.length}개 Intent 중 분포 상위 5개. softmax(score/T) 정규화 분포.</p>
-          <IntentChart topN={topN} />
+          <p className="caption">{allIntents.length}개 Intent 중 분포 상위 5개 · 각 행의 <b>활용 예시</b>에 마우스를 올리면 채널별 예시가 표시됩니다</p>
+          <IntentChart topN={topN} actionsData={scenario.actions} />
 
           {others && (
             <div className="others-row">
@@ -184,7 +183,7 @@ export default function DemoPage() {
             </div>
           )}
 
-          <div style={{ marginTop: '1.5rem' }}>
+          <div style={{ marginTop: '0.9rem' }}>
             <VectorSpace
               intentPositions={intentPositions}
               l1Zones={l1Zones}
@@ -197,32 +196,29 @@ export default function DemoPage() {
             />
           </div>
 
-          <div style={{ marginTop: '1.5rem' }}>
+          <div style={{ marginTop: '0.9rem' }}>
             <DBViewerPanel sessionId={sessionId} />
           </div>
-        </div>
-
-        {/* ── 우 · 출력 (추천 액션 / 상담사 컨텍스트) ────────── */}
-        <div className="col col-output">
-          <ActionPanel actionsData={scenario.actions} topN={topN} />
         </div>
 
       </div>
 
       <style>{`
-        .demo-page { min-height: 100vh; padding-bottom: 2rem; }
-        .demo-grid { display: grid; grid-template-columns: 1fr 1.25fr 1.1fr; gap: clamp(1rem, 1.5vw, 1.75rem); padding-top: 1rem; align-items: start; }
-        .col { min-width: 0; }
-        .col-input { display: flex; flex-direction: column; gap: 1.5rem; }
+        .demo-page { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .demo-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.35fr;
+                     gap: clamp(0.8rem, 1.3vw, 1.4rem); padding-top: 0.5rem; padding-bottom: 0.5rem; align-items: stretch; }
+        .col { min-width: 0; height: 100%; }
+        .col-input { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 0.3rem; }
+        .col-infer { overflow-y: auto; padding-right: 0.3rem; }
         .behavior-block h2 { margin-bottom: 0.25rem; }
-        .badges { display: flex; gap: 0.5rem; margin-bottom: 0; flex-wrap: wrap; padding-top: 1rem; }
+        .badges { display: flex; gap: 0.5rem; margin-bottom: 0; flex-wrap: wrap; padding-top: 0.6rem; padding-bottom: 0.4rem; }
         .badge { padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
         .stage { background: #eff6ff; color: var(--primary); }
         .ws { background: #f1f5f9; }
         .step { background: #fef3c7; color: #92400e; }
         .admin-link { background: #f1f5f9; text-decoration: none; color: var(--fg); }
         .admin-link:hover { background: #e2e8f0; }
-        .caption { color: var(--muted); margin: 0 0 1rem; }
+        .caption { color: var(--muted); margin: 0 0 0.6rem; font-size: 0.9rem; }
         .others-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; padding: 0.5rem 1rem;
                       background: #f1f5f9; border-radius: 8px; font-size: 0.9rem; }
         .others-label { color: var(--muted); }
