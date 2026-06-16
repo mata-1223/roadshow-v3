@@ -177,7 +177,7 @@ export default function DemoPage() {
               <span className="others-val">{(others.probability * 100).toFixed(1)}%</span>
               {others.delta_probability !== undefined && Math.abs(others.delta_probability) >= 0.001 && (
                 <span className={`others-delta ${others.delta_probability > 0 ? 'up' : 'down'}`}>
-                  Δ {others.delta_probability > 0 ? '+' : ''}{(others.delta_probability * 100).toFixed(1)}%p
+                  {others.delta_probability > 0 ? '▲' : '▼'} {(Math.abs(others.delta_probability) * 100).toFixed(1)}%p
                 </span>
               )}
             </div>
@@ -225,7 +225,7 @@ export default function DemoPage() {
         .others-val { font-weight: 700; }
         .others-delta { padding: 1px 6px; border-radius: 4px; font-size: 0.78rem; font-weight: 700; }
         .others-delta.up { background: #dcfce7; color: #15803d; }
-        .others-delta.down { background: #fef3c7; color: #92400e; }
+        .others-delta.down { background: #fee2e2; color: #b91c1c; }
         .final-panel { background: #f3f4f6; border: 2px solid #6b7280; border-radius: 16px; padding: 1.5rem; margin-top: 1.5rem; }
         .final-panel h3 { color: #374151; }
         .history { margin-top: 1.5rem; background: white; border: 2px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; }
