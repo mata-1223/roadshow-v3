@@ -19,6 +19,15 @@ const L1_COLOR = {
   'INT-7000': 'var(--l1-7000)',
 };
 
+// cs 외 시나리오(bundle: INT-B1000~, worker: INT-W100~)는 L1 그룹 번호로 팔레트 색 부여
+const L1_PALETTE = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0891b2', '#db2777'];
+function l1Color(id) {
+  if (L1_COLOR[id]) return L1_COLOR[id];
+  const m = String(id || '').match(/\d/);   // 그룹 첫 자리 (B1000→1, W200→2)
+  const g = m ? parseInt(m[0], 10) : 0;
+  return g ? L1_PALETTE[(g - 1) % L1_PALETTE.length] : '#94a3b8';
+}
+
 function DeltaBadge({ delta }) {
   if (delta === undefined || delta === null) return null;
   const v = Number(delta);
@@ -124,7 +133,7 @@ export default function IntentChart({ topN, actionsData }) {
             </div>
             <div className="info">
               <div className="name">
-                <span className="dot" style={{ background: L1_COLOR[t.L1_id] || '#94a3b8' }} />
+                <span className="dot" style={{ background: l1Color(t.L1_id) }} />
                 {intentName(t)}
               </div>
               <div className="sub">
@@ -147,7 +156,7 @@ export default function IntentChart({ topN, actionsData }) {
           <div className="bar">
             <div className="fill" style={{
               width: `${(p / Math.max(max, 0.001)) * 100}%`,
-              background: L1_COLOR[t.L1_id] || '#94a3b8',
+              background: l1Color(t.L1_id),
             }} />
             {baseP !== undefined && (
               <div className="baseline-marker" style={{
