@@ -81,7 +81,7 @@ function ReasoningExample({ reasoning, intent }) {
             <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
             <div className="rx-head">
               <span className="rx-tag">{reasoning.type === 'Model' ? 'AI 모델' : '규칙'}</span>
-              <b>{intentName(intent)}</b> 추론 근거
+              <b>{intentName(intent)}</b> 추론 이유
             </div>
             <ul className="rx-list">
               {factors.filter((f) => f.label !== '기본 점수').map((f, i) => (
