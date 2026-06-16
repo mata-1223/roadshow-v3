@@ -5,7 +5,7 @@
 //   rank / baseline_rank / rank_change
 //   intent_nm_ko / L1_id / L1_name / L2_name / inference_type
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { intentName } from '../utils/intent.js';
 import ActionPanel from './ActionPanel.jsx';
 
@@ -46,20 +46,18 @@ const pctOf = (t) => (t.probability ?? t.final_score ?? 0);
 const basePctOf = (t) => (t.baseline_probability ?? t.baseline_score);
 const deltaOf = (t) => (t.delta_probability ?? t.delta_score);
 
-// 활용 예시 hover 팝업 — 기존 ActionPanel 화면을 해당 Intent 기준으로 화면 중앙에 크게 표출.
-// 대형 모달이라 컬럼 overflow에 잘리지 않도록 position:fixed, hover 이동 간 닫힘 방지를 위해 200ms 지연.
+// 활용 예시 클릭 팝업 — 기존 ActionPanel 화면을 해당 Intent 기준으로 화면 중앙에 크게 표출.
+// 대형 모달이라 컬럼 overflow에 잘리지 않도록 position:fixed. 버튼 클릭으로 열고 배경 클릭으로 닫음.
 function ActionExample({ actionsData, intent }) {
   const [open, setOpen] = useState(false);
-  const timer = useRef(null);
-  const show = () => { clearTimeout(timer.current); setOpen(true); };
-  const hide = () => { timer.current = setTimeout(() => setOpen(false), 200); };
   return (
-    <div className="ax-wrap" onMouseEnter={show} onMouseLeave={hide}>
-      <button type="button" className="ax-btn">활용 예시</button>
+    <div className="ax-wrap">
+      <button type="button" className="ax-btn" onClick={() => setOpen(true)}>활용 예시</button>
       {open && (
         <>
           <div className="ax-backdrop" onClick={() => setOpen(false)} />
-          <div className="ax-modal" role="tooltip" onMouseEnter={show} onMouseLeave={hide}>
+          <div className="ax-modal" role="dialog">
+            <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
             <ActionPanel actionsData={actionsData} topN={[intent]} reasoning={intent.reasoning} />
           </div>
         </>
@@ -68,21 +66,19 @@ function ActionExample({ actionsData, intent }) {
   );
 }
 
-// 추론 이유 hover 팝업 — 백엔드 reasoning(factors: 기여 feature/항) 표출.
+// 추론 이유 클릭 팝업 — 백엔드 reasoning(factors: 기여 feature/항) 표출.
 function ReasoningExample({ reasoning, intent }) {
   const [open, setOpen] = useState(false);
-  const timer = useRef(null);
-  const show = () => { clearTimeout(timer.current); setOpen(true); };
-  const hide = () => { timer.current = setTimeout(() => setOpen(false), 200); };
   const factors = reasoning?.factors || [];
   if (!factors.length) return null;
   return (
-    <div className="rx-wrap" onMouseEnter={show} onMouseLeave={hide}>
-      <button type="button" className="rx-btn">추론 이유</button>
+    <div className="rx-wrap">
+      <button type="button" className="rx-btn" onClick={() => setOpen(true)}>추론 이유</button>
       {open && (
         <>
           <div className="rx-backdrop" onClick={() => setOpen(false)} />
-          <div className="rx-modal" role="tooltip" onMouseEnter={show} onMouseLeave={hide}>
+          <div className="rx-modal" role="dialog">
+            <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
             <div className="rx-head">
               <span className="rx-tag">{reasoning.type === 'Model' ? 'AI 모델' : '규칙'}</span>
               <b>{intentName(intent)}</b> 추론 근거
@@ -189,8 +185,10 @@ export default function IntentChart({ topN, actionsData }) {
         /* 활용 예시 버튼 + 화면 중앙 대형 모달 (기존 ActionPanel 화면을 한눈에 크게) */
         .ax-wrap { position: relative; display: inline-flex; }
         .ax-btn { font-size: 0.74rem; font-weight: 700; color: var(--primary); background: #eff6ff;
-                  border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.25rem 0.55rem; cursor: pointer; white-space: nowrap; }
+                  border: 1px solid #bfdbfe; border-bottom-width: 2px; border-radius: 7px; padding: 0.28rem 0.6rem;
+                  cursor: pointer; white-space: nowrap; box-shadow: 0 2px 0 #bfdbfe, 0 2px 4px rgba(37,99,235,.12); }
         .ax-btn:hover { background: #dbeafe; }
+        .ax-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #bfdbfe; }
         .ax-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 190; }
         .ax-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
                     width: max-content; max-width: 96vw; max-height: 92vh; overflow: auto; text-align: left;
@@ -211,8 +209,14 @@ export default function IntentChart({ topN, actionsData }) {
         /* 추론 이유 버튼 + 팝업 */
         .rx-wrap { position: relative; display: inline-flex; }
         .rx-btn { font-size: 0.74rem; font-weight: 700; color: #92400e; background: #fffbeb;
-                  border: 1px solid #fde68a; border-radius: 6px; padding: 0.25rem 0.55rem; cursor: pointer; white-space: nowrap; }
+                  border: 1px solid #fde68a; border-bottom-width: 2px; border-radius: 7px; padding: 0.28rem 0.6rem;
+                  cursor: pointer; white-space: nowrap; box-shadow: 0 2px 0 #fcd34d, 0 2px 4px rgba(180,83,9,.12); }
         .rx-btn:hover { background: #fef3c7; }
+        .rx-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #fcd34d; }
+        .rx-close { position: absolute; top: 0.8rem; right: 0.9rem; z-index: 1; width: 28px; height: 28px;
+                    border: 1px solid var(--border); background: #fff; border-radius: 50%; cursor: pointer;
+                    font-size: 0.9rem; color: var(--muted); line-height: 1; }
+        .rx-close:hover { background: #f1f5f9; color: var(--fg); }
         .rx-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 190; }
         .rx-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
                     width: min(460px, 92vw); max-height: 88vh; overflow: auto; text-align: left;

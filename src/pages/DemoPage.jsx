@@ -168,7 +168,7 @@ export default function DemoPage() {
         {/* ── 중 · 추론 (Intent + Vector + DB) ──────────────── */}
         <div className="col col-infer">
           <h2>Intent — 실시간 Top 5</h2>
-          <p className="caption">{allIntents.length}개 Intent 중 분포 상위 5개 · 각 행의 <b>활용 예시</b>에 마우스를 올리면 채널별 예시가 표시됩니다</p>
+          <p className="caption">{allIntents.length}개 Intent 중 분포 상위 5개 · 각 행의 <b>[추론 이유]</b>·<b>[활용 예시]</b> 버튼을 클릭하면 상세가 표시됩니다</p>
           <IntentChart topN={topN} actionsData={scenario.actions} />
 
           {others && (
