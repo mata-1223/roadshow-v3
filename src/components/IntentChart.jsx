@@ -85,17 +85,17 @@ function ReasoningExample({ reasoning, intent }) {
               <b>{intentName(intent)}</b> 추론 근거
             </div>
             <ul className="rx-list">
-              {factors.map((f, i) => (
+              {factors.filter((f) => f.label !== '기본 점수').map((f, i) => (
                 <li key={i} className={`rx-f ${f.direction}`}>
                   <span className="rx-arrow">{f.direction === 'down' ? '▼' : '▲'}</span>
                   <span className="rx-label">{f.label}</span>
-                  <span className="rx-contrib">{f.contribution > 0 ? '+' : ''}{Number(f.contribution).toFixed(2)}</span>
+                  {f.value != null && f.value !== '' && <span className="rx-val">{f.value}</span>}
                 </li>
               ))}
             </ul>
             {reasoning.behavior_note && <div className="rx-beh">🔵 {reasoning.behavior_note}</div>}
             <div className="rx-foot">
-              {reasoning.type === 'Model' ? '기여도 = 모델 가중치 × 표준화 특징값 (▲상승/▼하강)' : '규칙 항목별 기여 점수'}
+              {reasoning.type === 'Model' ? 'AI 모델이 중요하게 본 특징과 현재값 (▲상승 / ▼하강)' : '추론에 작용한 항목과 현재값'}
             </div>
           </div>
         </>
@@ -224,7 +224,8 @@ export default function IntentChart({ topN, actionsData }) {
         .rx-f.up .rx-arrow { color: #16a34a; }
         .rx-f.down .rx-arrow { color: #dc2626; }
         .rx-label { flex: 1; font-size: 0.95rem; font-weight: 600; color: #1e293b; }
-        .rx-contrib { font-weight: 800; font-variant-numeric: tabular-nums; color: #475569; }
+        .rx-val { font-weight: 800; font-variant-numeric: tabular-nums; color: #0f172a;
+                  background: #eef2ff; border-radius: 6px; padding: 0.1rem 0.45rem; font-size: 0.88rem; }
         .rx-beh { margin-top: 0.8rem; font-size: 0.9rem; font-weight: 600; color: var(--primary); }
         .rx-foot { margin-top: 0.9rem; font-size: 0.78rem; color: var(--muted); }
       `}</style>
