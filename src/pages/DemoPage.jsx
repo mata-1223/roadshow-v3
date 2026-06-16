@@ -169,7 +169,7 @@ export default function DemoPage() {
         <div className="col col-infer">
           <h2>Intent — 실시간 Top 5</h2>
           <p className="caption">{allIntents.length}개 Intent 중 분포 상위 5개 · 각 행의 <b>[추론 이유]</b>·<b>[활용 예시]</b> 버튼을 클릭하면 상세가 표시됩니다</p>
-          <IntentChart topN={topN} actionsData={scenario.actions} />
+          <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} />
 
           {others && (
             <div className="others-row">

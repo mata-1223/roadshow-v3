@@ -112,12 +112,16 @@ function ReasoningExample({ reasoning, intent }) {
   );
 }
 
-export default function IntentChart({ topN, actionsData }) {
+export default function IntentChart({ topN, actionsData, l1Zones }) {
   if (!topN || topN.length === 0) {
     return <div className="empty">결과 없음</div>;
   }
   const max = Math.max(...topN.map(pctOf));
   const actionsMap = actionsData?.actions || {};
+  // Vector Space와 동일한 L1 색 사용 (l1_zones.color), 없으면 팔레트 fallback
+  const zoneColor = {};
+  (l1Zones || []).forEach((z) => { if (z && z.L1_id) zoneColor[z.L1_id] = z.color; });
+  const colorOf = (id) => zoneColor[id] || l1Color(id);
 
   return (
     <div className="intent-chart">
@@ -133,7 +137,7 @@ export default function IntentChart({ topN, actionsData }) {
             </div>
             <div className="info">
               <div className="name">
-                <span className="dot" style={{ background: l1Color(t.L1_id), opacity: 0.8 }} />
+                <span className="dot" style={{ background: colorOf(t.L1_id), opacity: 0.8 }} />
                 {intentName(t)}
               </div>
               <div className="sub">
@@ -156,7 +160,7 @@ export default function IntentChart({ topN, actionsData }) {
           <div className="bar">
             <div className="fill" style={{
               width: `${(p / Math.max(max, 0.001)) * 100}%`,
-              background: l1Color(t.L1_id),
+              background: colorOf(t.L1_id),
               opacity: 0.72,
             }} />
             {baseP !== undefined && (
