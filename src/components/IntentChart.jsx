@@ -65,6 +65,45 @@ function ActionExample({ actionsData, intent }) {
   );
 }
 
+// 추론 이유 hover 팝업 — 백엔드 reasoning(factors: 기여 feature/항) 표출.
+function ReasoningExample({ reasoning, intent }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef(null);
+  const show = () => { clearTimeout(timer.current); setOpen(true); };
+  const hide = () => { timer.current = setTimeout(() => setOpen(false), 200); };
+  const factors = reasoning?.factors || [];
+  if (!factors.length) return null;
+  return (
+    <div className="rx-wrap" onMouseEnter={show} onMouseLeave={hide}>
+      <button type="button" className="rx-btn">추론 이유</button>
+      {open && (
+        <>
+          <div className="rx-backdrop" onClick={() => setOpen(false)} />
+          <div className="rx-modal" role="tooltip" onMouseEnter={show} onMouseLeave={hide}>
+            <div className="rx-head">
+              <span className="rx-tag">{reasoning.type === 'Model' ? 'AI 모델' : '규칙'}</span>
+              <b>{intentName(intent)}</b> 추론 근거
+            </div>
+            <ul className="rx-list">
+              {factors.map((f, i) => (
+                <li key={i} className={`rx-f ${f.direction}`}>
+                  <span className="rx-arrow">{f.direction === 'down' ? '▼' : '▲'}</span>
+                  <span className="rx-label">{f.label}</span>
+                  <span className="rx-contrib">{f.contribution > 0 ? '+' : ''}{Number(f.contribution).toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
+            {reasoning.behavior_note && <div className="rx-beh">🔵 {reasoning.behavior_note}</div>}
+            <div className="rx-foot">
+              {reasoning.type === 'Model' ? '기여도 = 모델 가중치 × 표준화 특징값 (▲상승/▼하강)' : '규칙 항목별 기여 점수'}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function IntentChart({ topN, actionsData }) {
   if (!topN || topN.length === 0) {
     return <div className="empty">결과 없음</div>;
@@ -95,6 +134,9 @@ export default function IntentChart({ topN, actionsData }) {
                 <span className="l2">{t.L2_name}</span>
               </div>
             </div>
+            {t.reasoning && (
+              <ReasoningExample reasoning={t.reasoning} intent={t} />
+            )}
             {actionsMap[t.intent_id] && (
               <ActionExample actionsData={actionsData} intent={t} />
             )}
@@ -162,6 +204,29 @@ export default function IntentChart({ topN, actionsData }) {
         .ax-modal .pp-nmsg { font-size: 12.5px; }
         .ax-modal .ac-msg, .ax-modal .ab-msg { font-size: 1.06rem; }
         .ax-modal .ac-service { font-size: 1rem; }
+        /* 추론 이유 버튼 + 팝업 */
+        .rx-wrap { position: relative; display: inline-flex; }
+        .rx-btn { font-size: 0.74rem; font-weight: 700; color: #92400e; background: #fffbeb;
+                  border: 1px solid #fde68a; border-radius: 6px; padding: 0.25rem 0.55rem; cursor: pointer; white-space: nowrap; }
+        .rx-btn:hover { background: #fef3c7; }
+        .rx-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 190; }
+        .rx-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
+                    width: min(460px, 92vw); max-height: 88vh; overflow: auto; text-align: left;
+                    background: #fff; border-radius: 16px; padding: 1.3rem 1.5rem; box-shadow: 0 26px 70px rgba(0,0,0,.4); }
+        .rx-head { font-size: 1.05rem; margin-bottom: 0.9rem; color: #1e293b; }
+        .rx-tag { font-size: 0.7rem; font-weight: 800; color: #92400e; background: #fef3c7;
+                  padding: 0.12rem 0.5rem; border-radius: 6px; margin-right: 0.5rem; }
+        .rx-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+        .rx-f { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border-radius: 10px; background: #f8fafc; }
+        .rx-f.up { border-left: 4px solid #16a34a; }
+        .rx-f.down { border-left: 4px solid #dc2626; }
+        .rx-arrow { font-size: 0.78rem; }
+        .rx-f.up .rx-arrow { color: #16a34a; }
+        .rx-f.down .rx-arrow { color: #dc2626; }
+        .rx-label { flex: 1; font-size: 0.95rem; font-weight: 600; color: #1e293b; }
+        .rx-contrib { font-weight: 800; font-variant-numeric: tabular-nums; color: #475569; }
+        .rx-beh { margin-top: 0.8rem; font-size: 0.9rem; font-weight: 600; color: var(--primary); }
+        .rx-foot { margin-top: 0.9rem; font-size: 0.78rem; color: var(--muted); }
       `}</style>
     </div>
   );
