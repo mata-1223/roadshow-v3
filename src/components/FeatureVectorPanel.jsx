@@ -4,6 +4,7 @@
 // 클라이언트에서 즉시 표시한다(완료/대기). 파생(Index/Score 등)은 builder가 필요하므로
 // 제출 후 batchFeatures가 들어오면 채운다.
 import { useMemo } from 'react';
+import { featureLabel } from '../utils/featureLabel.js';
 
 function fmt(v) {
   if (v === null || v === undefined) return '—';
@@ -65,7 +66,7 @@ export default function FeatureVectorPanel({ survey, answers, batchFeatures }) {
           const r = baseRow(fname);
           return (
             <div key={fname} className={`fv-row ${r.done ? 'done' : 'wait'}`}>
-              <span className="fv-name">{fname}</span>
+              <span className="fv-name">{featureLabel(fname)}</span>
               <span className="fv-val">{fmt(r.value)}</span>
               <span className={`fv-badge ${r.done ? 'b-done' : 'b-wait'}`}>{r.done ? '완료' : '대기'}</span>
             </div>
@@ -77,7 +78,7 @@ export default function FeatureVectorPanel({ survey, answers, batchFeatures }) {
             <div className="fv-sub">파생 feature (Index / Score)</div>
             {derived.map((fname) => (
               <div key={fname} className="fv-row done">
-                <span className="fv-name">{fname}</span>
+                <span className="fv-name">{featureLabel(fname)}</span>
                 <span className="fv-val">{fmt(batchFeatures[fname])}</span>
                 <span className="fv-badge b-done">완료</span>
               </div>

@@ -43,8 +43,13 @@ export default function SystemStatusPanel({ states = {}, title = '시스템 구�
         .sys-box.active { border-color: var(--primary); background: #eff6ff; }
         .sys-box.done   { border-color: #16a34a; background: #f0fdf4; }
         .sys-dot { width: 9px; height: 9px; border-radius: 999px; background: #cbd5e1; margin-bottom: 0.2rem; }
-        .sys-box.active .sys-dot { background: var(--primary); box-shadow: 0 0 0 4px rgba(37,99,235,0.15); }
+        .sys-box.active .sys-dot { background: var(--primary); animation: sys-pulse 1.4s infinite; }
         .sys-box.done   .sys-dot { background: #16a34a; }
+        @keyframes sys-pulse {
+          0%   { box-shadow: 0 0 0 0 rgba(37,99,235,.55); transform: scale(1); }
+          70%  { box-shadow: 0 0 0 7px rgba(37,99,235,0); transform: scale(1.25); }
+          100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); transform: scale(1); }
+        }
         .sys-label { font-weight: 700; font-size: 1.05rem; }
         .sys-desc { font-size: 0.72rem; color: var(--muted); }
         .sys-state {

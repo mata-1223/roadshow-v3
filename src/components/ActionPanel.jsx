@@ -34,7 +34,7 @@ function AgentConsole({ situation, guidance }) {
       <div className="cc-bar">
         <span className="cc-dots"><i /><i /><i /></span>
         <span className="cc-title">상담 콘솔 · 고객 상담 화면 예시</span>
-        <span className="cc-live">● 통화중</span>
+        <span className="cc-live"><span className="cc-pulse" />통화중</span>
       </div>
       <div className="cc-body">
         <div className="cc-customer">
@@ -64,7 +64,7 @@ function AgentBubble({ message }) {
   );
 }
 
-export default function ActionPanel({ actionsData, topN = [] }) {
+export default function ActionPanel({ actionsData, topN = [], reasoning = null }) {
   const channels = actionsData?.channels || [];
   const actionsMap = actionsData?.actions || {};
 
@@ -108,7 +108,10 @@ export default function ActionPanel({ actionsData, topN = [] }) {
                   ) : c.id === 'agent' ? (
                     <AgentBubble message={body} />
                   ) : typeof body === 'object' ? (
-                    <AgentConsole situation={body.situation} guidance={body.guidance} />
+                    <AgentConsole
+                      situation={(reasoning && reasoning.situation_text) || body.situation}
+                      guidance={body.guidance}
+                    />
                   ) : (
                     <div className="ac-msg">{body}</div>
                   )}
@@ -199,7 +202,15 @@ export default function ActionPanel({ actionsData, topN = [] }) {
         .cc-dots i:nth-child(2) { background: #f59e0b; }
         .cc-dots i:nth-child(3) { background: #22c55e; }
         .cc-title { font-size: 0.72rem; font-weight: 700; color: #cbd5e1; }
-        .cc-live { margin-left: auto; font-size: 0.68rem; font-weight: 800; color: #4ade80; }
+        .cc-live { margin-left: auto; font-size: 0.68rem; font-weight: 800; color: #4ade80;
+                   display: inline-flex; align-items: center; gap: 5px; }
+        .cc-pulse { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; flex: none;
+                    box-shadow: 0 0 0 0 rgba(34,197,94,.7); animation: cc-pulse 1.4s infinite; }
+        @keyframes cc-pulse {
+          0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.7); transform: scale(1); }
+          70%  { box-shadow: 0 0 0 7px rgba(34,197,94,0); transform: scale(1.15); }
+          100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); transform: scale(1); }
+        }
         .cc-body { background: #f8fafc; padding: 0.7rem 0.8rem; }
         .cc-customer { display: flex; align-items: center; gap: 8px; margin-bottom: 0.6rem; }
         .cc-ava { width: 30px; height: 30px; border-radius: 50%; background: #e2e8f0; display: flex;
