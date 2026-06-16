@@ -133,7 +133,7 @@ export default function IntentChart({ topN, actionsData }) {
             </div>
             <div className="info">
               <div className="name">
-                <span className="dot" style={{ background: l1Color(t.L1_id) }} />
+                <span className="dot" style={{ background: l1Color(t.L1_id), opacity: 0.8 }} />
                 {intentName(t)}
               </div>
               <div className="sub">
@@ -157,6 +157,7 @@ export default function IntentChart({ topN, actionsData }) {
             <div className="fill" style={{
               width: `${(p / Math.max(max, 0.001)) * 100}%`,
               background: l1Color(t.L1_id),
+              opacity: 0.72,
             }} />
             {baseP !== undefined && (
               <div className="baseline-marker" style={{
