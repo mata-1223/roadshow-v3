@@ -23,9 +23,12 @@ function DeltaBadge({ delta }) {
   if (delta === undefined || delta === null) return null;
   const v = Number(delta);
   if (Math.abs(v) < 0.0005) return null;
-  const sign = v > 0 ? '+' : '';
-  const cls = v > 0 ? 'delta-up' : 'delta-down';
-  return <span className={`delta-badge ${cls}`}>Δ {sign}{(v * 100).toFixed(1)}%p</span>;
+  const up = v > 0;
+  return (
+    <span className={`delta-badge ${up ? 'delta-up' : 'delta-down'}`}>
+      {up ? '▲' : '▼'} {(Math.abs(v) * 100).toFixed(1)}%p
+    </span>
+  );
 }
 
 function RankChange({ change }) {
@@ -178,7 +181,7 @@ export default function IntentChart({ topN, actionsData }) {
         .score { font-size: 1.3rem; font-weight: 700; color: var(--fg); }
         .delta-badge { font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
         .delta-badge.delta-up { background: #dcfce7; color: #15803d; }
-        .delta-badge.delta-down { background: #fef3c7; color: #92400e; }
+        .delta-badge.delta-down { background: #fee2e2; color: #b91c1c; }
         .bar { margin-top: 0.5rem; height: 8px; background: white; border-radius: 999px; overflow: hidden; position: relative; }
         .fill { height: 100%; transition: width 0.5s ease-out; }
         .baseline-marker { position: absolute; top: -2px; width: 2px; height: 12px; background: rgba(15,23,42,0.5); }
@@ -190,7 +193,7 @@ export default function IntentChart({ topN, actionsData }) {
         .ax-btn:hover { background: #dbeafe; }
         .ax-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 190; }
         .ax-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
-                    width: max-content; max-width: 94vw; max-height: 92vh; overflow: auto; text-align: left;
+                    width: max-content; max-width: 96vw; max-height: 92vh; overflow: auto; text-align: left;
                     background: #fff; border-radius: 20px; padding: 1.6rem 1.9rem;
                     box-shadow: 0 30px 80px rgba(0,0,0,.45); }
         .ax-modal h2 { font-size: 1.55rem; margin: 0 0 0.4rem; }
@@ -200,6 +203,7 @@ export default function IntentChart({ topN, actionsData }) {
         /* 채널을 가로로 나열 → 넓고 낮게 (한눈에) */
         .ax-modal .ac-channels { flex-direction: row; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: stretch; }
         .ax-modal .ac-ch { width: 360px; flex: 0 0 auto; }
+        .ax-modal .ac-ch.ch-call_center { width: 540px; }   /* 상담사 콘솔: 문구 길이 따라 자연스럽게 */
         .ax-modal .phone-push { width: 250px; }
         .ax-modal .pp-nmsg { font-size: 12.5px; }
         .ax-modal .ac-msg, .ax-modal .ab-msg { font-size: 1.06rem; }
