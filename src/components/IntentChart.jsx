@@ -5,7 +5,7 @@
 //   rank / baseline_rank / rank_change
 //   intent_nm_ko / L1_id / L1_name / L2_name / inference_type
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { intentName } from '../utils/intent.js';
 import ActionPanel from './ActionPanel.jsx';
 
@@ -19,13 +19,25 @@ const L1_COLOR = {
   'INT-7000': 'var(--l1-7000)',
 };
 
+// cs 외 시나리오(bundle: INT-B1000~, worker: INT-W100~)는 L1 그룹 번호로 팔레트 색 부여
+const L1_PALETTE = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#dc2626', '#0891b2', '#db2777'];
+function l1Color(id) {
+  if (L1_COLOR[id]) return L1_COLOR[id];
+  const m = String(id || '').match(/\d/);   // 그룹 첫 자리 (B1000→1, W200→2)
+  const g = m ? parseInt(m[0], 10) : 0;
+  return g ? L1_PALETTE[(g - 1) % L1_PALETTE.length] : '#94a3b8';
+}
+
 function DeltaBadge({ delta }) {
   if (delta === undefined || delta === null) return null;
   const v = Number(delta);
   if (Math.abs(v) < 0.0005) return null;
-  const sign = v > 0 ? '+' : '';
-  const cls = v > 0 ? 'delta-up' : 'delta-down';
-  return <span className={`delta-badge ${cls}`}>Δ {sign}{(v * 100).toFixed(1)}%p</span>;
+  const up = v > 0;
+  return (
+    <span className={`delta-badge ${up ? 'delta-up' : 'delta-down'}`}>
+      {up ? '▲' : '▼'} {(Math.abs(v) * 100).toFixed(1)}%p
+    </span>
+  );
 }
 
 function RankChange({ change }) {
@@ -43,21 +55,19 @@ const pctOf = (t) => (t.probability ?? t.final_score ?? 0);
 const basePctOf = (t) => (t.baseline_probability ?? t.baseline_score);
 const deltaOf = (t) => (t.delta_probability ?? t.delta_score);
 
-// 활용 예시 hover 팝업 — 기존 ActionPanel 화면을 해당 Intent 기준으로 화면 중앙에 크게 표출.
-// 대형 모달이라 컬럼 overflow에 잘리지 않도록 position:fixed, hover 이동 간 닫힘 방지를 위해 200ms 지연.
+// 활용 예시 클릭 팝업 — 기존 ActionPanel 화면을 해당 Intent 기준으로 화면 중앙에 크게 표출.
+// 대형 모달이라 컬럼 overflow에 잘리지 않도록 position:fixed. 버튼 클릭으로 열고 배경 클릭으로 닫음.
 function ActionExample({ actionsData, intent }) {
   const [open, setOpen] = useState(false);
-  const timer = useRef(null);
-  const show = () => { clearTimeout(timer.current); setOpen(true); };
-  const hide = () => { timer.current = setTimeout(() => setOpen(false), 200); };
   return (
-    <div className="ax-wrap" onMouseEnter={show} onMouseLeave={hide}>
-      <button type="button" className="ax-btn">활용 예시</button>
+    <div className="ax-wrap">
+      <button type="button" className="ax-btn" onClick={() => setOpen(true)}>활용 예시</button>
       {open && (
         <>
           <div className="ax-backdrop" onClick={() => setOpen(false)} />
-          <div className="ax-modal" role="tooltip" onMouseEnter={show} onMouseLeave={hide}>
-            <ActionPanel actionsData={actionsData} topN={[intent]} />
+          <div className="ax-modal" role="dialog">
+            <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
+            <ActionPanel actionsData={actionsData} topN={[intent]} reasoning={intent.reasoning} />
           </div>
         </>
       )}
@@ -65,12 +75,53 @@ function ActionExample({ actionsData, intent }) {
   );
 }
 
-export default function IntentChart({ topN, actionsData }) {
+// 추론 이유 클릭 팝업 — 백엔드 reasoning(factors: 기여 feature/항) 표출.
+function ReasoningExample({ reasoning, intent }) {
+  const [open, setOpen] = useState(false);
+  const factors = reasoning?.factors || [];
+  if (!factors.length) return null;
+  return (
+    <div className="rx-wrap">
+      <button type="button" className="rx-btn" onClick={() => setOpen(true)}>추론 이유</button>
+      {open && (
+        <>
+          <div className="rx-backdrop" onClick={() => setOpen(false)} />
+          <div className="rx-modal" role="dialog">
+            <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
+            <div className="rx-head">
+              <span className="rx-tag">{reasoning.type === 'Model' ? 'AI 모델' : '규칙'}</span>
+              <b>{intentName(intent)}</b> 추론 이유
+            </div>
+            <ul className="rx-list">
+              {factors.filter((f) => f.label !== '기본 점수').map((f, i) => (
+                <li key={i} className={`rx-f ${f.direction}`}>
+                  <span className="rx-arrow">{f.direction === 'down' ? '▼' : '▲'}</span>
+                  <span className="rx-label">{f.label}</span>
+                  {f.value != null && f.value !== '' && <span className="rx-val">{f.value}</span>}
+                </li>
+              ))}
+            </ul>
+            {reasoning.behavior_note && <div className="rx-beh">🔵 {reasoning.behavior_note}</div>}
+            <div className="rx-foot">
+              {reasoning.type === 'Model' ? 'AI 모델이 중요하게 본 특징과 현재값 (▲상승 / ▼하강)' : '추론에 작용한 항목과 현재값'}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function IntentChart({ topN, actionsData, l1Zones }) {
   if (!topN || topN.length === 0) {
     return <div className="empty">결과 없음</div>;
   }
   const max = Math.max(...topN.map(pctOf));
   const actionsMap = actionsData?.actions || {};
+  // Vector Space와 동일한 L1 색 사용 (l1_zones.color), 없으면 팔레트 fallback
+  const zoneColor = {};
+  (l1Zones || []).forEach((z) => { if (z && z.L1_id) zoneColor[z.L1_id] = z.color; });
+  const colorOf = (id) => zoneColor[id] || l1Color(id);
 
   return (
     <div className="intent-chart">
@@ -86,7 +137,7 @@ export default function IntentChart({ topN, actionsData }) {
             </div>
             <div className="info">
               <div className="name">
-                <span className="dot" style={{ background: L1_COLOR[t.L1_id] || '#94a3b8' }} />
+                <span className="dot" style={{ background: colorOf(t.L1_id), opacity: 0.8 }} />
                 {intentName(t)}
               </div>
               <div className="sub">
@@ -95,6 +146,9 @@ export default function IntentChart({ topN, actionsData }) {
                 <span className="l2">{t.L2_name}</span>
               </div>
             </div>
+            {t.reasoning && (
+              <ReasoningExample reasoning={t.reasoning} intent={t} />
+            )}
             {actionsMap[t.intent_id] && (
               <ActionExample actionsData={actionsData} intent={t} />
             )}
@@ -106,7 +160,8 @@ export default function IntentChart({ topN, actionsData }) {
           <div className="bar">
             <div className="fill" style={{
               width: `${(p / Math.max(max, 0.001)) * 100}%`,
-              background: L1_COLOR[t.L1_id] || '#94a3b8',
+              background: colorOf(t.L1_id),
+              opacity: 0.72,
             }} />
             {baseP !== undefined && (
               <div className="baseline-marker" style={{
@@ -136,7 +191,7 @@ export default function IntentChart({ topN, actionsData }) {
         .score { font-size: 1.3rem; font-weight: 700; color: var(--fg); }
         .delta-badge { font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
         .delta-badge.delta-up { background: #dcfce7; color: #15803d; }
-        .delta-badge.delta-down { background: #fef3c7; color: #92400e; }
+        .delta-badge.delta-down { background: #fee2e2; color: #b91c1c; }
         .bar { margin-top: 0.5rem; height: 8px; background: white; border-radius: 999px; overflow: hidden; position: relative; }
         .fill { height: 100%; transition: width 0.5s ease-out; }
         .baseline-marker { position: absolute; top: -2px; width: 2px; height: 12px; background: rgba(15,23,42,0.5); }
@@ -144,11 +199,13 @@ export default function IntentChart({ topN, actionsData }) {
         /* 활용 예시 버튼 + 화면 중앙 대형 모달 (기존 ActionPanel 화면을 한눈에 크게) */
         .ax-wrap { position: relative; display: inline-flex; }
         .ax-btn { font-size: 0.74rem; font-weight: 700; color: var(--primary); background: #eff6ff;
-                  border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.25rem 0.55rem; cursor: pointer; white-space: nowrap; }
+                  border: 1px solid #bfdbfe; border-bottom-width: 2px; border-radius: 7px; padding: 0.28rem 0.6rem;
+                  cursor: pointer; white-space: nowrap; box-shadow: 0 2px 0 #bfdbfe, 0 2px 4px rgba(37,99,235,.12); }
         .ax-btn:hover { background: #dbeafe; }
+        .ax-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #bfdbfe; }
         .ax-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 190; }
         .ax-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
-                    width: max-content; max-width: 94vw; max-height: 92vh; overflow: auto; text-align: left;
+                    width: max-content; max-width: 96vw; max-height: 92vh; overflow: auto; text-align: left;
                     background: #fff; border-radius: 20px; padding: 1.6rem 1.9rem;
                     box-shadow: 0 30px 80px rgba(0,0,0,.45); }
         .ax-modal h2 { font-size: 1.55rem; margin: 0 0 0.4rem; }
@@ -158,10 +215,41 @@ export default function IntentChart({ topN, actionsData }) {
         /* 채널을 가로로 나열 → 넓고 낮게 (한눈에) */
         .ax-modal .ac-channels { flex-direction: row; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: stretch; }
         .ax-modal .ac-ch { width: 360px; flex: 0 0 auto; }
+        .ax-modal .ac-ch.ch-call_center { width: 540px; }   /* 상담사 콘솔: 문구 길이 따라 자연스럽게 */
         .ax-modal .phone-push { width: 250px; }
         .ax-modal .pp-nmsg { font-size: 12.5px; }
         .ax-modal .ac-msg, .ax-modal .ab-msg { font-size: 1.06rem; }
         .ax-modal .ac-service { font-size: 1rem; }
+        /* 추론 이유 버튼 + 팝업 */
+        .rx-wrap { position: relative; display: inline-flex; }
+        .rx-btn { font-size: 0.74rem; font-weight: 700; color: #92400e; background: #fffbeb;
+                  border: 1px solid #fde68a; border-bottom-width: 2px; border-radius: 7px; padding: 0.28rem 0.6rem;
+                  cursor: pointer; white-space: nowrap; box-shadow: 0 2px 0 #fcd34d, 0 2px 4px rgba(180,83,9,.12); }
+        .rx-btn:hover { background: #fef3c7; }
+        .rx-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #fcd34d; }
+        .rx-close { position: absolute; top: 0.8rem; right: 0.9rem; z-index: 1; width: 28px; height: 28px;
+                    border: 1px solid var(--border); background: #fff; border-radius: 50%; cursor: pointer;
+                    font-size: 0.9rem; color: var(--muted); line-height: 1; }
+        .rx-close:hover { background: #f1f5f9; color: var(--fg); }
+        .rx-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 190; }
+        .rx-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
+                    width: min(460px, 92vw); max-height: 88vh; overflow: auto; text-align: left;
+                    background: #fff; border-radius: 16px; padding: 1.3rem 1.5rem; box-shadow: 0 26px 70px rgba(0,0,0,.4); }
+        .rx-head { font-size: 1.05rem; margin-bottom: 0.9rem; color: #1e293b; }
+        .rx-tag { font-size: 0.7rem; font-weight: 800; color: #92400e; background: #fef3c7;
+                  padding: 0.12rem 0.5rem; border-radius: 6px; margin-right: 0.5rem; }
+        .rx-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+        .rx-f { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border-radius: 10px; background: #f8fafc; }
+        .rx-f.up { border-left: 4px solid #16a34a; }
+        .rx-f.down { border-left: 4px solid #dc2626; }
+        .rx-arrow { font-size: 0.78rem; }
+        .rx-f.up .rx-arrow { color: #16a34a; }
+        .rx-f.down .rx-arrow { color: #dc2626; }
+        .rx-label { flex: 1; font-size: 0.95rem; font-weight: 600; color: #1e293b; }
+        .rx-val { font-weight: 800; font-variant-numeric: tabular-nums; color: #0f172a;
+                  background: #eef2ff; border-radius: 6px; padding: 0.1rem 0.45rem; font-size: 0.88rem; }
+        .rx-beh { margin-top: 0.8rem; font-size: 0.9rem; font-weight: 600; color: var(--primary); }
+        .rx-foot { margin-top: 0.9rem; font-size: 0.78rem; color: var(--muted); }
       `}</style>
     </div>
   );
