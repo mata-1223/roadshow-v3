@@ -57,7 +57,7 @@ function ActionExample({ actionsData, intent }) {
         <>
           <div className="ax-backdrop" onClick={() => setOpen(false)} />
           <div className="ax-modal" role="tooltip" onMouseEnter={show} onMouseLeave={hide}>
-            <ActionPanel actionsData={actionsData} topN={[intent]} />
+            <ActionPanel actionsData={actionsData} topN={[intent]} reasoning={intent.reasoning} />
           </div>
         </>
       )}

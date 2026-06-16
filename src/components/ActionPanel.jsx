@@ -64,7 +64,7 @@ function AgentBubble({ message }) {
   );
 }
 
-export default function ActionPanel({ actionsData, topN = [] }) {
+export default function ActionPanel({ actionsData, topN = [], reasoning = null }) {
   const channels = actionsData?.channels || [];
   const actionsMap = actionsData?.actions || {};
 
@@ -108,7 +108,10 @@ export default function ActionPanel({ actionsData, topN = [] }) {
                   ) : c.id === 'agent' ? (
                     <AgentBubble message={body} />
                   ) : typeof body === 'object' ? (
-                    <AgentConsole situation={body.situation} guidance={body.guidance} />
+                    <AgentConsole
+                      situation={(reasoning && reasoning.situation_text) || body.situation}
+                      guidance={body.guidance}
+                    />
                   ) : (
                     <div className="ac-msg">{body}</div>
                   )}
