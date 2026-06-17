@@ -74,7 +74,7 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null }
   return (
     <div className="action-panel">
       <h2>활용 예시</h2>
-      <p className="caption">가장 매칭되는 Intent의 채널별 활용 예시 — Context → Intent → Action</p>
+      <p className="caption">해당 Intent의 채널별 활용 예시</p>
 
       {!act ? (
         <div className="ac-empty">상위 Intent에 매칭된 활용 예시가 없습니다. 행동을 선택하면 갱신됩니다.</div>
