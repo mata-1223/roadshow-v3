@@ -14,7 +14,7 @@ export default function DemoPage() {
   const navigate = useNavigate();
   const {
     sessionId, scenarioId, scenario, surveyAnswers,
-    topN, others, stage,
+    topN, others,
     intentPositions, l1Zones,
     customerPosition, baselinePosition, customerPath,
     applyIntentUpdate, setIntentPositions,
@@ -61,6 +61,11 @@ export default function DemoPage() {
   const behaviorsData = scenario?.behaviors || {};
   const isSingleSelect = behaviorsData.structure === 'single-select';
 
+  // Intent에 실제로 반영되는 행동 횟수 (뒤로 가기·앱 이탈은 제외)
+  const reflectedCount = history.filter(
+    (h) => h.behavior.event_type !== 'navigate_back' && h.behavior.event_type !== 'app_exit'
+  ).length;
+
   // 단일 선택 시나리오(직장인)는 시작 모드를 'single'로
   useEffect(() => {
     if (isSingleSelect) setMode('single');
@@ -104,9 +109,7 @@ export default function DemoPage() {
     <div className="demo-page">
       <div className="container">
         <div className="badges">
-          <span className="badge stage">{stage}</span>
           <span className="badge ws">{wsReady ? '🟢 연결됨' : '🔴 연결 끊김'}</span>
-          <span className="badge step">행동 누적 {history.length}회</span>
           <Link to="/admin" className="badge admin-link" target="_blank">📊 DB 전체 보기 ↗</Link>
         </div>
       </div>
@@ -167,8 +170,17 @@ export default function DemoPage() {
 
         {/* ── 중 · 추론 (Intent + Vector + DB) ──────────────── */}
         <div className="col col-infer">
-          <h2>Intent — 실시간 Top 5</h2>
-          <p className="caption">{allIntents.length}개 Intent 중 분포 상위 5개 · 각 행의 <b>[추론 이유]</b>·<b>[활용 예시]</b> 버튼을 클릭하면 상세가 표시됩니다</p>
+          <h2>
+            {reflectedCount === 0 ? 'Base Intent Top 5' : '실시간 행동 반영 Intent Top 5'}
+            <span className={`top5-badge ${reflectedCount === 0 ? 'base' : 'live'}`}>
+              {reflectedCount === 0 ? '행동 대기 중' : `행동 ${reflectedCount}회 반영`}
+            </span>
+          </h2>
+          <p className="caption">
+            {reflectedCount === 0
+              ? <>아직 행동이 없습니다 · 아래는 설문만으로 추론한 <b>Base Intent</b>이며, 왼쪽에서 행동을 선택하면 실시간으로 갱신됩니다</>
+              : <>{allIntents.length}개 Intent 중 상위 5개 · <b>Base 대비</b> 변화가 ▲▼로 표시됩니다 · 각 행의 <b>[활용 예시]</b>에서 상세를 확인하세요</>}
+          </p>
           <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} />
 
           {others && (
@@ -213,12 +225,14 @@ export default function DemoPage() {
         .behavior-block h2 { margin-bottom: 0.25rem; }
         .badges { display: flex; gap: 0.5rem; margin-bottom: 0; flex-wrap: wrap; padding-top: 0.6rem; padding-bottom: 0.4rem; }
         .badge { padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
-        .stage { background: #eff6ff; color: var(--primary); }
         .ws { background: #f1f5f9; }
-        .step { background: #fef3c7; color: #92400e; }
         .admin-link { background: #f1f5f9; text-decoration: none; color: var(--fg); }
         .admin-link:hover { background: #e2e8f0; }
         .caption { color: var(--muted); margin: 0 0 0.6rem; font-size: 0.9rem; }
+        .col-infer h2 { display: flex; align-items: center; gap: 0.6rem; }
+        .top5-badge { font-size: 0.72rem; font-weight: 700; padding: 0.18rem 0.6rem; border-radius: 999px; }
+        .top5-badge.base { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+        .top5-badge.live { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
         .others-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; padding: 0.5rem 1rem;
                       background: #f1f5f9; border-radius: 8px; font-size: 0.9rem; }
         .others-label { color: var(--muted); }
