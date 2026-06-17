@@ -120,6 +120,11 @@ export default function DemoPage() {
 
         {/* ── 좌 · 입력 (시스템 구성 + 행동 + 설문) ──────────── */}
         <div className="col col-input">
+          <div className="col-head col-head-input">
+            <span className="col-step">①</span>
+            <span className="col-role">고객 입력</span>
+            <span className="col-desc">설문 · 행동 선택</span>
+          </div>
           <SystemStatusPanel states={{ batch: 'done', realtime: 'active', infer: 'active' }} />
 
           <div className="behavior-block">
@@ -172,6 +177,11 @@ export default function DemoPage() {
 
         {/* ── 중 · 추론 (Intent + Vector + DB) ──────────────── */}
         <div className="col col-infer">
+          <div className="col-head col-head-infer">
+            <span className="col-step">②</span>
+            <span className="col-role">엔진 추론 결과</span>
+            <span className="col-desc">Intent 분포 · Vector Space</span>
+          </div>
           <h2>
             {reflectedCount === 0 ? 'Base Intent Top 5' : '실시간 행동 반영 Intent Top 5'}
             <span className={`top5-badge ${reflectedCount === 0 ? 'base' : 'live'}`}>
@@ -229,8 +239,23 @@ export default function DemoPage() {
         .demo-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.35fr;
                      gap: clamp(0.8rem, 1.3vw, 1.4rem); padding-top: 0.5rem; padding-bottom: 0.5rem; align-items: stretch; }
         .col { min-width: 0; height: 100%; }
-        .col-input { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 0.3rem; }
-        .col-infer { overflow-y: auto; padding-right: 0.3rem; }
+        /* 면 분리: 좌(입력)=옅은 면 / 우(추론 결과)=흰 면 → 입력→결과 흐름을 시각적으로 구분 */
+        .col-input { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto;
+                     background: #eef2f6; border: 1px solid #dbe3ec; border-radius: 14px; padding: 0.8rem; }
+        .col-infer { overflow-y: auto;
+                     background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 0.8rem; }
+        /* 역할 라벨 헤더 (스크롤해도 상단 고정) */
+        .col-head { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 0.5rem;
+                    margin: -0.8rem -0.8rem 0.2rem; padding: 0.6rem 0.85rem; border-radius: 14px 14px 0 0;
+                    border-bottom: 1px solid; }
+        .col-head-input { background: #eef2f6; border-color: #dbe3ec; }
+        .col-head-infer { background: #ffffff; border-color: #e2e8f0; }
+        .col-step { font-weight: 800; font-size: 0.95rem; color: #fff; width: 1.5rem; height: 1.5rem;
+                    display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .col-head-input .col-step { background: #64748b; }
+        .col-head-infer .col-step { background: #2563eb; }
+        .col-role { font-weight: 800; font-size: 1.05rem; color: var(--fg); }
+        .col-desc { font-size: 0.82rem; color: var(--muted); }
         .behavior-block h2 { margin-bottom: 0.25rem; }
         .badges { display: flex; gap: 0.5rem; margin-bottom: 0; flex-wrap: wrap; padding-top: 0.6rem; padding-bottom: 0.4rem; }
         .badge { padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
