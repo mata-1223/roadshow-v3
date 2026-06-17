@@ -118,14 +118,26 @@ export default function DemoPage() {
 
       <div className="container demo-grid">
 
-        {/* ── 좌 · 입력 (시스템 구성 + 행동 + 설문) ──────────── */}
+        {/* ── 좌 · 시스템 구성(별개) + 고객 입력(행동·설문) ──────────── */}
         <div className="col col-input">
+          <div className="stage-guide">
+            👆 {scenarioId === 'worker-v3'
+              ? <>고객의 <b>앱 진입 행동</b>을 선택하면,</>
+              : <>고객이 <b>마이케이티 앱에서 하는 활동</b>을 선택하면,</>}
+            {' '}엔진이 <b>매 행동마다 Intent를 실시간 재추론</b>합니다. 행동이 쌓일수록 의도가 또렷해집니다.
+            <span className="stage-note">
+              {scenarioId === 'worker-v3'
+                ? <>※ 실제 운영 시에는 고객의 <b>앱 진입 로그</b>를 활용하는 단계로, 본 시연에서는 실제 고객 데이터 대신 <b>앱 진입 행동 응답(선택)</b>으로 대체합니다.</>
+                : <>※ 실제 운영 시에는 고객의 <b>마이케이티 앱 내 실시간 행동 로그</b>를 활용하는 단계로, 본 시연에서는 실제 고객 데이터 대신 <b>마이케이티 앱에서 가능한 행동 응답(선택)</b>으로 대체합니다.</>}
+            </span>
+          </div>
+
+          <div className="input-panel">
           <div className="col-head col-head-input">
             <span className="col-step">①</span>
             <span className="col-role">고객 입력</span>
-            <span className="col-desc">설문 · 행동 선택</span>
+            <span className="col-desc">행동 선택 · 설문</span>
           </div>
-          <SystemStatusPanel states={{ batch: 'done', realtime: 'active', infer: 'active' }} />
 
           <div className="behavior-block">
             <h2>행동 선택지</h2>
@@ -173,10 +185,14 @@ export default function DemoPage() {
           </div>
 
           <SurveySummaryPanel survey={scenario.survey} answers={surveyAnswers} />
+          </div>
         </div>
 
-        {/* ── 중 · 추론 (Intent + Vector + DB) ──────────────── */}
+        {/* ── 중 · 시스템 구성(별개) + 엔진 추론 결과 ──────────────── */}
         <div className="col col-infer">
+          <SystemStatusPanel states={{ batch: 'done', realtime: 'active', infer: 'active' }} />
+
+          <div className="infer-panel">
           <div className="col-head col-head-infer">
             <span className="col-step">②</span>
             <span className="col-role">엔진 추론 결과</span>
@@ -230,6 +246,7 @@ export default function DemoPage() {
           <div style={{ marginTop: '0.9rem' }}>
             <DBViewerPanel sessionId={sessionId} />
           </div>
+          </div>
         </div>
 
       </div>
@@ -240,10 +257,11 @@ export default function DemoPage() {
                      gap: clamp(0.8rem, 1.3vw, 1.4rem); padding-top: 0.5rem; padding-bottom: 0.5rem; align-items: stretch; }
         .col { min-width: 0; height: 100%; }
         /* 면 분리: 좌(입력)=옅은 면 / 우(추론 결과)=흰 면 → 입력→결과 흐름을 시각적으로 구분 */
-        .col-input { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto;
-                     background: #eef2f6; border: 1px solid #dbe3ec; border-radius: 14px; padding: 0.8rem; }
-        .col-infer { overflow-y: auto;
-                     background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 0.8rem; }
+        /* 시스템 구성(SystemStatusPanel)은 고객 입력 면과 별개 — col-input은 투명 컨테이너, 고객 입력만 input-panel(면)로 묶음 */
+        .col-input, .col-infer { display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 0.3rem; }
+        .input-panel { display: flex; flex-direction: column; gap: 1rem;
+                       background: #eef2f6; border: 1px solid #dbe3ec; border-radius: 14px; padding: 0.8rem; }
+        .infer-panel { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 0.8rem; }
         /* 역할 라벨 헤더 (스크롤해도 상단 고정) */
         .col-head { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 0.5rem;
                     margin: -0.8rem -0.8rem 0.2rem; padding: 0.6rem 0.85rem; border-radius: 14px 14px 0 0;
@@ -257,6 +275,10 @@ export default function DemoPage() {
         .col-role { font-weight: 800; font-size: 1.05rem; color: var(--fg); }
         .col-desc { font-size: 0.82rem; color: var(--muted); }
         .behavior-block h2 { margin-bottom: 0.25rem; }
+        .stage-guide { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+                       padding: 0.65rem 0.9rem; margin: 0.4rem 0 0.6rem; font-size: 0.9rem; color: #1e3a5f; line-height: 1.5; }
+        .stage-note { display: block; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #bfdbfe;
+                      font-size: 0.82rem; color: #5b7290; }
         .badges { display: flex; gap: 0.5rem; margin-bottom: 0; flex-wrap: wrap; padding-top: 0.6rem; padding-bottom: 0.4rem; }
         .badge { padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
         .ws { background: #f1f5f9; }

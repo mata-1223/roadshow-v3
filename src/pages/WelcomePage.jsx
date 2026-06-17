@@ -37,8 +37,6 @@ export default function WelcomePage() {
           <p className="lead">
             고객의 상태 정보와 실시간 행동을 기반으로<br />실시간 Intent를 추론하고, 고객 Context를 생성하여 상황에 맞는 활용 방안을 제안합니다.
           </p>
-          <p className="sub">도메인별 Intent Taxonomy 전체에 대해 실시간 추론</p>
-
           <h3 className="pick">시나리오를 선택하세요</h3>
           <div className="cards">
             {SCENARIOS.map((scn) => (
@@ -48,7 +46,10 @@ export default function WelcomePage() {
                 onClick={() => start(scn)}
                 disabled={!scn.active || busy}
               >
-                <span className="scn-name">{scn.name}</span>
+                <span className="scn-main">
+                  <span className="scn-name">{scn.name}</span>
+                  {scn.desc && <span className="scn-desc">{scn.desc}</span>}
+                </span>
                 {scn.active
                   ? <span className="scn-go">{busy ? '준비 중…' : '시작 →'}</span>
                   : <span className="scn-soon">준비 중</span>}
@@ -68,23 +69,24 @@ export default function WelcomePage() {
       <style>{`
         .welcome-page { min-height: 100vh; display: flex; align-items: center;
           background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); }
-        .welcome-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center;
-          width: 100%; max-width: 1400px; margin: 0 auto; }
+        .welcome-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(2rem, 4vw, 5rem); align-items: center;
+          width: 100%; max-width: min(2200px, 94vw); margin: 0 auto; }
         .right-col { display: flex; flex-direction: column; gap: 1rem; }
         .badge { display: inline-block; background: #eff6ff; color: #1d4ed8;
           padding: 0.4rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem; }
-        h1 { font-size: 3rem; margin-bottom: 1.25rem; }
-        .lead { font-size: 1.4rem; color: var(--fg); margin-bottom: 0.5rem; }
-        .sub  { font-size: 1.05rem; color: var(--muted); margin-bottom: 2.5rem; }
-        .pick { color: var(--fg); font-size: 1.2rem; margin-bottom: 1rem; }
-        .cards { display: flex; flex-direction: column; gap: 0.75rem; max-width: 520px; }
+        h1 { font-size: clamp(2.5rem, 3.6vw, 4.2rem); margin-bottom: 1.25rem; }
+        .lead { font-size: clamp(1.25rem, 1.7vw, 1.9rem); color: var(--fg); margin-bottom: 2.5rem; }
+        .pick { color: var(--fg); font-size: clamp(1.15rem, 1.3vw, 1.5rem); margin-bottom: 1rem; }
+        .cards { display: flex; flex-direction: column; gap: clamp(0.75rem, 1vw, 1.2rem); max-width: min(1040px, 100%); }
         .scenario-card { display: flex; align-items: center; justify-content: space-between;
           border: 2px solid var(--border); background: white; border-radius: 14px;
-          padding: 1.1rem 1.4rem; text-align: left; transition: all 0.15s; }
+          padding: clamp(1.1rem, 1.5vw, 1.7rem) clamp(1.4rem, 2vw, 2.2rem); text-align: left; transition: all 0.15s; }
         .scenario-card:not(.disabled):hover { border-color: var(--primary); background: #f0f7ff;
           box-shadow: 0 4px 12px rgba(37,99,235,0.12); }
         .scenario-card.disabled { opacity: 0.5; cursor: not-allowed; }
-        .scn-name { font-size: 1.2rem; font-weight: 700; }
+        .scn-main { display: flex; flex-direction: column; gap: 0.3rem; }
+        .scn-name { font-size: clamp(1.2rem, 1.4vw, 1.6rem); font-weight: 700; }
+        .scn-desc { font-size: clamp(0.92rem, 1vw, 1.12rem); color: var(--muted); font-weight: 500; line-height: 1.4; }
         .scn-go { color: var(--primary); font-weight: 700; }
         .scn-soon { font-size: 0.85rem; color: var(--muted); background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 999px; }
         .hint { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
