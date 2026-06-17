@@ -61,6 +61,11 @@ export default function SurveyPage() {
             </div>
           </div>
 
+          <div className="stage-guide">
+            🧩 고객의 <b>상태 정보</b>를 입력하는 단계입니다. 이 응답만으로 먼저 <b>Base Intent</b>(행동 전 추론)가 만들어집니다.
+            <span className="stage-note">※ 실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로, 본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다.</span>
+          </div>
+
           <QuestionGroup title="고객 상태 정보" subtitle={`${staticQs.length}문항`} questions={staticQs} answers={answers} setAnswers={setAnswers} />
           <QuestionGroup title="사용 행동·이력·맥락" subtitle={`${behavioralQs.length}문항`} questions={behavioralQs} answers={answers} setAnswers={setAnswers} />
 
@@ -82,7 +87,11 @@ export default function SurveyPage() {
         .survey-page { min-height: 100vh; padding: 1rem 0; }
         .survey-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
         .right-col { position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .stage-guide { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px;
+                       padding: 0.8rem 1.1rem; margin-bottom: 2rem; font-size: 0.95rem; color: #1e3a5f; line-height: 1.5; }
+        .stage-note { display: block; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #bfdbfe;
+                      font-size: 0.85rem; color: #5b7290; }
         .progress { display: flex; align-items: center; gap: 1rem; font-weight: 600; }
         .progress .bar { width: 240px; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
         .progress .fill { height: 100%; background: var(--primary); transition: width 0.3s; }
