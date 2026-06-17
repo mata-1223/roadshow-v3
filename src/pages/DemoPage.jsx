@@ -4,11 +4,13 @@ import { useSessionStore } from '../store/sessionStore.js';
 import { createWebSocket } from '../api/websocket.js';
 import { getIntentPositions } from '../api/http.js';
 import IntentChart from '../components/IntentChart.jsx';
+import IntentTaxonomyModal from '../components/IntentTaxonomyModal.jsx';
 import BehaviorPanel from '../components/BehaviorPanel.jsx';
 import VectorSpace from '../components/VectorSpace.jsx';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 import SurveySummaryPanel from '../components/SurveySummaryPanel.jsx';
+import { SCENARIOS } from '../constants/scenarios.js';
 
 export default function DemoPage() {
   const navigate = useNavigate();
@@ -175,6 +177,13 @@ export default function DemoPage() {
             <span className={`top5-badge ${reflectedCount === 0 ? 'base' : 'live'}`}>
               {reflectedCount === 0 ? '행동 대기 중' : `행동 ${reflectedCount}회 반영`}
             </span>
+            <span className="top5-right">
+              <IntentTaxonomyModal
+                intents={allIntents}
+                l1Zones={l1Zones}
+                scenarioName={SCENARIOS.find((s) => s.id === scenarioId)?.name}
+              />
+            </span>
           </h2>
           <p className="caption">
             {reflectedCount === 0
@@ -230,6 +239,7 @@ export default function DemoPage() {
         .admin-link:hover { background: #e2e8f0; }
         .caption { color: var(--muted); margin: 0 0 0.6rem; font-size: 0.9rem; }
         .col-infer h2 { display: flex; align-items: center; gap: 0.6rem; }
+        .top5-right { margin-left: auto; }
         .top5-badge { font-size: 0.72rem; font-weight: 700; padding: 0.18rem 0.6rem; border-radius: 999px; }
         .top5-badge.base { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
         .top5-badge.live { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
