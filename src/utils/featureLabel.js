@@ -8,7 +8,7 @@ const MAP = {
   contract_status: '약정 상태', non_mobile_cost_gap: '결합 비용 격차',
   // 사용/가족
   family_line_count: '가족 회선 수', subscribed_service_count: '가입 부가서비스 수',
-  service_coverage_ratio: '서비스 커버리지 비율', content_view_mode: '콘텐츠 이용 형태',
+  service_coverage_ratio: '서비스 커버리지 비율', content_view_mode: '영상 소비 강도',
   benefit_utilization: '혜택 활용도', dissatisfaction_factor: '불만 요인',
   // 직장인 설문 파생
   offwork_time: '퇴근 시간', overtime_freq: '야근 빈도', move_pattern: '퇴근 후 이동',

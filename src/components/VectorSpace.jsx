@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from 'react';
 import { intentName } from '../utils/intent.js';
+import { featureLabel } from '../utils/featureLabel.js';
 
 const VIEW_W = 1040;       // 가로로 넓은 영역에 맞춰 wide aspect
 const VIEW_H = 560;
@@ -277,7 +278,15 @@ export default function VectorSpace({
                 <div className="vd-sec">
                   <div className="vd-sec-t">CORE FEATURES</div>
                   <div className="vd-chips">
-                    {feats.map((f) => <span key={f} className="vd-chip">{f}</span>)}
+                    {feats.map((f) => {
+                      const ko = featureLabel(f);
+                      return (
+                        <span key={f} className="vd-chip">
+                          <span className="vd-chip-en">{f}</span>
+                          {ko && ko !== f && <span className="vd-chip-ko">{ko}</span>}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -329,8 +338,10 @@ export default function VectorSpace({
         .vd-sec { margin-top: 1.1rem; }
         .vd-sec-t { font-size: 0.72rem; font-weight: 800; letter-spacing: .08em; color: #64748b; margin-bottom: 0.5rem; }
         .vd-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-        .vd-chip { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: #cbd5e1;
+        .vd-chip { display: inline-flex; flex-direction: column; gap: 1px; align-items: flex-start;
                    background: #334155; border-radius: 7px; padding: 0.3rem 0.6rem; }
+        .vd-chip-en { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: #cbd5e1; }
+        .vd-chip-ko { font-size: 0.72rem; color: #94a3b8; }
         .vd-situation { margin-top: 1rem; font-size: 0.88rem; color: #cbd5e1; line-height: 1.55;
                         background: #0f172a; border-left: 3px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 0.6rem 0.8rem; }
       `}</style>
