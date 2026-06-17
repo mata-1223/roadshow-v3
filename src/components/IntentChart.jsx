@@ -91,6 +91,10 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
       {topN.map((t) => {
         const p = pctOf(t);
         const baseP = basePctOf(t);
+        // 메인 표시명이 L2와 동일하면(예: 직장인 시나리오, intent가 곧 L2 계층)
+        // 상위 계층(L1)을 부가 표시 — 동일 명칭 중복을 방지
+        const main = intentName(t);
+        const parentLabel = (main && main === t.L2_name) ? t.L1_name : t.L2_name;
         return (
         <div key={t.intent_id} className="row">
           <div className="meta">
@@ -101,11 +105,11 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
             <div className="info">
               <div className="name">
                 <span className="dot" style={{ background: colorOf(t.L1_id), opacity: 0.8 }} />
-                {intentName(t)}
+                {main}
               </div>
               <div className="sub">
                 <span className="id">{t.intent_id}</span>
-                <span className="l2">{t.L2_name}</span>
+                <span className="l2">{parentLabel}</span>
               </div>
             </div>
             {actionsMap[t.intent_id] && (
