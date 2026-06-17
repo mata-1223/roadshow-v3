@@ -17,21 +17,36 @@ export default function SurveyPage() {
 
   if (!scenario) return null;
   const questions = scenario.survey.questions;
+  // 조건부 문항(show_if): 특정 문항 응답에 따라 노출. 예) Q9는 Q5=인터넷/IPTV 포함일 때만
+  const isVisible = (q) => {
+    const c = q.show_if;
+    if (!c) return true;
+    return (c.in || []).includes(answers[c.qid]);
+  };
+  // 조건 미충족 조건부 문항은 '잠금' 상태로 자리는 유지(번호 점프·갑작스런 등장 방지), 완료 판정에서만 제외
+  const isLocked = (q) => !!q.show_if && !isVisible(q);
   // 새 survey.json은 block 필드(objective_fact/usage_behavior/behavioral_history/usage_context),
   // 옛 양식은 type 필드(static/behavioral) — 둘 다 지원
   const isStatic = (q) => q.type === 'static' || q.block === 'objective_fact';
-  const staticQs     = questions.filter(isStatic);
-  const behavioralQs = questions.filter((q) => !isStatic(q));
-  const total = questions.length;
-  const answered = Object.keys(answers).length;
+  const staticQs      = questions.filter(isStatic);
+  const behavioralQs  = questions.filter((q) => !isStatic(q));   // 잠금 문항 포함 렌더
+  const answerableQs  = questions.filter((q) => !isLocked(q));   // 완료 판정 대상
+  const total = answerableQs.length;
+  const answered = answerableQs.filter((q) => answers[q.id] != null).length;
   const ready = answered === total;
 
   async function handleSubmit() {
     if (!ready || busy) return;
     setBusy(true);
     try {
-      const res = await submitSurvey(sessionId, answers);
-      setSurveyAnswers(answers);
+      // 응답 가능한 문항만 제출 + 잠긴 조건부 문항은 hidden_default 코드로 보정
+      const effective = {};
+      answerableQs.forEach((q) => { if (answers[q.id] != null) effective[q.id] = answers[q.id]; });
+      questions.forEach((q) => {
+        if (isLocked(q) && q.hidden_default != null) effective[q.id] = q.hidden_default;
+      });
+      const res = await submitSurvey(sessionId, effective);
+      setSurveyAnswers(effective);
       setStage(res.stage);
       setBatchFeatures(res.batch_features);
       applyInitialResult({
@@ -66,8 +81,8 @@ export default function SurveyPage() {
             <span className="stage-note">※ 실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로, 본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다.</span>
           </div>
 
-          <QuestionGroup title="고객 상태 정보" subtitle={`${staticQs.length}문항`} questions={staticQs} answers={answers} setAnswers={setAnswers} />
-          <QuestionGroup title="사용 행동·이력·맥락" subtitle={`${behavioralQs.length}문항`} questions={behavioralQs} answers={answers} setAnswers={setAnswers} />
+          <QuestionGroup title="고객 상태 정보" subtitle={`${staticQs.length}문항`} questions={staticQs} answers={answers} setAnswers={setAnswers} isLocked={isLocked} />
+          <QuestionGroup title="사용 행동·이력·맥락" subtitle={`${behavioralQs.length}문항`} questions={behavioralQs} answers={answers} setAnswers={setAnswers} isLocked={isLocked} />
 
           <div className="submit-bar">
             <button className="btn btn-primary submit" disabled={!ready || busy} onClick={handleSubmit}>
@@ -104,13 +119,14 @@ export default function SurveyPage() {
   );
 }
 
-function QuestionGroup({ title, subtitle, questions, answers, setAnswers }) {
+function QuestionGroup({ title, subtitle, questions, answers, setAnswers, isLocked }) {
   return (
     <section className="group">
       <h3>{title} <span>{subtitle}</span></h3>
       {questions.map((q) => (
         <QuestionCard key={q.id} q={q}
           selected={answers[q.id]}
+          locked={isLocked ? isLocked(q) : false}
           onSelect={(code) => setAnswers({ ...answers, [q.id]: code })} />
       ))}
       <style>{`
@@ -122,29 +138,35 @@ function QuestionGroup({ title, subtitle, questions, answers, setAnswers }) {
   );
 }
 
-function QuestionCard({ q, selected, onSelect }) {
+function QuestionCard({ q, selected, onSelect, locked }) {
   return (
-    <div className="qcard">
+    <div className={`qcard ${locked ? 'locked' : ''}`}>
       <div className="qhead">
         <span className="qid">{q.id}</span>
         <span className="qtext">{q.question}</span>
         <span className="qdim">{q.dimension}</span>
       </div>
-      <div className="qopts">
-        {q.options.map((o) => (
-          <button key={o.code} className={`qopt ${selected === o.code ? 'on' : ''}`}
-                  onClick={() => onSelect(o.code)}>
-            <span className="qopt-code">{o.code}</span>
-            <span className="qopt-label">{o.label}</span>
-          </button>
-        ))}
-      </div>
+      {locked ? (
+        <div className="qlocked">🔒 {q.locked_hint || '위 응답에 따라 활성화되는 문항입니다.'}</div>
+      ) : (
+        <div className="qopts">
+          {q.options.map((o) => (
+            <button key={o.code} className={`qopt ${selected === o.code ? 'on' : ''}`}
+                    onClick={() => onSelect(o.code)}>
+              <span className="qopt-code">{o.code}</span>
+              <span className="qopt-label">{o.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <style>{`
         .qcard { background: white; border: 2px solid var(--border); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+        .qcard.locked { background: #f8fafc; border-style: dashed; opacity: 0.7; }
         .qhead { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
         .qid { background: #f1f5f9; color: var(--muted); padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.9rem; }
         .qtext { flex: 1; font-weight: 600; }
         .qdim { color: var(--muted); font-size: 0.85rem; }
+        .qlocked { color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
         .qopts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .qopt { display: flex; align-items: center; gap: 0.5rem; border: 2px solid var(--border); background: white;
                 padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.95rem; }
