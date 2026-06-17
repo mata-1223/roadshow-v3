@@ -3,7 +3,7 @@
 // 페이로드 양식 (서버 → 클라이언트):
 //   probability / baseline_probability / delta_probability (0~1)
 //   rank / baseline_rank / rank_change
-//   intent_nm_ko / L1_id / L1_name / L2_name / inference_type
+//   intent_nm_ko / L1_id / L1_name / L2_name
 
 import { useState } from 'react';
 import { intentName } from '../utils/intent.js';
@@ -75,43 +75,6 @@ function ActionExample({ actionsData, intent }) {
   );
 }
 
-// 추론 이유 클릭 팝업 — 백엔드 reasoning(factors: 기여 feature/항) 표출.
-function ReasoningExample({ reasoning, intent }) {
-  const [open, setOpen] = useState(false);
-  const factors = reasoning?.factors || [];
-  if (!factors.length) return null;
-  return (
-    <div className="rx-wrap">
-      <button type="button" className="rx-btn" onClick={() => setOpen(true)}>추론 이유</button>
-      {open && (
-        <>
-          <div className="rx-backdrop" onClick={() => setOpen(false)} />
-          <div className="rx-modal" role="dialog">
-            <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
-            <div className="rx-head">
-              <span className="rx-tag">{reasoning.type === 'Model' ? 'AI 모델' : '규칙'}</span>
-              <b>{intentName(intent)}</b> 추론 이유
-            </div>
-            <ul className="rx-list">
-              {factors.filter((f) => f.label !== '기본 점수').map((f, i) => (
-                <li key={i} className={`rx-f ${f.direction}`}>
-                  <span className="rx-arrow">{f.direction === 'down' ? '▼' : '▲'}</span>
-                  <span className="rx-label">{f.label}</span>
-                  {f.value != null && f.value !== '' && <span className="rx-val">{f.value}</span>}
-                </li>
-              ))}
-            </ul>
-            {reasoning.behavior_note && <div className="rx-beh">🔵 {reasoning.behavior_note}</div>}
-            <div className="rx-foot">
-              {reasoning.type === 'Model' ? 'AI 모델이 중요하게 본 특징과 현재값 (▲상승 / ▼하강)' : '추론에 작용한 항목과 현재값'}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 export default function IntentChart({ topN, actionsData, l1Zones }) {
   if (!topN || topN.length === 0) {
     return <div className="empty">결과 없음</div>;
@@ -142,13 +105,9 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
               </div>
               <div className="sub">
                 <span className="id">{t.intent_id}</span>
-                <span className="type">{t.inference_type}</span>
                 <span className="l2">{t.L2_name}</span>
               </div>
             </div>
-            {t.reasoning && (
-              <ReasoningExample reasoning={t.reasoning} intent={t} />
-            )}
             {actionsMap[t.intent_id] && (
               <ActionExample actionsData={actionsData} intent={t} />
             )}
@@ -186,7 +145,6 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
         .sub { color: var(--muted); font-size: 0.85rem; display: flex; gap: 0.75rem; margin-top: 0.2rem; }
         .id { font-weight: 600; }
-        .type { background: white; padding: 0 0.5rem; border-radius: 4px; border: 1px solid var(--border); }
         .score-block { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
         .score { font-size: 1.3rem; font-weight: 700; color: var(--fg); }
         .delta-badge { font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
@@ -220,36 +178,11 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
         .ax-modal .pp-nmsg { font-size: 12.5px; }
         .ax-modal .ac-msg, .ax-modal .ab-msg { font-size: 1.06rem; }
         .ax-modal .ac-service { font-size: 1rem; }
-        /* 추론 이유 버튼 + 팝업 */
-        .rx-wrap { position: relative; display: inline-flex; }
-        .rx-btn { font-size: 0.74rem; font-weight: 700; color: #92400e; background: #fffbeb;
-                  border: 1px solid #fde68a; border-bottom-width: 2px; border-radius: 7px; padding: 0.28rem 0.6rem;
-                  cursor: pointer; white-space: nowrap; box-shadow: 0 2px 0 #fcd34d, 0 2px 4px rgba(180,83,9,.12); }
-        .rx-btn:hover { background: #fef3c7; }
-        .rx-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #fcd34d; }
+        /* 모달 닫기 버튼 (활용 예시 모달 공용) */
         .rx-close { position: absolute; top: 0.8rem; right: 0.9rem; z-index: 1; width: 28px; height: 28px;
                     border: 1px solid var(--border); background: #fff; border-radius: 50%; cursor: pointer;
                     font-size: 0.9rem; color: var(--muted); line-height: 1; }
         .rx-close:hover { background: #f1f5f9; color: var(--fg); }
-        .rx-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 190; }
-        .rx-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
-                    width: min(460px, 92vw); max-height: 88vh; overflow: auto; text-align: left;
-                    background: #fff; border-radius: 16px; padding: 1.3rem 1.5rem; box-shadow: 0 26px 70px rgba(0,0,0,.4); }
-        .rx-head { font-size: 1.05rem; margin-bottom: 0.9rem; color: #1e293b; }
-        .rx-tag { font-size: 0.7rem; font-weight: 800; color: #92400e; background: #fef3c7;
-                  padding: 0.12rem 0.5rem; border-radius: 6px; margin-right: 0.5rem; }
-        .rx-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-        .rx-f { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; border-radius: 10px; background: #f8fafc; }
-        .rx-f.up { border-left: 4px solid #16a34a; }
-        .rx-f.down { border-left: 4px solid #dc2626; }
-        .rx-arrow { font-size: 0.78rem; }
-        .rx-f.up .rx-arrow { color: #16a34a; }
-        .rx-f.down .rx-arrow { color: #dc2626; }
-        .rx-label { flex: 1; font-size: 0.95rem; font-weight: 600; color: #1e293b; }
-        .rx-val { font-weight: 800; font-variant-numeric: tabular-nums; color: #0f172a;
-                  background: #eef2ff; border-radius: 6px; padding: 0.1rem 0.45rem; font-size: 0.88rem; }
-        .rx-beh { margin-top: 0.8rem; font-size: 0.9rem; font-weight: 600; color: var(--primary); }
-        .rx-foot { margin-top: 0.9rem; font-size: 0.78rem; color: var(--muted); }
       `}</style>
     </div>
   );
