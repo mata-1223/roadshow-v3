@@ -62,6 +62,13 @@ export default function WelcomePage() {
         </div>
 
         <div className="right-col">
+          <div className="qr-card">
+            <img src="/qr-roadshow.png" alt="체험 QR" className="qr-img" />
+            <div className="qr-text">
+              <b>📱 내 폰에서도 직접 체험 가능</b>
+              <span>QR을 스캔해 바로 체험해보세요</span>
+            </div>
+          </div>
           <SystemStatusPanel states={{ batch: 'idle', realtime: 'idle', infer: 'idle' }} />
           <DBViewerPanel tables={['sessions', 'event_log']} defaultTable="sessions" limit={5} title="DB 조회 — 적재 현황" />
           <p className="hint">시나리오를 선택하면 배치 → 실시간 → 추론 순으로 컴포넌트가 활성화됩니다.</p>
@@ -94,6 +101,12 @@ export default function WelcomePage() {
         .scn-go { color: var(--primary); font-weight: 700; }
         .scn-soon { font-size: 0.85rem; color: var(--muted); background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 999px; }
         .hint { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
+        .qr-card { display: flex; align-items: center; gap: 1.1rem; background: #fff;
+                   border: 2px solid var(--border); border-radius: 16px; padding: 1rem 1.25rem; }
+        .qr-img { width: 124px; height: 124px; border-radius: 8px; flex: 0 0 auto; }
+        .qr-text { display: flex; flex-direction: column; gap: 0.3rem; }
+        .qr-text b { font-size: clamp(1rem, 1.1vw, 1.2rem); }
+        .qr-text span { color: var(--muted); font-size: 0.9rem; line-height: 1.4; }
         @media (max-width: 1024px) { .welcome-grid { grid-template-columns: 1fr; } }
       `}</style>
     </div>
