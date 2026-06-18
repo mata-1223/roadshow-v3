@@ -89,7 +89,7 @@ function BehaviorButton({ b, disabled, onSelect, variant }) {
   return (
     <button className={cls} disabled={disabled} onClick={() => onSelect(b)}>
       <span className="bid">{b.id}</span>
-      <span className="bname">{b.name}</span>
+      <span className="bname">{b.icon && <span className="bemoji">{b.icon}</span>}{b.name}</span>
       <span className="bevent">{b.event_type}</span>
     </button>
   );
@@ -123,6 +123,7 @@ const STYLES = `
   .bbtn.exit:hover:not(:disabled) { border-color: #ef4444; background: #fee2e2; }
   .bid { font-weight: 700; font-size: 0.8rem; opacity: 0.7; }
   .bname { font-weight: 600; }
+  .bemoji { font-size: 1.15rem; margin-right: 0.4rem; }
   .bevent { font-size: 0.75rem; color: var(--muted); }
   .bbtn:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
