@@ -91,10 +91,15 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
       {topN.map((t) => {
         const p = pctOf(t);
         const baseP = basePctOf(t);
-        // 메인 표시명이 L2와 동일하면(예: 직장인 시나리오, intent가 곧 L2 계층)
-        // 상위 계층(L1)을 부가 표시 — 동일 명칭 중복을 방지
+        // 최하위(leaf) Intent 위의 상위 분류를 모두 표기.
+        //  · 직장인: leaf가 곧 L2 계층 → 위로 L1만 존재 → "L1: …"
+        //  · CS·결합: leaf(최하위) 아래 L1·L2 모두 존재 → "L1: … / L2: …"
         const main = intentName(t);
-        const parentLabel = (main && main === t.L2_name) ? t.L1_name : t.L2_name;
+        const leafIsL2 = main && main === t.L2_name;
+        const crumbs = (leafIsL2
+          ? [['L1', t.L1_name]]
+          : [['L1', t.L1_name], ['L2', t.L2_name]]
+        ).filter(([, v]) => v);
         return (
         <div key={t.intent_id} className="row">
           <div className="meta">
@@ -109,7 +114,12 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
               </div>
               <div className="sub">
                 <span className="id">{t.intent_id}</span>
-                <span className="l2">{parentLabel}</span>
+                {crumbs.map(([lvl, v], i) => (
+                  <span key={lvl} className="crumb">
+                    {i > 0 && <span className="sep">/</span>}
+                    <b style={lvl === 'L1' ? { color: colorOf(t.L1_id) } : undefined}>{lvl}</b>: {v}
+                  </span>
+                ))}
               </div>
             </div>
             {actionsMap[t.intent_id] && (
@@ -147,8 +157,11 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
         .info { flex: 1; }
         .name { font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
         .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-        .sub { color: var(--muted); font-size: 0.85rem; display: flex; gap: 0.75rem; margin-top: 0.2rem; }
+        .sub { color: var(--muted); font-size: 0.85rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem; margin-top: 0.2rem; }
         .id { font-weight: 600; }
+        .crumb { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; }
+        .crumb b { font-weight: 800; }
+        .crumb .sep { color: var(--border); margin-right: 0.15rem; }
         .score-block { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
         .score { font-size: 1.3rem; font-weight: 700; color: var(--fg); }
         .delta-badge { font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
