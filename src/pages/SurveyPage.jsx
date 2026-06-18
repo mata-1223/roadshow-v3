@@ -143,7 +143,19 @@ function QuestionCard({ q, selected, onSelect, locked }) {
     <div className={`qcard ${locked ? 'locked' : ''}`}>
       <div className="qhead">
         <span className="qid">{q.id}</span>
-        <span className="qtext">{q.question}</span>
+        <span className="qtextwrap">
+          <span className="qtext">{q.question}</span>
+          {q.realdata_source && (
+            <span className="qinfo">
+              <button type="button" className="qinfo-btn" aria-label="실제 데이터 활용 예상">ⓘ</button>
+              <span className="qinfo-pop">
+                실제 고객 데이터 활용 시<br />
+                <b>{q.realdata_source}</b><br />
+                활용 가능 예상
+              </span>
+            </span>
+          )}
+        </span>
         <span className="qdim">{q.dimension}</span>
       </div>
       {locked ? (
@@ -164,8 +176,20 @@ function QuestionCard({ q, selected, onSelect, locked }) {
         .qcard.locked { background: #f8fafc; border-style: dashed; opacity: 0.7; }
         .qhead { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
         .qid { background: #f1f5f9; color: var(--muted); padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.9rem; }
-        .qtext { flex: 1; font-weight: 600; }
+        .qtextwrap { flex: 1; display: flex; align-items: center; gap: 0.4rem; }
+        .qtext { font-weight: 600; }
         .qdim { color: var(--muted); font-size: 0.85rem; }
+        .qinfo { position: relative; display: inline-flex; }
+        .qinfo-btn { border: none; background: none; padding: 0; cursor: pointer; line-height: 1;
+                     font-size: 1.05rem; color: var(--primary); opacity: 0.7;
+                     display: inline-flex; align-items: center; }
+        .qinfo:hover .qinfo-btn { opacity: 1; }
+        .qinfo-pop { display: none; position: absolute; top: 145%; left: 0; z-index: 31;
+                     width: max-content; white-space: nowrap;
+                     background: #1e293b; color: #e2e8f0; font-size: 0.8rem; font-weight: 500; line-height: 1.55;
+                     padding: 0.6rem 0.8rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.35); text-align: left; }
+        .qinfo:hover .qinfo-pop { display: block; }
+        .qinfo-pop b { color: #fff; }
         .qlocked { color: var(--muted); font-size: 0.9rem; padding: 0.3rem 0; }
         .qopts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .qopt { display: flex; align-items: center; gap: 0.5rem; border: 2px solid var(--border); background: white;
