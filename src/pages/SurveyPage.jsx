@@ -10,6 +10,7 @@ export default function SurveyPage() {
   const { sessionId, scenario, batchFeatures, setSurveyAnswers, setStage, setBatchFeatures, applyInitialResult } = useSessionStore();
   const [answers, setAnswers] = useState({});
   const [busy, setBusy] = useState(false);
+  const [presetSel, setPresetSel] = useState('');
 
   useEffect(() => {
     if (!sessionId) navigate('/');
@@ -17,6 +18,11 @@ export default function SurveyPage() {
 
   if (!scenario) return null;
   const questions = scenario.survey.questions;
+  const presets = scenario.survey.presets || [];
+  function applyPreset() {
+    const p = presets.find((x) => x.id === presetSel);
+    if (p) setAnswers({ ...p.answers });
+  }
   // 조건부 문항(show_if): 특정 문항 응답에 따라 노출. 예) Q9는 Q5=인터넷/IPTV 포함일 때만
   const isVisible = (q) => {
     const c = q.show_if;
@@ -81,6 +87,22 @@ export default function SurveyPage() {
             <span className="stage-note">※ 실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로, 본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다.</span>
           </div>
 
+          {presets.length > 0 && (
+            <div className="preset-bar">
+              <span className="preset-label">설문 응답 프리셋</span>
+              <span className="preset-selwrap">
+                <select className="preset-select" value={presetSel} onChange={(e) => setPresetSel(e.target.value)}>
+                  <option value="">선택</option>
+                  {presets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <span className="preset-caret">▾</span>
+              </span>
+              <button type="button" className="btn btn-primary preset-apply" disabled={!presetSel} onClick={applyPreset}>
+                선택
+              </button>
+            </div>
+          )}
+
           <QuestionGroup title="고객 상태 정보" subtitle={`${staticQs.length}문항`} questions={staticQs} answers={answers} setAnswers={setAnswers} isLocked={isLocked} />
           <QuestionGroup title="사용 행동·이력·맥락" subtitle={`${behavioralQs.length}문항`} questions={behavioralQs} answers={answers} setAnswers={setAnswers} isLocked={isLocked} />
 
@@ -107,6 +129,22 @@ export default function SurveyPage() {
                        padding: 0.8rem 1.1rem; margin-bottom: 2rem; font-size: 0.95rem; color: #1e3a5f; line-height: 1.5; }
         .stage-note { display: block; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #bfdbfe;
                       font-size: 0.85rem; color: #5b7290; }
+        .preset-bar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 2rem;
+                      padding: 0.8rem 1rem; background: linear-gradient(180deg,#f8fafc,#eef2f7);
+                      border: 1px solid #e2e8f0; border-radius: 14px; }
+        .preset-label { font-weight: 700; font-size: 0.9rem; color: var(--fg); display: inline-flex; align-items: center; gap: 0.35rem; }
+        .preset-label::before { content: '🎭'; font-size: 1rem; }
+        .preset-selwrap { position: relative; flex: 1; min-width: 240px; }
+        .preset-select { width: 100%; appearance: none; -webkit-appearance: none; cursor: pointer;
+                         padding: 0.6rem 2.2rem 0.6rem 0.9rem; border: 1.5px solid #cbd5e1; border-radius: 10px;
+                         font-size: 0.95rem; font-weight: 600; color: var(--fg); background: #fff;
+                         box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: border-color .15s, box-shadow .15s; }
+        .preset-select:hover { border-color: var(--primary); }
+        .preset-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+        .preset-caret { position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);
+                        pointer-events: none; color: var(--muted); font-size: 0.8rem; }
+        .preset-apply { padding: 0.6rem 1.4rem; font-size: 0.92rem; border-radius: 10px; }
+        .preset-apply:disabled { opacity: 0.45; cursor: not-allowed; }
         .progress { display: flex; align-items: center; gap: 1rem; font-weight: 600; }
         .progress .bar { width: 240px; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
         .progress .fill { height: 100%; background: var(--primary); transition: width 0.3s; }
