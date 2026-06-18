@@ -47,7 +47,10 @@ export default function WelcomePage() {
                 disabled={!scn.active || busy}
               >
                 <span className="scn-main">
-                  <span className="scn-name">{scn.name}</span>
+                  <span className="scn-name">
+                    {scn.emoji && <span className="scn-emoji">{scn.emoji}</span>}
+                    {scn.name}
+                  </span>
                   {scn.desc && <span className="scn-desc">{scn.desc}</span>}
                 </span>
                 {scn.active
@@ -85,7 +88,8 @@ export default function WelcomePage() {
           box-shadow: 0 4px 12px rgba(37,99,235,0.12); }
         .scenario-card.disabled { opacity: 0.5; cursor: not-allowed; }
         .scn-main { display: flex; flex-direction: column; gap: 0.3rem; }
-        .scn-name { font-size: clamp(1.2rem, 1.4vw, 1.6rem); font-weight: 700; }
+        .scn-name { font-size: clamp(1.2rem, 1.4vw, 1.6rem); font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .scn-emoji { font-size: 1.25em; }
         .scn-desc { font-size: clamp(0.92rem, 1vw, 1.12rem); color: var(--muted); font-weight: 500; line-height: 1.4; }
         .scn-go { color: var(--primary); font-weight: 700; }
         .scn-soon { font-size: 0.85rem; color: var(--muted); background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 999px; }
