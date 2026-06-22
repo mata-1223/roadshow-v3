@@ -5,6 +5,8 @@ import { useSessionStore } from '../store/sessionStore.js';
 import { SCENARIOS } from '../constants/scenarios.js';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
+import DemoStepper from '../components/DemoStepper.jsx';
+import TopBar from '../components/TopBar.jsx';
 
 export default function WelcomePage() {
   const navigate = useNavigate();
@@ -29,6 +31,8 @@ export default function WelcomePage() {
 
   return (
     <div className="welcome-page">
+      <TopBar />
+      <DemoStepper current={1} />
       <div className="container welcome-grid">
 
         <div className="left-col">
@@ -37,6 +41,15 @@ export default function WelcomePage() {
           <p className="lead">
             고객의 상태 정보와 실시간 행동을 기반으로<br />실시간 Intent를 추론하고, 고객 Context를 생성하여 상황에 맞는 활용 방안을 제안합니다.
           </p>
+          <div className="value-prop">
+            <span className="vp-quote">“고객의 상황과 행동을 이해해, 지금의 의도를 읽고 최적의 Action을 제공한다”</span>
+            <div className="vp-kpis">
+              <span className="vp-kpi">✨ 고객 경험 혁신</span>
+              <span className="vp-kpi">📈 비즈니스 성과 향상</span>
+              <span className="vp-kpi">⚙️ 업무 효율화</span>
+              <span className="vp-kpi">🗄️ Context 자산화</span>
+            </div>
+          </div>
           <h3 className="pick">시나리오를 선택하세요</h3>
           <div className="cards">
             {SCENARIOS.map((scn) => (
@@ -77,15 +90,21 @@ export default function WelcomePage() {
       </div>
 
       <style>{`
-        .welcome-page { min-height: 100vh; display: flex; align-items: center;
+        .welcome-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
           background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); }
         .welcome-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(2rem, 4vw, 5rem); align-items: center;
-          width: 100%; max-width: min(2200px, 94vw); margin: 0 auto; }
+          width: 100%; max-width: min(2200px, 94vw); margin: auto; }
         .right-col { display: flex; flex-direction: column; gap: 1rem; }
-        .badge { display: inline-block; background: #eff6ff; color: #1d4ed8;
-          padding: 0.4rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .badge { display: inline-block; background: var(--kt-red-bg); color: var(--kt-red);
+          padding: 0.4rem 1rem; border-radius: 999px; font-weight: 700; font-size: 0.9rem; margin-bottom: 1.5rem; }
         h1 { font-size: clamp(2.5rem, 3.6vw, 4.2rem); margin-bottom: 1.25rem; }
-        .lead { font-size: clamp(1.25rem, 1.7vw, 1.9rem); color: var(--fg); margin-bottom: 2.5rem; }
+        .lead { font-size: clamp(1.25rem, 1.7vw, 1.9rem); color: var(--fg); margin-bottom: 1.5rem; }
+        .value-prop { margin-bottom: 2.2rem; padding: 1rem 1.25rem; border-radius: 14px;
+          background: #fafbfc; border: 1px solid var(--border); border-left: 3px solid var(--kt-red); }
+        .vp-quote { display: block; font-size: clamp(1.1rem, 1.35vw, 1.5rem); font-weight: 800; color: var(--fg); }
+        .vp-kpis { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+        .vp-kpi { font-size: clamp(0.92rem, 1vw, 1.15rem); font-weight: 700; color: var(--fg);
+          background: #fff; border: 1.5px solid var(--border); border-radius: 999px; padding: 0.3rem 0.9rem; }
         .pick { color: var(--fg); font-size: clamp(1.15rem, 1.3vw, 1.5rem); margin-bottom: 1rem; }
         .cards { display: flex; flex-direction: column; gap: clamp(0.75rem, 1vw, 1.2rem); max-width: min(1040px, 100%); }
         .scenario-card { display: flex; align-items: center; justify-content: space-between;

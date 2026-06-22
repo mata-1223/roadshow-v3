@@ -64,6 +64,41 @@ function AgentBubble({ message }) {
   );
 }
 
+// 🎵 지니뮤직 플레이리스트 카드 목업 (kind: music-card)
+function MusicCard({ playlist, desc }) {
+  return (
+    <div className="gm-card">
+      <div className="gm-art">
+        <span className="gm-note">🎵</span>
+        <span className="gm-eq"><i /><i /><i /><i /></span>
+      </div>
+      <div className="gm-body">
+        <div className="gm-brand">지니뮤직 · 추천 플레이리스트</div>
+        <div className="gm-title">{playlist}</div>
+        {desc && <div className="gm-desc">{desc}</div>}
+        <div className="gm-controls"><span>⏮</span><span className="gm-play">▶</span><span>⏭</span></div>
+      </div>
+    </div>
+  );
+}
+
+// 🏠 기가지니 음성 명령 + 홈IoT 기기 동작 목업 (kind: device-voice)
+function DeviceVoice({ command, devices = [], desc }) {
+  return (
+    <div className="gv-card">
+      <div className="gv-say">
+        <span className="gv-mic">🎙️</span>
+        <span className="gv-cmd">“{command}”</span>
+      </div>
+      <div className="gv-arrow">↓ 기가지니가 집안 환경을 세팅합니다</div>
+      <div className="gv-devices">
+        {devices.map((d, i) => <span key={i} className="gv-dev">{d}</span>)}
+      </div>
+      {desc && <div className="gv-desc">{desc}</div>}
+    </div>
+  );
+}
+
 export default function ActionPanel({ actionsData, topN = [], reasoning = null }) {
   const channels = actionsData?.channels || [];
   const actionsMap = actionsData?.actions || {};
@@ -87,31 +122,54 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null }
             <span className="ac-prob">{(best.probability * 100).toFixed(1)}%</span>
           </div>
 
+          {act.business_value && (
+            <div className="ac-biz">
+              <span className="ac-biz-head">💼 비즈니스 임팩트</span>
+              <span className="ac-biz-tags">
+                <span className="ac-biz-tag">{act.business_value.tag}</span>
+                {act.business_value.kpi && <span className="ac-biz-kpi">{act.business_value.kpi}</span>}
+              </span>
+              {act.business_value.note && <span className="ac-biz-note">{act.business_value.note}</span>}
+            </div>
+          )}
+
           <div className="ac-channels">
             {channels.map((c) => {
               const body = act[c.id];
               if (body == null) return null;
               const icon = c.icon || FALLBACK_ICON[c.id] || '•';
+              // kind 기반 범용 렌더러 — 신규 채널은 데이터만 추가하면 동작 (시나리오 특화 코드 지양).
+              // kind 미지정(CS·결합 등 기존 채널)은 채널 id로 fallback.
+              const kind = c.kind
+                || (c.id === 'push' ? 'phone-push'
+                  : c.id === 'agent' ? 'chat-bubble'
+                  : c.id === 'call_center' ? 'agent-console' : null);
               return (
-                <div key={c.id} className={`ac-ch ch-${c.id}`}>
+                <div key={c.id} className={`ac-ch ch-${c.id} kind-${kind || 'text'}`}>
                   <div className="ac-ch-head">
                     <span className="ac-ch-icon">{icon}</span>
                     <span className="ac-ch-name">{c.name}</span>
                   </div>
-                  {c.id === 'push' ? (
+                  {kind === 'phone-push' ? (
                     <>
                       {act.service && (
                         <div className="ac-service"><span className="ac-service-tag">추천 서비스</span>{act.service}</div>
                       )}
                       <PhonePush message={body} />
                     </>
-                  ) : c.id === 'agent' ? (
+                  ) : kind === 'chat-bubble' ? (
                     <AgentBubble message={body} />
-                  ) : typeof body === 'object' ? (
+                  ) : kind === 'agent-console' ? (
                     <AgentConsole
                       situation={(reasoning && reasoning.situation_text) || body.situation}
                       guidance={body.guidance}
                     />
+                  ) : kind === 'music-card' ? (
+                    <MusicCard playlist={body.playlist} desc={body.desc} />
+                  ) : kind === 'device-voice' ? (
+                    <DeviceVoice command={body.command} devices={body.devices} desc={body.desc} />
+                  ) : typeof body === 'object' ? (
+                    <AgentConsole situation={body.situation} guidance={body.guidance} />
                   ) : (
                     <div className="ac-msg">{body}</div>
                   )}
@@ -133,12 +191,26 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null }
         .ac-iname { font-weight: 700; font-size: 1.1rem; }
         .ac-iid { font-size: 0.75rem; color: var(--muted); }
         .ac-prob { margin-left: auto; font-weight: 800; color: var(--primary); }
+        /* 비즈니스 임팩트 배너 */
+        .ac-biz { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.7rem; margin-bottom: 1rem;
+                  padding: 0.7rem 0.9rem; border-radius: 12px; background: #fafbfc;
+                  border: 1px solid var(--border); border-left: 3px solid var(--kt-red); }
+        .ac-biz-head { font-size: 0.82rem; font-weight: 800; color: var(--kt-red); }
+        .ac-biz-tags { display: inline-flex; gap: 0.4rem; }
+        .ac-biz-tag { font-size: 0.8rem; font-weight: 800; color: #fff; background: var(--kt-red);
+                      padding: 0.15rem 0.6rem; border-radius: 999px; }
+        .ac-biz-kpi { font-size: 0.8rem; font-weight: 800; color: #1d4ed8; background: #dbeafe;
+                      padding: 0.15rem 0.6rem; border-radius: 999px; }
+        .ac-biz-note { flex-basis: 100%; font-size: 0.86rem; color: #334155; line-height: 1.4; }
+
         .ac-channels { display: flex; flex-direction: column; gap: 0.9rem; }
         .ac-ch { border: 2px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; background: white;
                  border-left: 5px solid var(--border); }
         .ac-ch.ch-push        { border-left-color: #f59e0b; }
         .ac-ch.ch-call_center { border-left-color: #475569; }
         .ac-ch.ch-agent       { border-left-color: var(--primary); }
+        .ac-ch.ch-genie_music { border-left-color: #e11d48; }
+        .ac-ch.ch-gigagenie   { border-left-color: #7c3aed; }
         .ac-ch-head { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem; }
         .ac-ch-icon { font-size: 1.1rem; }
         .ac-ch-name { font-weight: 700; font-size: 0.95rem; }
@@ -227,6 +299,39 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null }
         .cc-row + .cc-row { margin-top: 0.35rem; }
         .cc-tag { font-size: 0.68rem; font-weight: 700; color: #475569; background: #f1f5f9;
                   padding: 0.1rem 0.4rem; border-radius: 5px; text-align: center; }
+
+        /* 🎵 지니뮤직 플레이리스트 카드 */
+        .gm-card { display: flex; gap: 0.8rem; align-items: center; margin-top: 0.3rem;
+                   background: linear-gradient(135deg,#1e1b2e,#3b1d3a); border-radius: 14px; padding: 0.7rem 0.8rem; }
+        .gm-art { position: relative; width: 58px; height: 58px; border-radius: 10px; flex: none;
+                  background: linear-gradient(135deg,#e11d48,#9333ea); display: flex; align-items: center; justify-content: center; }
+        .gm-note { font-size: 24px; }
+        .gm-eq { position: absolute; bottom: 6px; right: 6px; display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+        .gm-eq i { width: 3px; background: rgba(255,255,255,.85); border-radius: 2px; animation: gm-eq 0.9s infinite ease-in-out; }
+        .gm-eq i:nth-child(1){ height:6px; animation-delay:0s; }
+        .gm-eq i:nth-child(2){ height:12px; animation-delay:.2s; }
+        .gm-eq i:nth-child(3){ height:8px; animation-delay:.4s; }
+        .gm-eq i:nth-child(4){ height:11px; animation-delay:.1s; }
+        @keyframes gm-eq { 0%,100%{ transform: scaleY(.4);} 50%{ transform: scaleY(1);} }
+        .gm-body { flex: 1; min-width: 0; }
+        .gm-brand { font-size: 0.7rem; font-weight: 700; color: #f9a8d4; letter-spacing: .02em; }
+        .gm-title { font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0.1rem 0; }
+        .gm-desc { font-size: 0.8rem; color: #cbd5e1; line-height: 1.4; }
+        .gm-controls { display: flex; align-items: center; gap: 0.7rem; margin-top: 0.45rem; color: #e2e8f0; font-size: 0.85rem; }
+        .gm-play { width: 26px; height: 26px; border-radius: 50%; background: #fff; color: #1e1b2e;
+                   display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+
+        /* 🏠 기가지니 음성 명령 + 홈IoT */
+        .gv-card { margin-top: 0.3rem; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 14px; padding: 0.8rem 0.9rem; }
+        .gv-say { display: flex; align-items: center; gap: 0.5rem; }
+        .gv-mic { width: 30px; height: 30px; border-radius: 50%; flex: none; background: #7c3aed; color: #fff;
+                  display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; }
+        .gv-cmd { font-size: 1.02rem; font-weight: 800; color: #5b21b6; }
+        .gv-arrow { font-size: 0.74rem; color: #7c3aed; font-weight: 700; margin: 0.5rem 0 0.4rem; }
+        .gv-devices { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .gv-dev { font-size: 0.85rem; font-weight: 700; color: #4c1d95; background: #fff; border: 1px solid #ddd6fe;
+                  border-radius: 999px; padding: 0.28rem 0.7rem; box-shadow: 0 1px 2px rgba(124,58,237,.1); }
+        .gv-desc { font-size: 0.82rem; color: #475569; line-height: 1.45; margin-top: 0.5rem; }
       `}</style>
     </div>
   );

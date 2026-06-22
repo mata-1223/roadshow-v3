@@ -4,6 +4,9 @@ import { submitSurvey } from '../api/http.js';
 import { useSessionStore } from '../store/sessionStore.js';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import FeatureVectorPanel from '../components/FeatureVectorPanel.jsx';
+import AnalysisOverlay from '../components/AnalysisOverlay.jsx';
+import DemoStepper from '../components/DemoStepper.jsx';
+import TopBar from '../components/TopBar.jsx';
 
 export default function SurveyPage() {
   const navigate = useNavigate();
@@ -11,6 +14,8 @@ export default function SurveyPage() {
   const [answers, setAnswers] = useState({});
   const [busy, setBusy] = useState(false);
   const [presetSel, setPresetSel] = useState('');
+  const [analysis, setAnalysis] = useState(null); // 제출 후 분석 서사 오버레이 데이터
+  const [topStep, setTopStep] = useState(2);      // 상단 스텝퍼 현재 단계 (오버레이가 3·4로 진행)
 
   useEffect(() => {
     if (!sessionId) navigate('/');
@@ -62,7 +67,8 @@ export default function SurveyPage() {
         stage:             res.stage,
         computed_at:       new Date().toISOString(),
       });
-      navigate('/demo');
+      // 즉시 이동하지 않고 분석 서사(적재→파생분석→추론)를 먼저 연출
+      setAnalysis({ answers: effective, result: res });
     } catch (e) {
       alert(`설문 제출 실패: ${e.message}`);
       setBusy(false);
@@ -71,6 +77,17 @@ export default function SurveyPage() {
 
   return (
     <div className="survey-page">
+      {analysis && (
+        <AnalysisOverlay
+          survey={scenario.survey}
+          answers={analysis.answers}
+          result={analysis.result}
+          onStep={setTopStep}
+          onDone={() => navigate('/demo')}
+        />
+      )}
+      <TopBar />
+      <DemoStepper current={analysis ? topStep : 2} />
       <div className="container survey-grid">
 
         <div className="left-col">
@@ -84,7 +101,7 @@ export default function SurveyPage() {
 
           <div className="stage-guide">
             🧩 고객의 <b>상태 정보</b>를 입력하는 단계입니다. 이 응답만으로 먼저 <b>Base Intent</b>(행동 전 추론)가 만들어집니다.
-            <span className="stage-note">※ 실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로, 본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다.</span>
+            <span className="stage-note">※ 실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로, 본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다. 입력 데이터는 시연용 임시 DB에 적재되며, <span className="del-emph">시연 종료 후 전부 삭제</span>됩니다.</span>
           </div>
 
           {presets.length > 0 && (
@@ -129,6 +146,7 @@ export default function SurveyPage() {
                        padding: 0.8rem 1.1rem; margin-bottom: 2rem; font-size: 0.95rem; color: #1e3a5f; line-height: 1.5; }
         .stage-note { display: block; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #bfdbfe;
                       font-size: 0.85rem; color: #5b7290; }
+        .del-emph { color: var(--kt-red); font-weight: 600; }
         .preset-bar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 2rem;
                       padding: 0.8rem 1rem; background: linear-gradient(180deg,#f8fafc,#eef2f7);
                       border: 1px solid #e2e8f0; border-radius: 14px; }
