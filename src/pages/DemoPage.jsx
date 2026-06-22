@@ -9,6 +9,7 @@ import BehaviorPanel from '../components/BehaviorPanel.jsx';
 import VectorSpace from '../components/VectorSpace.jsx';
 import BusinessImpactBanner from '../components/BusinessImpactBanner.jsx';
 import DemoStepper from '../components/DemoStepper.jsx';
+import { bundleProfile as buildBundleProfile } from '../utils/bundleSim.js';
 import TopBar from '../components/TopBar.jsx';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
@@ -18,7 +19,7 @@ import { SCENARIOS } from '../constants/scenarios.js';
 export default function DemoPage() {
   const navigate = useNavigate();
   const {
-    sessionId, scenarioId, scenario, surveyAnswers,
+    sessionId, scenarioId, scenario, surveyAnswers, batchFeatures,
     topN, others,
     intentPositions, l1Zones,
     customerPosition, baselinePosition, customerPath,
@@ -80,6 +81,10 @@ export default function DemoPage() {
   const step1Block = behaviorsData.step1;
   const step2Block = behaviorsData.step2;
   const allIntents = scenario.intents?.intents || [];
+  // 결합 시나리오: 고객 설문 feature값 기반 프로파일 (의도별 시뮬레이션은 활용 예시에서 계산)
+  const bundleProfile = scenarioId === 'bundle-v3'
+    ? buildBundleProfile(batchFeatures, scenario.survey, surveyAnswers)
+    : null;
 
   function handleSelect(b) {
     if (ackPending || !wsReady || mode === 'ended') return;
@@ -216,7 +221,7 @@ export default function DemoPage() {
               : <>{allIntents.length}개 Intent 중 상위 5개 · <b>Base 대비</b> 변화가 ▲▼로 표시됩니다 · 각 행의 <b>[활용 예시]</b>에서 상세를 확인하세요</>}
           </p>
           <BusinessImpactBanner topN={topN} actionsData={scenario.actions} reflected={reflectedCount > 0} />
-          <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} />
+          <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} bundleProfile={bundleProfile} />
 
           {others && (
             <div className="others-row">
