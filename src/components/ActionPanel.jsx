@@ -194,7 +194,47 @@ function DeviceVoice({ command, devices = [], desc }) {
   );
 }
 
-export default function ActionPanel({ actionsData, topN = [], reasoning = null, bundleProfile = null }) {
+// 🔗 옴니채널 컨텍스트 연속성 — 중앙 고객 Context 자산 DB가 모든 접점에 동일하게 공급
+function OmniChannel({ intent }) {
+  const channels = [
+    { ic: '📱', label: '마이케이티 앱' },
+    { ic: '📞', label: '고객센터 상담사' },
+    { ic: '🏪', label: '오프라인 방문' },
+  ];
+  return (
+    <div className="cscard omni">
+      <div className="cscard-head"><span>🔗 옴니채널 컨텍스트 연속성</span><span className="cscard-tag omni">하나의 Context · 모든 접점</span></div>
+      <div className="cscard-why">‘{intent}’ 의도가 <b>고객 Context 자산 DB</b>에 저장되어 모든 접점에서 동일하게 활용됩니다</div>
+      <div className="omni-hub">
+        <div className="omni-db">
+          <span className="omni-db-ic">🗄️</span>
+          <div className="omni-db-tx"><b>고객 Context 자산 DB</b><small>의도 · 상태 · 행동</small></div>
+        </div>
+        <div className="omni-conn"><span>모든 접점에서 동일 Context 활용</span></div>
+        <div className="omni-chs">
+          {channels.map((c) => (
+            <div key={c.label} className="omni-ch"><span className="omni-ic">{c.ic}</span><b>{c.label}</b></div>
+          ))}
+        </div>
+      </div>
+      <div className="cscard-note">어느 채널이든 같은 고객 Context로 응대 — 채널 종속이 아닌 고객 종속</div>
+    </div>
+  );
+}
+
+// 📞 상담 전 셀프 해결 안내 — 상담 전 AI 사전 진단으로 셀프 해결 유도
+function CallDeflection({ intent, selfText }) {
+  return (
+    <div className="cscard deflect">
+      <div className="cscard-head"><span>📞 상담 전 셀프 해결 안내</span><span className="cscard-tag deflect">상담효율 ↑ · 비용 ↓</span></div>
+      <div className="deflect-bubble"><span className="deflect-ava">🤖</span><span>혹시 ‘{intent}’ 때문에 연락하려 하셨나요?</span></div>
+      {selfText && <div className="deflect-self"><span className="deflect-self-tag">셀프 해결</span>{selfText}</div>}
+      <div className="cscard-note">✅ 셀프로 해결되면 상담 연결 불필요 — 상담 인입·대기시간 감소</div>
+    </div>
+  );
+}
+
+export default function ActionPanel({ actionsData, topN = [], reasoning = null, bundleProfile = null, scenarioId = null }) {
   const channels = actionsData?.channels || [];
   const actionsMap = actionsData?.actions || {};
 
@@ -202,6 +242,11 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
   const act = best ? actionsMap[best.intent_id] : null;
   // 결합 시나리오: 의도에 맞는 카드 — 신규/추가는 시뮬레이터, 재약정/장기는 특별혜택
   const card = bundleProfile ? bundleCardForIntent(bundleProfile, intentName(topN[0])) : null;
+  // CS 시나리오: 옴니채널 컨텍스트 연속성 + 셀프 해결 안내 (의도 기반)
+  const isCS = scenarioId === 'cs-myk-v3';
+  const csIntent = intentName(topN[0]);
+  const selfText = act?.agent || act?.push || null;
+  const deflectable = isCS && !/(해지|이탈|상담\s*연결)/.test(csIntent || '');
 
   return (
     <div className="action-panel">
@@ -210,6 +255,8 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
 
       {card?.kind === 'sim' && <BundleSim sim={card} />}
       {card?.kind === 'loyalty' && <BundleLoyalty card={card} />}
+      {isCS && <OmniChannel intent={csIntent} />}
+      {deflectable && <CallDeflection intent={csIntent} selfText={selfText} />}
 
       {!act ? (
         <div className="ac-empty">상위 Intent에 매칭된 활용 예시가 없습니다. 행동을 선택하면 갱신됩니다.</div>
@@ -341,6 +388,46 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
                   background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 10px;
                   font-size: 0.92rem; font-weight: 700; color: #1f2937; }
         .bloy-ic { font-size: 1.15rem; flex: none; }
+
+        /* CS — 옴니채널 / 셀프 해결 안내 카드 */
+        .cscard { margin-bottom: 1rem; border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; background: #fff; }
+        .cscard-head { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.9rem; font-weight: 800; }
+        .cscard.omni .cscard-head { background: #eef2ff; color: #3730a3; }
+        .cscard.deflect .cscard-head { background: #ecfeff; color: #155e75; }
+        .cscard-tag { font-size: 0.72rem; font-weight: 800; color: #fff; padding: 0.12rem 0.55rem; border-radius: 999px; }
+        .cscard-tag.omni { background: #4f46e5; }
+        .cscard-tag.deflect { background: #0891b2; }
+        .cscard-why { padding: 0.7rem 0.9rem 0; font-size: 0.9rem; color: #334155; }
+        .cscard-why b { color: #0f172a; font-weight: 800; }
+        .cscard-note { padding: 0.6rem 0.9rem 0.9rem; font-size: 0.78rem; color: var(--muted); line-height: 1.45; }
+        /* 옴니채널 허브 — 중앙 Context DB → 3접점 동시 공급 */
+        .omni-hub { padding: 0.8rem 0.9rem 0.2rem; }
+        .omni-db { display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+                   max-width: 300px; margin: 0 auto; padding: 0.7rem 1rem;
+                   background: linear-gradient(120deg,#eef2ff,#e0e7ff); border: 1.5px solid #c7d2fe; border-radius: 12px; }
+        .omni-db-ic { font-size: 1.5rem; flex: none; }
+        .omni-db-tx { display: flex; flex-direction: column; line-height: 1.25; }
+        .omni-db-tx b { font-size: 0.95rem; font-weight: 800; color: #3730a3; }
+        .omni-db-tx small { font-size: 0.74rem; color: #6366f1; }
+        .omni-conn { position: relative; text-align: center; margin: 0.5rem 0; }
+        .omni-conn::before { content: ''; position: absolute; left: 50%; top: -0.35rem; width: 2px; height: 0.5rem;
+                             background: #a5b4fc; transform: translateX(-50%); }
+        .omni-conn span { font-size: 0.74rem; font-weight: 700; color: #4f46e5; }
+        .omni-chs { display: flex; gap: 0.4rem; }
+        .omni-ch { flex: 1; min-width: 0; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0;
+                   border-radius: 12px; padding: 0.6rem 0.4rem; display: flex; flex-direction: column; gap: 0.2rem;
+                   border-top: 2px solid #a5b4fc; }
+        .omni-ic { font-size: 1.4rem; }
+        .omni-ch b { font-size: 0.82rem; color: #1e293b; }
+        /* 셀프 해결 안내 */
+        .deflect-bubble { display: flex; align-items: center; gap: 0.5rem; margin: 0.7rem 0.9rem 0;
+                          background: #cffafe; border-radius: 12px 12px 12px 4px; padding: 0.6rem 0.8rem;
+                          font-size: 0.95rem; font-weight: 700; color: #155e75; }
+        .deflect-ava { font-size: 1.2rem; flex: none; }
+        .deflect-self { display: flex; align-items: baseline; gap: 0.5rem; margin: 0.6rem 0.9rem 0;
+                        font-size: 0.9rem; color: #1e293b; }
+        .deflect-self-tag { font-size: 0.7rem; font-weight: 800; color: #0891b2; background: #ecfeff;
+                            border: 1px solid #a5f3fc; border-radius: 5px; padding: 0.12rem 0.45rem; flex: none; }
         .bsim-perks { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.7rem 0.9rem 0.9rem; }
         .bsim-perks span { font-size: 0.78rem; font-weight: 700; color: var(--kt-red-dark);
                            background: var(--kt-red-bg); border: 1px solid var(--kt-red-border);

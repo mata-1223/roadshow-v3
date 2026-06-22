@@ -221,7 +221,7 @@ export default function DemoPage() {
               : <>{allIntents.length}개 Intent 중 상위 5개 · <b>Base 대비</b> 변화가 ▲▼로 표시됩니다 · 각 행의 <b>[활용 예시]</b>에서 상세를 확인하세요</>}
           </p>
           <BusinessImpactBanner topN={topN} actionsData={scenario.actions} reflected={reflectedCount > 0} />
-          <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} bundleProfile={bundleProfile} />
+          <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} bundleProfile={bundleProfile} scenarioId={scenarioId} />
 
           {others && (
             <div className="others-row">
