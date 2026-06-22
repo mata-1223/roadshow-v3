@@ -57,7 +57,7 @@ const deltaOf = (t) => (t.delta_probability ?? t.delta_score);
 
 // 활용 예시 클릭 팝업 — 기존 ActionPanel 화면을 해당 Intent 기준으로 화면 중앙에 크게 표출.
 // 대형 모달이라 컬럼 overflow에 잘리지 않도록 position:fixed. 버튼 클릭으로 열고 배경 클릭으로 닫음.
-function ActionExample({ actionsData, intent }) {
+function ActionExample({ actionsData, intent, bundleProfile }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="ax-wrap">
@@ -67,7 +67,7 @@ function ActionExample({ actionsData, intent }) {
           <div className="ax-backdrop" onClick={() => setOpen(false)} />
           <div className="ax-modal" role="dialog">
             <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
-            <ActionPanel actionsData={actionsData} topN={[intent]} reasoning={intent.reasoning} />
+            <ActionPanel actionsData={actionsData} topN={[intent]} reasoning={intent.reasoning} bundleProfile={bundleProfile} />
           </div>
         </>
       )}
@@ -75,7 +75,7 @@ function ActionExample({ actionsData, intent }) {
   );
 }
 
-export default function IntentChart({ topN, actionsData, l1Zones }) {
+export default function IntentChart({ topN, actionsData, l1Zones, bundleProfile = null }) {
   if (!topN || topN.length === 0) {
     return <div className="empty">결과 없음</div>;
   }
@@ -123,7 +123,7 @@ export default function IntentChart({ topN, actionsData, l1Zones }) {
               </div>
             </div>
             {actionsMap[t.intent_id] && (
-              <ActionExample actionsData={actionsData} intent={t} />
+              <ActionExample actionsData={actionsData} intent={t} bundleProfile={bundleProfile} />
             )}
             <div className="score-block">
               <div className="score">{(p * 100).toFixed(1)}%</div>

@@ -2,8 +2,103 @@
 // 현재 분포 상위 Intent 중 Action이 정의된 "가장 매칭되는" Intent를 골라,
 // 앱 Push(휴대폰 푸시 알림) / 고객센터 상담사 컨텍스트 / AI Agent 3채널을 동시에 표출한다.
 
+import { useEffect, useState } from 'react';
 import ktAppIcon from '../assets/kt-app-icon.png';
 import { intentName } from '../utils/intent.js';
+import { wonText, bundleCardForIntent } from '../utils/bundleSim.js';
+
+// 절감액 카운트업 (마운트 시 0→target) — 극적 연출
+function useCountUp(target, ms = 900) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!target) { setV(0); return undefined; }
+    const start = performance.now();
+    let raf;
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / ms);
+      setV(Math.round(target * (1 - Math.pow(1 - p, 3)))); // easeOutCubic
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return v;
+}
+
+// 🧮 결합 시뮬레이터 카드 — 총액결합할인 중심(내 모바일 요금에서 할인) + 감지된 '왜 나에게'.
+function BundleSim({ sim }) {
+  const discount = useCountUp(sim.discount || 0);
+  return (
+    <div className="bsim">
+      <div className="bsim-head">
+        <span>🧮 결합 시뮬레이터</span>
+        <span className="bsim-tag">고객님 맞춤</span>
+      </div>
+
+      <div className="bsim-why"><span className="bsim-why-ic">💡</span>{sim.why}</div>
+
+      <div className="bsim-calc">
+        {sim.cost != null && (
+          <div className="bsim-line">
+            <span>{sim.services.join(' + ')} <em>(3년 약정)</em></span>
+            <b>월 {wonText(sim.cost)}</b>
+          </div>
+        )}
+        {sim.discount > 0 && (
+          <div className="bsim-line disc">
+            <span>모바일 결합할인 <em>({sim.mobileLabel || '요금대'} 기준)</em></span>
+            <b>−{wonText(sim.discount)}/월</b>
+          </div>
+        )}
+        {sim.net != null && sim.discount > 0 && (
+          <div className="bsim-line net">
+            <span>실질 부담</span>
+            <b>월 {wonText(sim.net)}</b>
+          </div>
+        )}
+      </div>
+
+      {sim.contentOnly ? (
+        <div className="bsim-save value">지니TV 콘텐츠 혜택 포함 · 월 {wonText(sim.cost)} 추가</div>
+      ) : (
+        <div className="bsim-save">
+          내 모바일 요금에서 매월 <b>{wonText(discount)}</b> 할인
+          <span className="bsim-yr">· 연 {wonText(sim.yearSave)} 절감</span>
+        </div>
+      )}
+
+      <div className="bsim-perks">{sim.perks.map((p) => <span key={p}>{p}</span>)}</div>
+      <div className="bsim-note">※ 3년 약정 기준 · 설치비 별도 · 프로모션 제외</div>
+    </div>
+  );
+}
+
+// 🎁 장기·재약정 고객 특별 혜택 카드 (시뮬레이터 대신)
+function BundleLoyalty({ card }) {
+  return (
+    <div className="bsim bloy">
+      <div className="bsim-head">
+        <span>🎁 {card.title}</span>
+        <span className="bsim-tag">{card.tag}</span>
+      </div>
+      <div className="bsim-why"><span className="bsim-why-ic">💡</span>{card.why}</div>
+      {card.status && (
+        <div className="bloy-status">
+          {card.status.map((s) => (
+            <div key={s.k} className="bloy-srow"><span>{s.k}</span><b>{s.v}</b></div>
+          ))}
+        </div>
+      )}
+      {card.status && <div className="bloy-sub">연장 시 받을 수 있는 혜택</div>}
+      <div className="bloy-list">
+        {card.benefits.map((b) => (
+          <div key={b.t} className="bloy-b"><span className="bloy-ic">{b.ic}</span><span>{b.t}</span></div>
+        ))}
+      </div>
+      <div className="bsim-note">{card.note}</div>
+    </div>
+  );
+}
 
 const FALLBACK_ICON = { push: '📱', call_center: '📞', agent: '🤖' };
 
@@ -99,17 +194,22 @@ function DeviceVoice({ command, devices = [], desc }) {
   );
 }
 
-export default function ActionPanel({ actionsData, topN = [], reasoning = null }) {
+export default function ActionPanel({ actionsData, topN = [], reasoning = null, bundleProfile = null }) {
   const channels = actionsData?.channels || [];
   const actionsMap = actionsData?.actions || {};
 
   const best = topN.find((t) => actionsMap[t.intent_id]);
   const act = best ? actionsMap[best.intent_id] : null;
+  // 결합 시나리오: 의도에 맞는 카드 — 신규/추가는 시뮬레이터, 재약정/장기는 특별혜택
+  const card = bundleProfile ? bundleCardForIntent(bundleProfile, intentName(topN[0])) : null;
 
   return (
     <div className="action-panel">
       <h2>활용 예시</h2>
       <p className="caption">해당 Intent의 채널별 활용 예시</p>
+
+      {card?.kind === 'sim' && <BundleSim sim={card} />}
+      {card?.kind === 'loyalty' && <BundleLoyalty card={card} />}
 
       {!act ? (
         <div className="ac-empty">상위 Intent에 매칭된 활용 예시가 없습니다. 행동을 선택하면 갱신됩니다.</div>
@@ -202,6 +302,49 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null }
         .ac-biz-kpi { font-size: 0.8rem; font-weight: 800; color: #1d4ed8; background: #dbeafe;
                       padding: 0.15rem 0.6rem; border-radius: 999px; }
         .ac-biz-note { flex-basis: 100%; font-size: 0.86rem; color: #334155; line-height: 1.4; }
+
+        /* 🧮 결합 시뮬레이터 카드 */
+        .bsim { margin-bottom: 1rem; border: 1.5px solid var(--kt-red-border); border-radius: 16px; overflow: hidden;
+                background: #fff; box-shadow: 0 6px 20px rgba(230,0,45,.08); }
+        .bsim-head { display: flex; align-items: center; justify-content: space-between;
+                     padding: 0.6rem 0.9rem; background: var(--kt-red-bg); font-weight: 800; color: var(--kt-red-dark); }
+        .bsim-tag { font-size: 0.72rem; font-weight: 800; color: #fff; background: var(--kt-red);
+                    padding: 0.12rem 0.55rem; border-radius: 999px; }
+        .bsim-why { display: flex; align-items: center; gap: 0.45rem; margin: 0.7rem 0.9rem 0;
+                    padding: 0.5rem 0.7rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+                    font-size: 0.86rem; font-weight: 700; color: #1e3a5f; }
+        .bsim-why-ic { font-size: 1rem; }
+        .bsim-calc { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.7rem 0.9rem; }
+        .bsim-line { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem;
+                     font-size: 0.92rem; color: #334155; }
+        .bsim-line em { font-style: normal; color: var(--muted); font-size: 0.78rem; font-weight: 600; }
+        .bsim-line b { font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .bsim-line.disc b { color: var(--kt-red); }
+        .bsim-line.net { border-top: 1px dashed var(--border); padding-top: 0.4rem; }
+        .bsim-line.net b { font-size: 1.15rem; }
+        .bsim-save { margin: 0 0.9rem; padding: 0.8rem 0.9rem; border-radius: 12px; text-align: center;
+                     background: #ecfdf5; border: 1px solid #bbf7d0; color: #065f46; font-size: 1rem; font-weight: 800; }
+        .bsim-save b { font-size: 1.7rem; font-weight: 900; color: #059669; font-variant-numeric: tabular-nums; }
+        .bsim-save.value { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; font-size: 0.95rem; }
+        .bsim-yr { display: block; font-size: 0.85rem; font-weight: 700; color: #047857; margin-top: 0.15rem; }
+        .bsim-note { padding: 0 0.9rem 0.9rem; font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+        /* 장기·재약정 특별 혜택 카드 */
+        .bsim.bloy .bsim-head { background: #fdf2f8; color: #9d174d; }
+        .bsim.bloy .bsim-tag { background: #db2777; }
+        .bloy-status { margin: 0.7rem 0.9rem 0; padding: 0.6rem 0.8rem; background: #f8fafc;
+                       border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; gap: 0.35rem; }
+        .bloy-srow { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem; color: #475569; }
+        .bloy-srow b { font-weight: 800; color: #0f172a; }
+        .bloy-sub { padding: 0.7rem 0.9rem 0; font-size: 0.82rem; font-weight: 800; color: #9d174d; }
+        .bloy-list { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.6rem 0.9rem 0.7rem; }
+        .bloy-b { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.75rem;
+                  background: #fdf2f8; border: 1px solid #fbcfe8; border-radius: 10px;
+                  font-size: 0.92rem; font-weight: 700; color: #1f2937; }
+        .bloy-ic { font-size: 1.15rem; flex: none; }
+        .bsim-perks { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.7rem 0.9rem 0.9rem; }
+        .bsim-perks span { font-size: 0.78rem; font-weight: 700; color: var(--kt-red-dark);
+                           background: var(--kt-red-bg); border: 1px solid var(--kt-red-border);
+                           border-radius: 999px; padding: 0.2rem 0.6rem; }
 
         .ac-channels { display: flex; flex-direction: column; gap: 0.9rem; }
         .ac-ch { border: 2px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; background: white;
