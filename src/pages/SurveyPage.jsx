@@ -16,6 +16,7 @@ export default function SurveyPage() {
   const [presetSel, setPresetSel] = useState('');
   const [analysis, setAnalysis] = useState(null); // 제출 후 분석 서사 오버레이 데이터
   const [topStep, setTopStep] = useState(2);      // 상단 스텝퍼 현재 단계 (오버레이가 3·4로 진행)
+  const [showIntro, setShowIntro] = useState(true); // 진입 시 데이터 이용 안내 팝업
 
   useEffect(() => {
     if (!sessionId) navigate('/');
@@ -77,6 +78,22 @@ export default function SurveyPage() {
 
   return (
     <div className="survey-page">
+      {showIntro && (
+        <div className="intro-bd" onClick={() => setShowIntro(false)}>
+          <div className="intro-modal" role="dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="intro-ic">🔒</div>
+            <h3 className="intro-title">시연 데이터 이용 안내</h3>
+            <p className="intro-p">
+              실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로,
+              본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다.
+            </p>
+            <p className="intro-p">
+              입력 데이터는 시연용 임시 DB에 적재되며, <span className="del-emph">시연 종료 후 전부 삭제</span>됩니다.
+            </p>
+            <button className="btn btn-primary intro-ok" onClick={() => setShowIntro(false)}>확인하고 시작</button>
+          </div>
+        </div>
+      )}
       {analysis && (
         <AnalysisOverlay
           survey={scenario.survey}
@@ -147,6 +164,16 @@ export default function SurveyPage() {
         .stage-note { display: block; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #bfdbfe;
                       font-size: 0.85rem; color: #5b7290; }
         .del-emph { color: var(--kt-red); font-weight: 600; }
+        /* 진입 시 데이터 이용 안내 팝업 */
+        .intro-bd { position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 500;
+                    display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .intro-modal { background: #fff; border-radius: 20px; padding: 2.2rem 2.6rem 1.8rem; width: min(760px, 94vw);
+                       text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+        .intro-ic { font-size: 2.4rem; margin-bottom: 0.4rem; }
+        .intro-title { font-size: 1.5rem; color: var(--fg); margin: 0 0 1rem; }
+        .intro-p { font-size: 1rem; color: #334155; line-height: 1.6; margin: 0 0 0.7rem; text-align: left; }
+        .intro-p b { color: #0f172a; font-weight: 800; }
+        .intro-ok { margin-top: 1rem; font-size: 1.1rem; padding: 0.8rem 2.2rem; min-width: 220px; }
         .preset-bar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 2rem;
                       padding: 0.8rem 1rem; background: linear-gradient(180deg,#f8fafc,#eef2f7);
                       border: 1px solid #e2e8f0; border-radius: 14px; }

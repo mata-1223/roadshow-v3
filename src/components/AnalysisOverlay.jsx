@@ -167,7 +167,15 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
 
         <div className="ao-foot">
           {step < 3 ? (
-            <span className="ao-analyzing"><span className="ao-spin" /> 분석 중…</span>
+            <span className="ao-analyzing">
+              <span className="ao-spin" />
+              {[
+                `고객 응답 ${answeredRows.length}건을 데이터 테이블에 적재하고 있어요`,
+                '응답을 조합해 파생 변수(Index·Score)를 계산하고 있어요',
+                '계산된 특성으로 고객의 Base Intent를 추론하고 있어요',
+              ][Math.min(step, 2)]}
+              <span className="ao-dots"><span /><span /><span /></span>
+            </span>
           ) : (
             <button className="btn btn-primary ao-cta" onClick={onDone}>결과 보기 →</button>
           )}
@@ -252,8 +260,15 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
         .ao-int-name { font-weight: 700; flex: 1; }
         .ao-int-prob { font-weight: 800; color: var(--primary); }
         .ao-foot { display: flex; justify-content: center; margin-top: 1.3rem; }
-        .ao-analyzing { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); font-weight: 600; }
+        .ao-analyzing { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); font-weight: 700; }
         .ao-analyzing small { color: #94a3b8; font-weight: 500; }
+        .ao-dots { display: inline-flex; gap: 3px; margin-left: 1px; }
+        .ao-dots span { width: 4px; height: 4px; border-radius: 50%; background: var(--primary);
+                        animation: ao-dot 1.2s infinite ease-in-out; }
+        .ao-dots span:nth-child(2) { animation-delay: .2s; }
+        .ao-dots span:nth-child(3) { animation-delay: .4s; }
+        @keyframes ao-dot { 0%,80%,100% { opacity: .3; transform: translateY(0); }
+                            40% { opacity: 1; transform: translateY(-2px); } }
         .ao-spin { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: var(--primary);
                    border-radius: 50%; animation: ao-rot .7s linear infinite; }
         @keyframes ao-rot { to { transform: rotate(360deg); } }
