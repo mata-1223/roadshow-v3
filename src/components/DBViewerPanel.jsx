@@ -102,8 +102,17 @@ export default function DBViewerPanel({
         )}
       </div>
 
+      <p className="db-note">
+        ※ 설문 응답·행동 선택 데이터는 <b>실제 고객 데이터를 대체하기 위한 시연용</b>으로 임시 DB에 적재됩니다.
+        <span className="db-note-del">시연 종료 후 전부 삭제됩니다.</span>
+      </p>
+
       <style>{`
         .db-panel { background: white; border: 2px solid var(--border); border-radius: 16px; padding: 1.25rem; }
+        .db-note { margin: 0.7rem 0 0; font-size: 0.76rem; color: var(--muted); line-height: 1.6;
+                   border-top: 1px dashed var(--border); padding-top: 0.6rem; }
+        .db-note b { color: #475569; font-weight: 700; }
+        .db-note-del { margin-left: 0.3rem; color: var(--kt-red); }
         .db-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.75rem; }
         .db-head h3 { margin: 0; }
         .db-live { font-size: 0.78rem; font-weight: 700; color: var(--muted); }

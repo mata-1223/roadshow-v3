@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSessionStore } from '../store/sessionStore.js';
 import { createWebSocket } from '../api/websocket.js';
 import { getIntentPositions } from '../api/http.js';
@@ -7,6 +7,9 @@ import IntentChart from '../components/IntentChart.jsx';
 import IntentTaxonomyModal from '../components/IntentTaxonomyModal.jsx';
 import BehaviorPanel from '../components/BehaviorPanel.jsx';
 import VectorSpace from '../components/VectorSpace.jsx';
+import BusinessImpactBanner from '../components/BusinessImpactBanner.jsx';
+import DemoStepper from '../components/DemoStepper.jsx';
+import TopBar from '../components/TopBar.jsx';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 import SurveySummaryPanel from '../components/SurveySummaryPanel.jsx';
@@ -109,12 +112,8 @@ export default function DemoPage() {
 
   return (
     <div className="demo-page">
-      <div className="container">
-        <div className="badges">
-          <span className="badge ws">{wsReady ? '🟢 연결됨' : '🔴 연결 끊김'}</span>
-          <Link to="/admin" className="badge admin-link" target="_blank">📊 DB 전체 보기 ↗</Link>
-        </div>
-      </div>
+      <TopBar connected={wsReady} />
+      <DemoStepper current={reflectedCount > 0 ? 5 : 4} />
 
       <div className="container demo-grid">
 
@@ -216,6 +215,7 @@ export default function DemoPage() {
               ? <>아직 행동이 없습니다 · 아래는 설문만으로 추론한 <b>Base Intent</b>이며, 왼쪽에서 행동을 선택하면 실시간으로 갱신됩니다</>
               : <>{allIntents.length}개 Intent 중 상위 5개 · <b>Base 대비</b> 변화가 ▲▼로 표시됩니다 · 각 행의 <b>[활용 예시]</b>에서 상세를 확인하세요</>}
           </p>
+          <BusinessImpactBanner topN={topN} actionsData={scenario.actions} reflected={reflectedCount > 0} />
           <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} />
 
           {others && (
@@ -279,11 +279,6 @@ export default function DemoPage() {
                        padding: 0.65rem 0.9rem; margin: 0.4rem 0 0.6rem; font-size: 0.9rem; color: #1e3a5f; line-height: 1.5; }
         .stage-note { display: block; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #bfdbfe;
                       font-size: 0.82rem; color: #5b7290; }
-        .badges { display: flex; gap: 0.5rem; margin-bottom: 0; flex-wrap: wrap; padding-top: 0.6rem; padding-bottom: 0.4rem; }
-        .badge { padding: 0.3rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
-        .ws { background: #f1f5f9; }
-        .admin-link { background: #f1f5f9; text-decoration: none; color: var(--fg); }
-        .admin-link:hover { background: #e2e8f0; }
         .caption { color: var(--muted); margin: 0 0 0.6rem; font-size: 0.9rem; }
         .col-infer h2 { display: flex; align-items: center; gap: 0.6rem; }
         .top5-right { margin-left: auto; }

@@ -8,6 +8,13 @@
   --primary:  #2563eb;
   --accent:   #f59e0b;
 
+  /* KT 브랜드 레드 — 브랜드 액센트(배지·가치제안·비즈니스 임팩트)에만 사용.
+     엔진/추론 UI(Top5·Vector Space·버튼)는 --primary(블루) 유지 */
+  --kt-red:        #e6002d;
+  --kt-red-dark:   #b3001f;
+  --kt-red-bg:     #fff1f3;
+  --kt-red-border: #ffd1d8;
+
   --l1-1000:  #3b82f6;   /* My 정보 조회 */
   --l1-2000:  #10b981;   /* 상품 탐색/가입 */
   --l1-3000:  #eab308;   /* 셀프처리 */
