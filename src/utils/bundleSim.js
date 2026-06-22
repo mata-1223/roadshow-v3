@@ -41,17 +41,37 @@ export function bundleProfile(features, survey, answers) {
     contractCode: features.contract_status ?? 0,
     contractLabel: answerLabel(survey, answers, 'contract_status'),
     contractExpiring: (features.contract_status ?? 0) === 3, // 약정 만료 예정
-    serviceLabel: answerLabel(survey, answers, 'subscribed_service_count'), // 현재 결합 구성
+    serviceLabel: answerLabel(survey, answers, 'subscribed_service_count'), // 현재 구성
+    hasInternet: (features.has_internet ?? 0) === 1,
+    hasIptv: (features.has_iptv ?? 0) === 1,
   };
 }
 
-// 재약정/장기/유지 등 기존 결합 고객 의도 → 특별 혜택 카드(시뮬레이터 대신)
-function loyaltyForIntent(profile, name) {
+const NOTE = '※ 대상·혜택은 고객 등급·약정 상태에 따라 상이';
+const NOTE_PRICE = '※ 3년 약정 · 설치비 별도 · 프로모션 제외';
+
+// 결합 가입 시 받는 혜택 (미결합 고객 또는 신규 가입 의도) — 총액결합할인 기반
+function joinCard(profile, opts = {}) {
+  return {
+    title: opts.title || '결합 가입 시 받는 혜택',
+    tag: opts.tag || '신규 결합',
+    why: opts.why || '모바일만 이용 중이세요 — 결합하면 매월 할인과 가입 혜택을 받을 수 있어요',
+    benefits: [
+      { ic: '💰', t: `모바일 요금 매월 ${wonText(profile.discount)} 할인 (${profile.mobileLabel || '요금대'} 기준)` },
+      { ic: '🎁', t: '신규 가입 사은품 · 지니TV 쿠폰 5천원×6' },
+      { ic: '🔒', t: '결합 약정 할인 + 멤버십 전용 혜택' },
+    ], note: NOTE_PRICE,
+  };
+}
+
+// 의도별 결합 카드 — 고객의 실제 결합 여부(has_internet/has_iptv)에 따라 분기
+export function bundleCardForIntent(profile, name) {
+  if (!profile) return null;
   const n = name || '';
-  const note = '※ 대상·혜택은 고객 등급·약정 상태에 따라 상이';
+  const isBundled = profile.hasInternet || profile.hasIptv; // 실제 결합 여부
   const tenure = profile.tenureLabel || '오랜 기간';
 
-  // 약정 상태·연장 혜택 — 현재 결합 구성 + 약정 잔여 + 연장 시 혜택
+  // 약정 상태·연장 혜택 — 현재 구성 + 약정 잔여 + 연장 혜택
   if (n.includes('연장') || n.includes('약정 상태') || (n.includes('약정') && !n.includes('재약정'))) {
     const why = profile.contractExpiring
       ? '약정 만료가 가까워요 — 지금 연장하면 혜택이 가장 커요'
@@ -59,22 +79,26 @@ function loyaltyForIntent(profile, name) {
         ? '지금 약정이 없으세요 — 약정하면 결합 할인이 더 커집니다'
         : '고객님 약정 현황과 연장 시 받을 수 있는 혜택이에요';
     return {
-      title: '내 결합 약정 현황 · 연장 혜택', tag: profile.contractExpiring ? '연장 적기' : '약정 현황',
+      kind: 'loyalty',
+      title: isBundled ? '내 결합 약정 현황 · 연장 혜택' : '내 약정 현황 · 연장 혜택',
+      tag: profile.contractExpiring ? '연장 적기' : '약정 현황',
       why,
       status: [
-        { k: '현재 결합', v: profile.serviceLabel || '결합 이용 중' },
+        { k: isBundled ? '현재 결합' : '현재 이용', v: profile.serviceLabel || '—' },
         { k: '이용 기간', v: profile.tenureLabel || '—' },
         { k: '약정 상태', v: profile.contractLabel || '—' },
       ],
       benefits: [
-        { ic: '🔒', t: '연장 시 결합 할인 그대로 유지 + 추가 할인' },
+        { ic: '🔒', t: '연장 시 결합 할인 유지 + 추가 할인' },
         { ic: '📱', t: '기기변경 지원금 우대' },
         { ic: '🎁', t: '연장 사은품 · 데이터 쿠폰' },
-      ], note,
+      ], note: NOTE,
     };
   }
+  // 재약정
   if (n.includes('재약정')) {
     return {
+      kind: 'loyalty',
       title: '고객님 맞춤 재약정 혜택', tag: profile.contractExpiring ? '약정 만료 예정' : '재약정 적기',
       why: profile.contractExpiring
         ? '약정 만료가 가까워요 — 지금 재약정하면 고객님 혜택이 가장 커집니다'
@@ -83,11 +107,13 @@ function loyaltyForIntent(profile, name) {
         { ic: '📱', t: '재약정 시 단말 지원금 우대' },
         { ic: '🔒', t: '결합 할인 유지 + 재약정 추가 할인' },
         { ic: '🎁', t: '재약정 사은품 · 데이터 쿠폰' },
-      ], note,
+      ], note: NOTE,
     };
   }
+  // 장기 고객 (이용기간 기반 — 결합 여부 무관)
   if (n.includes('장기')) {
     return {
+      kind: 'loyalty',
       title: '고객님만을 위한 장기 혜택', tag: profile.tenureLong ? `${tenure} 함께` : '장기 고객',
       why: profile.tenureLong
         ? `벌써 ${tenure}째 KT와 함께해주신 고객님 — 그 시간에 보답하는 전용 혜택이에요`
@@ -96,32 +122,42 @@ function loyaltyForIntent(profile, name) {
         { ic: '👑', t: '고객님 멤버십 VIP 등급 상향' },
         { ic: '💝', t: '장기고객 감사 할인 · 데이터 쿠폰' },
         { ic: '📱', t: '기기변경 시 지원 우대' },
-      ], note,
+      ], note: NOTE,
     };
   }
-  if (n.includes('현재 결합 혜택') || n.includes('미사용') || n.includes('추가 결합 할인') || n.includes('유지')) {
+  // 신규/가입 혜택 → 결합 가입 시 받는 혜택
+  if (n.includes('가입')) {
     return {
-      title: '내가 받고 있는 결합 혜택', tag: '이미 결합 중',
-      why: `${tenure} 결합으로 함께해주신 고객님 — 놓치고 계신 혜택은 없는지 챙겨드릴게요`,
-      status: [
-        { k: '현재 결합', v: profile.serviceLabel || '결합 이용 중' },
-        { k: '이용 기간', v: profile.tenureLabel || '—' },
-      ],
-      benefits: [
-        { ic: '🔍', t: '미사용 결합 혜택 활성화' },
-        { ic: '➕', t: '추가 결합 할인 여지 확인' },
-        { ic: '🎁', t: '멤버십·제휴 전용 혜택' },
-      ], note,
+      kind: 'loyalty',
+      ...joinCard(profile, isBundled
+        ? { title: '추가 결합 가입 혜택', tag: '추가 결합', why: '결합을 더하면 받을 수 있는 추가 혜택이에요' }
+        : {}),
     };
   }
-  return null;
-}
-
-// 의도별 결합 카드 — 재약정/장기 등은 loyalty(특별혜택), 신규/추가는 sim(절감)
-export function bundleCardForIntent(profile, name) {
-  if (!profile) return null;
-  const loy = loyaltyForIntent(profile, name);
-  if (loy) return { kind: 'loyalty', ...loy };
+  // 현재혜택/미사용/추가/유지 — 결합 중이면 '내가 받는 혜택', 미결합이면 '결합 시 혜택'
+  if (n.includes('현재 결합 혜택') || n.includes('미사용') || n.includes('추가 결합 할인') || n.includes('유지')) {
+    if (isBundled) {
+      return {
+        kind: 'loyalty',
+        title: '내가 받고 있는 결합 혜택', tag: '이미 결합 중',
+        why: `${tenure} 결합으로 함께해주신 고객님 — 놓치고 계신 혜택은 없는지 챙겨드릴게요`,
+        status: [
+          { k: '현재 결합', v: profile.serviceLabel || '결합 이용 중' },
+          { k: '이용 기간', v: profile.tenureLabel || '—' },
+        ],
+        benefits: [
+          { ic: '🔍', t: '미사용 결합 혜택 활성화' },
+          { ic: '➕', t: '추가 결합 할인 여지 확인' },
+          { ic: '🎁', t: '멤버십·제휴 전용 혜택' },
+        ], note: NOTE,
+      };
+    }
+    return {
+      kind: 'loyalty',
+      ...joinCard(profile, { title: '결합 시 받을 수 있는 혜택', tag: '결합 전', why: '아직 결합 전이에요 — 결합하면 이런 혜택을 받을 수 있어요' }),
+    };
+  }
+  // 확장(인터넷/IPTV/통합/가족/결합 상품·가능) → 시뮬레이터
   const sim = simForIntent(profile, name);
   if (sim) return { kind: 'sim', ...sim };
   return null;
