@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>스토리보드 — 관측(상황·행동) → 추정 니즈 → 실시간 의도 → 액션</title>
+<style>
+  :root { --pp:#7c3aed; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif; color:#0f172a;
+         background:linear-gradient(180deg,#f8fafc,#eef2f7); padding:22px; }
+  h1 { font-size:1.24rem; margin:0 0 4px; }
+  .sub { color:#64748b; margin:0 0 12px; font-size:.86rem; }
+  .sub b { color:#7c3aed; }
+  .stage { position:relative; width:900px; max-width:97vw; height:600px; background:#0b1020; border-radius:16px;
+           overflow:hidden; box-shadow:0 14px 40px rgba(15,23,42,.25); }
+
+  .badge { position:absolute; top:0; left:0; right:0; height:32px; z-index:30; display:flex; align-items:center; justify-content:center;
+           background:linear-gradient(#1e1b3a,#241d44); color:#fff; font-weight:800; font-size:.86rem; opacity:0; }
+  .play .badge { animation:fade .5s ease 1.5s forwards; } .badge b { color:#c4b5fd; }
+
+  .intro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; z-index:25; }
+  .play .intro { animation:fade-out .6s ease 1.4s forwards; }
+  .intro .cap { color:#e2e8f0; font-weight:700; }
+  .intro .traits { display:flex; gap:6px; } .intro .traits span { background:#2a2350; color:#c4b5fd; font-size:.72rem; font-weight:700; padding:.2rem .55rem; border-radius:999px; }
+
+  .grid { position:absolute; top:32px; bottom:28px; left:0; right:0; display:grid; grid-template-columns:1fr 1fr 1fr; gap:3px; z-index:10; opacity:0; }
+  .play .grid { animation:fade .7s ease 1.5s forwards; }
+  .panel { position:relative; display:flex; flex-direction:column; overflow:hidden; }
+  .p-night { background:linear-gradient(#241b3d,#140e26); } .p-day { background:linear-gradient(#a9dbff,#dff1ff 75%); } .p-street { background:linear-gradient(#b9c6da,#9fb0c6); }
+
+  .scene-cap { z-index:8; text-align:center; font-size:.72rem; font-weight:800; padding:5px 2px 2px; }
+  .p-night .scene-cap { color:#e9d5ff; } .p-day .scene-cap, .p-street .scene-cap { color:#1e293b; }
+
+  /* ===== 씬: 캐릭터 + 관측 신호 + 손에 든 폰 ===== */
+  .scene { position:relative; height:216px; flex:none; overflow:hidden; }
+  .aura { position:absolute; bottom:8px; left:44%; transform:translateX(-50%); width:120px; height:120px; border-radius:50%;
+          background:radial-gradient(circle,rgba(124,58,237,.34),rgba(124,58,237,0) 65%); animation:pulse 2.2s ease-in-out infinite; z-index:3; }
+
+  /* 관측 신호 칩 (우리가 실제로 보는 데이터) */
+  .obs-head { position:absolute; top:6px; left:50%; transform:translateX(-50%); z-index:9; font-size:.58rem; font-weight:800;
+              color:#fff; background:rgba(15,23,42,.55); padding:.15rem .5rem; border-radius:999px; display:flex; align-items:center; gap:4px; opacity:0; }
+  .p-day .obs-head,.p-street .obs-head { color:#0f172a; background:rgba(255,255,255,.7); }
+  .obs-head .live { width:5px; height:5px; border-radius:50%; background:#4ade80; animation:gpulse 1.4s ease-in-out infinite; }
+  .play .obs-head { animation:fade .5s ease 1.8s forwards; }
+  .signals { position:absolute; top:28px; left:0; right:0; z-index:8; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; padding:0 8px; transition:opacity .22s; }
+  .signals span { font-size:.6rem; font-weight:700; padding:.16rem .45rem; border-radius:7px; white-space:nowrap;
+                  background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.18); animation:sigin .4s ease both; }
+  .p-day .signals span,.p-street .signals span { background:rgba(15,23,42,.08); color:#1e293b; border-color:rgba(15,23,42,.12); }
+  @keyframes sigin { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+  .person { position:absolute; bottom:4px; left:38%; transform:translateX(-50%); z-index:5; transform-origin:bottom center; }
+  .act-tired { animation:breathe 3s ease-in-out infinite; } .act-out { animation:stepout 2.2s ease-in-out infinite; } .act-walk { animation:walk .7s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(4px)} }
+  @keyframes stepout { 0%,100%{transform:translateX(-50%) rotate(-1.5deg)} 50%{transform:translateX(-45%) rotate(1.5deg)} }
+  @keyframes walk { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-3px)} }
+  .dec { position:absolute; z-index:6; }
+
+  /* 폰: 캐릭터 손 위치 */
+  .phone { position:absolute; bottom:6px; left:56%; transform:rotate(-7deg); width:50px; height:92px; background:#0f172a;
+           border-radius:12px; border:3px solid #1e293b; padding:3px; z-index:9; box-shadow:-4px 5px 13px rgba(0,0,0,.4); }
+  .pscreen { width:100%; height:100%; border-radius:9px; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+             gap:3px; text-align:center; transition:opacity .22s; background:#1e293b; color:#fff; overflow:hidden; padding:4px 3px; }
+  .scr-body { width:100%; flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+  .pscreen .ph-ic { font-size:26px; line-height:1; }
+  .pscreen .ph-t { flex:none; width:100%; font-size:.5rem; font-weight:800; line-height:1.15; word-break:keep-all; overflow:hidden; }
+  .th-dark{background:#241d44;color:#e9d5ff} .th-food{background:#fff7ed;color:#c2410c} .th-sleep{background:#0f172a;color:#a5b4fc}
+  .th-map{background:#e0f2fe;color:#0369a1} .th-cafe{background:#fef3c7;color:#92400e} .th-music{background:#1e1b2e;color:#f9a8d4}
+  .th-charge{background:#ecfeff;color:#0891b2} .th-plan{background:#eff6ff;color:#1d4ed8} .th-tv{background:#241d44;color:#fca5a5}
+  .scr-genie{display:inline-flex;align-items:center;gap:3px;max-width:100%;font-size:.42rem;font-weight:800;color:#c4b5fd;background:rgba(167,139,250,.22);padding:1px 6px;border-radius:6px;white-space:nowrap}
+  .scr-genie .gdot{width:4px;height:4px;border-radius:50%;background:#4ade80;animation:gpulse 1.4s ease-in-out infinite}
+  .scr-map{position:relative;border-radius:5px;background:#cfe3f7;overflow:hidden}
+  .scr-map::before{content:'';position:absolute;inset:0;background:
+     linear-gradient(#aecdee 0 0) 0 32%/100% 4px no-repeat,linear-gradient(#aecdee 0 0) 0 68%/100% 4px no-repeat,linear-gradient(#aecdee 0 0) 38% 0/4px 100% no-repeat}
+  .scr-map .route{position:absolute;left:8%;top:78%;width:84%;border-top:3px dashed #2563eb;transform:rotate(-30deg);transform-origin:left}
+  .scr-map .pin{position:absolute;right:6%;top:6%;font-size:13px;z-index:2}
+  .scr-alb{border-radius:5px;background:linear-gradient(135deg,#e11d48,#9333ea);position:relative}
+  .scr-alb .note{font-size:20px}
+  .scr-alb .eq{position:absolute;bottom:4px;right:4px;display:flex;gap:2px;align-items:flex-end;height:11px}
+  .scr-alb .eq i{width:2.4px;background:#fff;border-radius:1px;animation:eqb .9s ease-in-out infinite}
+  .scr-alb .eq i:nth-child(1){height:4px}.scr-alb .eq i:nth-child(2){height:10px;animation-delay:.2s}.scr-alb .eq i:nth-child(3){height:6px;animation-delay:.4s}
+  @keyframes eqb{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+  .scr-bar{flex:none;width:86%;height:3px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
+  .scr-bar i{display:block;height:100%;background:#fff;width:45%}
+  .scr-lock{flex:1;width:100%;border-radius:7px;background:linear-gradient(165deg,#243047,#0f172a);display:flex;flex-direction:column;align-items:center;overflow:hidden}
+  .scr-lock .lock-top{flex:none;width:100%;padding-top:3px}
+  .scr-lock .lock-time{font-size:.74rem;font-weight:800;color:#fff;opacity:.92}
+  .scr-lock .lock-date{font-size:.38rem;color:#cbd5e1;opacity:.7}
+  .scr-lock .lock-mid{flex:1;width:100%;display:flex;align-items:center;justify-content:center}
+  .push-card{width:92%;background:rgba(248,250,252,.97);border-radius:7px;padding:4px;text-align:left;box-shadow:0 4px 9px rgba(0,0,0,.35)}
+  .push-in{animation:pushdown .55s cubic-bezier(.2,.85,.25,1)}
+  @keyframes pushdown{from{transform:translateY(-130%);opacity:0}to{transform:translateY(0);opacity:1}}
+  .push-head{display:flex;align-items:center;gap:3px;margin-bottom:2px}
+  .push-app-ic{width:11px;height:11px;border-radius:3px;background:linear-gradient(135deg,#e11d48,#9333ea);display:flex;align-items:center;justify-content:center;font-size:7px;flex:none}
+  .push-app{font-size:.4rem;font-weight:800;color:#475569;white-space:nowrap}
+  .push-title{font-size:.45rem;font-weight:800;color:#0f172a;line-height:1.18;word-break:keep-all}
+  .push-body{font-size:.4rem;color:#475569;line-height:1.2;word-break:keep-all;margin-top:1px}
+
+  /* 씬 배경 소품 */
+  .win { position:absolute; top:6px; left:8px; width:52px; height:40px; background:linear-gradient(#0c1b3a,#13294f); border:4px solid #4a3f5e; border-radius:4px; z-index:1; }
+  .win .moon { position:absolute; top:3px; right:5px; font-size:12px; }
+  .couch { position:absolute; bottom:2px; left:38%; transform:translateX(-50%); width:150px; height:42px; background:#3b3357; border-radius:12px; z-index:4; box-shadow:inset 0 8px 0 #4a4170; }
+  .couch::before,.couch::after{content:'';position:absolute;top:-12px;width:18px;height:32px;background:#3b3357;border-radius:9px}.couch::before{left:-7px}.couch::after{right:-7px}
+  .door-open { position:absolute; bottom:0; left:38%; transform:translateX(-60%); width:92px; height:150px; border:6px solid #b58a5e; border-bottom:none; border-radius:8px 8px 0 0; background:#efe6d6; z-index:1; }
+  .floor-day { position:absolute; bottom:0; left:0; right:0; height:26px; background:#d9c3a3; z-index:1; }
+  .city { position:absolute; bottom:24px; left:0; right:0; height:130px; display:flex; align-items:flex-end; gap:3px; padding:0 3px; z-index:1; }
+  .b { background:#647488; border-radius:3px 3px 0 0; position:relative; opacity:.9; }
+  .b::after{content:'';position:absolute;left:3px;right:3px;top:5px;bottom:0;background:repeating-linear-gradient(#dbe4f0 0 3px,transparent 3px 10px);opacity:.3}
+  .sidewalk { position:absolute; bottom:0; left:0; right:0; height:26px; background:#8493a8; z-index:1; }
+
+  /* ===== 분석 카드: 4단계 추론 흐름 ===== */
+  .pipe { flex:1; margin:5px; padding:7px 8px; background:rgba(255,255,255,.94); border-radius:11px; z-index:9; display:flex; flex-direction:column; opacity:0; box-shadow:0 4px 12px rgba(0,0,0,.12); }
+  .play .pipe { animation:fade .6s ease 1.7s forwards; }
+  .steps { display:flex; gap:5px; justify-content:center; margin-bottom:5px; }
+  .steps i { width:7px; height:7px; border-radius:50%; background:#cbd5e1; transition:all .3s; }
+  .steps i.on { background:#a78bfa; box-shadow:0 0 0 3px rgba(167,139,250,.3); }
+  .flow { display:flex; flex-direction:column; gap:1px; transition:opacity .22s; }
+  .pipe.swap .flow { opacity:0; }
+  .frow { display:flex; align-items:center; gap:6px; padding:3px 2px; }
+  .flab { flex:none; width:92px; font-size:.6rem; font-weight:800; padding:.22rem 0; border-radius:7px; text-align:center; white-space:nowrap; }
+  .fval { font-size:.74rem; font-weight:800; line-height:1.15; word-break:keep-all; color:#0f172a; }
+  .flab.obs { background:#e0f2fe; color:#0369a1; } .fval.obs-v { color:#0c4a6e; }
+  .flab.want { background:#fef3c7; color:#b45309; } .fval.want-v { color:#b45309; font-style:italic; }
+  .flab.it { background:#ede9fe; color:#6d28d9; } .fval.it-v { color:#6d28d9; }
+  .flab.act { background:#dcfce7; color:#15803d; } .fval.act-v { color:#15803d; }
+  .farr { text-align:left; color:#cbd5e1; font-size:.62rem; font-weight:900; line-height:.7; padding-left:40px; }
+
+  .foot { position:absolute; bottom:0; left:0; right:0; height:28px; z-index:30; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 8px; font-size:.74rem; font-weight:800; color:#fff; background:rgba(124,58,237,.95); opacity:0; }
+  .play .foot { animation:fade .5s ease 1.8s forwards; }
+
+  @keyframes fade { to { opacity:1; } } @keyframes fade-out { to { opacity:0; visibility:hidden; } }
+  @keyframes pulse { 0%,100%{transform:translateX(-50%) scale(.92);opacity:.6} 50%{transform:translateX(-50%) scale(1.08);opacity:1} }
+  @keyframes gpulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}60%{box-shadow:0 0 0 4px rgba(74,222,128,0)}}
+  .replay { margin-top:12px; font-size:.85rem; font-weight:700; color:var(--pp); background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:.45rem .9rem; cursor:pointer; }
+</style>
+</head>
+<body>
+  <h1>🎬 관측(상황·행동) → 추정 니즈 → 실시간 의도 → 액션</h1>
+  <p class="sub">고객의 속마음은 알 수 없습니다. KT는 <b>고객의 과거 특성(프로필·이용 이력)과 실시간 상황·행동을 함께 분석</b>해 → 지금 무엇을 하고 싶은지 <b>추론</b>하고 → 의도를 도출해 → 알맞은 액션을 폰·기기로 제공합니다.</p>
+
+  <div id="stage" class="stage play">
+    <div class="badge">👤 고객 특성: <b>동일</b> <span style="font-weight:600;color:#a5b4fc">&nbsp;(요금제·가구·이용패턴 동일)</span></div>
+
+    <div class="intro">
+      <svg viewBox="0 0 120 120" width="98">
+        <ellipse cx="60" cy="58" rx="24" ry="25" fill="#f2c6a0"/><path d="M36 56 Q35 28 60 28 Q85 28 84 56 Q78 44 60 44 Q42 44 36 56 Z" fill="#3b2f2a"/>
+        <path d="M48 58 Q53 53 58 58" stroke="#3a2a1e" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M62 58 Q67 53 72 58" stroke="#3a2a1e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M52 70 Q60 75 68 70" stroke="#7a5b48" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M28 120 Q26 90 60 90 Q94 90 92 120 Z" fill="#8895ab"/>
+      </svg>
+      <div class="cap">동일한 한 명의 고객</div>
+      <div class="traits"><span>요금제 6~8만</span><span>1인 가구</span><span>데이터 헤비</span></div>
+    </div>
+
+    <div class="grid">
+      <!-- 좌: 평일 밤 -->
+      <div class="panel p-night">
+        <div class="scene-cap">🕦 23:30 · 평일 밤 · 야근 후 귀가</div>
+        <div class="scene">
+          <div class="win"><span class="moon">🌙</span></div>
+          <div class="couch"></div>
+          <div class="obs-head"><span class="live"></span> 특성 + 실시간 분석</div>
+          <div class="signals" data-signals></div>
+          <div class="aura"></div>
+          <div class="person act-tired">
+            <svg viewBox="0 0 120 100" width="96">
+              <ellipse cx="60" cy="46" rx="23" ry="24" fill="#f2c6a0"/><path d="M37 44 Q36 20 60 20 Q84 20 83 44 Q77 34 60 34 Q43 34 37 44 Z" fill="#3b2f2a"/>
+              <path d="M49 46 Q54 49 59 46" stroke="#3a2a1e" stroke-width="2.3" fill="none" stroke-linecap="round"/><path d="M61 46 Q66 49 71 46" stroke="#3a2a1e" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+              <path d="M52 60 Q60 57 68 60" stroke="#7a5b48" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+              <path d="M28 100 Q26 74 60 74 Q94 74 92 100 Z" fill="#6c7a95"/><path d="M60 74 l-5 8 l5 14 l5 -14 z" fill="#b3424f"/>
+            </svg>
+          </div>
+          <div class="phone"><div class="pscreen" data-screen></div></div>
+        </div>
+        <div class="pipe">
+          <div class="steps"><i></i><i></i><i></i></div>
+          <div class="flow">
+            <div class="frow"><span class="flab obs">👁 상황·행동</span><span class="fval obs-v" data-obs></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab want">🧠 하고 싶은 것</span><span class="fval want-v" data-want></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab it">⟳ 실시간 Intent</span><span class="fval it-v" data-it></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab act">📱 제공 액션</span><span class="fval act-v" data-res></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 중: 주말 낮 -->
+      <div class="panel p-day">
+        <div class="scene-cap">🕙 토 10:30 · 주말 낮 · 외출</div>
+        <div class="scene">
+          <span class="dec" style="top:8px;left:8px;font-size:18px">☀️</span>
+          <div class="door-open"></div><div class="floor-day"></div>
+          <span class="dec" style="bottom:24px;left:8px;font-size:16px">🪴</span>
+          <div class="obs-head"><span class="live"></span> 특성 + 실시간 분석</div>
+          <div class="signals" data-signals></div>
+          <div class="aura"></div>
+          <div class="person act-out">
+            <svg viewBox="0 0 120 100" width="96">
+              <ellipse cx="60" cy="46" rx="23" ry="24" fill="#f2c6a0"/><path d="M37 44 Q36 20 60 20 Q84 20 83 44 Q77 34 60 34 Q43 34 37 44 Z" fill="#3b2f2a"/>
+              <path d="M49 44 Q54 40 59 44" stroke="#3a2a1e" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M61 44 Q66 40 71 44" stroke="#3a2a1e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <path d="M51 56 Q60 65 69 56" stroke="#7a5b48" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <circle cx="47" cy="54" r="3.4" fill="#ffb4a8" opacity=".6"/><circle cx="73" cy="54" r="3.4" fill="#ffb4a8" opacity=".6"/>
+              <path d="M28 100 Q26 74 60 74 Q94 74 92 100 Z" fill="#5b9bd5"/><path d="M44 76 L78 90" stroke="#c2762e" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="phone"><div class="pscreen" data-screen></div></div>
+        </div>
+        <div class="pipe">
+          <div class="steps"><i></i><i></i><i></i></div>
+          <div class="flow">
+            <div class="frow"><span class="flab obs">👁 상황·행동</span><span class="fval obs-v" data-obs></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab want">🧠 하고 싶은 것</span><span class="fval want-v" data-want></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab it">⟳ 실시간 Intent</span><span class="fval it-v" data-it></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab act">📱 제공 액션</span><span class="fval act-v" data-res></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우: 출근길 -->
+      <div class="panel p-street">
+        <div class="scene-cap">🕗 월 08:10 · 출근길 · 데이터 소진</div>
+        <div class="scene">
+          <div class="city">
+            <span class="b" style="height:60px;width:20px"></span><span class="b" style="height:96px;width:24px"></span><span class="b" style="height:52px;width:18px"></span>
+            <span class="b" style="height:84px;width:26px"></span><span class="b" style="height:70px;width:20px"></span><span class="b" style="height:100px;width:22px"></span>
+          </div>
+          <div class="sidewalk"></div>
+          <span class="dec" style="bottom:26px;left:6px;font-size:14px">🚦</span>
+          <div class="obs-head"><span class="live"></span> 특성 + 실시간 분석</div>
+          <div class="signals" data-signals></div>
+          <div class="aura"></div>
+          <div class="person act-walk">
+            <svg viewBox="0 0 120 100" width="96">
+              <ellipse cx="60" cy="46" rx="23" ry="24" fill="#f2c6a0"/><path d="M37 44 Q36 20 60 20 Q84 20 83 44 Q77 34 60 34 Q43 34 37 44 Z" fill="#3b2f2a"/>
+              <path d="M50 42 L58 45" stroke="#3a2a1e" stroke-width="2.3" stroke-linecap="round"/><path d="M70 42 L62 45" stroke="#3a2a1e" stroke-width="2.3" stroke-linecap="round"/>
+              <circle cx="54" cy="50" r="2.1" fill="#2a1d12"/><circle cx="66" cy="50" r="2.1" fill="#2a1d12"/>
+              <path d="M53 60 Q60 57 67 60" stroke="#7a5b48" stroke-width="2.1" fill="none" stroke-linecap="round"/>
+              <path d="M28 100 Q26 74 60 74 Q94 74 92 100 Z" fill="#6c7a95"/>
+            </svg>
+          </div>
+          <div class="phone"><div class="pscreen" data-screen></div></div>
+        </div>
+        <div class="pipe">
+          <div class="steps"><i></i><i></i><i></i></div>
+          <div class="flow">
+            <div class="frow"><span class="flab obs">👁 상황·행동</span><span class="fval obs-v" data-obs></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab want">🧠 하고 싶은 것</span><span class="fval want-v" data-want></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab it">⟳ 실시간 Intent</span><span class="fval it-v" data-it></span></div>
+            <div class="farr">↓</div>
+            <div class="frow"><span class="flab act">📱 제공 액션</span><span class="fval act-v" data-res></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">같은 고객도 — 관측된 상황·행동이 다르면 의도가 달라지고, 제공 액션(폰 화면)도 매 순간 달라집니다.</div>
+  </div>
+  <button class="replay" onclick="replay()">↻ 다시 재생</button>
+
+  <script>
+    const PANELS = [
+      { sel:'.p-night', steps:[
+        {sig:['🕦 23:30','📍 자택','📉 활동량↓'],         obs:'심야 귀가 · 소파 착석',  want:'좀 쉬고 싶음',      it:'휴식 · 동굴 모드', res:'동굴 모드 · 기가지니', ph:{type:'home', t:'동굴 모드', th:'th-dark'}},
+        {sig:['🕦 00:10','📺 영상 시청','🍽 식사 전'],     obs:'늦은 저녁 · 정주행',     want:'야식이 당김',       it:'저녁 · 보상',     res:'배달 제휴 쿠폰',   ph:{type:'icon', ic:'🍔', t:'배달 쿠폰', th:'th-food'}},
+        {sig:['🕦 01:00','💡 조명 OFF','🛏 침대'],         obs:'취침 시간대 · 조도↓',    want:'이제 자려고 함',    it:'수면 준비',       res:'지니뮤직 수면 사운드', ph:{type:'player', t:'수면 사운드', th:'th-sleep'}} ]},
+      { sel:'.p-day', steps:[
+        {sig:['🕙 10:30','🚪 현관 이동','☀️ 맑음'],        obs:'주말 낮 · 외출 채비',    want:'밖에 나가려 함',    it:'환경 전환 · 나들이', res:'지도 길안내 · 날씨', ph:{type:'map', t:'길안내', th:'th-map'}},
+        {sig:['📍 이동 중','🧭 번화가','🕐 점심 전'],       obs:'외부 이동 · 체류',       want:'갈 곳을 찾는 중',   it:'근처 탐색',       res:'카페 쿠폰 제공',   ph:{type:'icon', ic:'☕', t:'카페 쿠폰', th:'th-cafe'}},
+        {sig:['🚗 차량 이동','🎧 음악앱 실행','🛣 장거리'], obs:'차량 이동 · 음악 탐색',  want:'음악 듣고 싶음',    it:'이동 콘텐츠',     res:'지니뮤직 플레이리스트', ph:{type:'player', t:'지니뮤직 재생', th:'th-music'}} ]},
+      { sel:'.p-street', steps:[
+        {sig:['🕗 08:10','📉 데이터 0','🚇 이동 중'],      obs:'데이터 소진 · 출근길',   want:'데이터가 필요함',   it:'데이터 부족',     res:'데이터 충전 안내', ph:{type:'icon', ic:'⚡', t:'데이터 충전', th:'th-charge'}},
+        {sig:['📅 월말','🔁 3개월 연속','📉 한도 초과'],    obs:'월말 소진 반복 패턴',    want:'요금 부담 줄이고 싶음', it:'요금제 업셀',  res:'맞춤 요금제 안내', ph:{type:'icon', ic:'📱', t:'맞춤 요금제', th:'th-plan'}},
+        {sig:['📺 OTT 주5h','📶 영상 트래픽↑','🎬 구독중'], obs:'OTT 다량 시청',          want:'영상 맘껏 보고 싶음', it:'콘텐츠 니즈',   res:'무제한 + 넷플릭스', ph:{type:'icon', ic:'🎬', t:'넷플릭스 무제한', th:'th-tv'}} ]},
+    ];
+    function screenHTML(ph){
+      switch(ph.type){
+        case 'home':   return '<div class="scr-body"><div class="ph-ic">🏠</div><div class="scr-genie"><span class="gdot"></span>기가지니</div></div><div class="ph-t">'+ph.t+'</div>';
+        case 'map':    return '<div class="scr-body scr-map"><span class="route"></span><span class="pin">📍</span></div><div class="ph-t">'+ph.t+'</div>';
+        case 'player': return '<div class="scr-body scr-alb"><span class="note">🎵</span><span class="eq"><i></i><i></i><i></i></span></div><div class="scr-bar"><i></i></div><div class="ph-t">'+ph.t+'</div>';
+        case 'noti':   return '<div class="scr-lock"><div class="lock-top"><div class="lock-time">'+(ph.time||'08:10')+'</div><div class="lock-date">월요일 · 출근길</div></div>'
+                              +'<div class="lock-mid"><div class="push-card push-in"><div class="push-head"><span class="push-app-ic">'+ph.ic+'</span><span class="push-app">MY KT</span></div>'
+                              +'<div class="push-title">'+ph.t+'</div><div class="push-body">'+(ph.sub||'')+'</div></div></div></div>';
+        default:       return '<div class="scr-body"><div class="ph-ic">'+ph.ic+'</div></div><div class="ph-t">'+ph.t+'</div>';
+      }
+    }
+    let timers = [];
+    function clearCycles(){ timers.forEach(clearInterval); timers=[]; }
+    function startCycles(){
+      clearCycles();
+      PANELS.forEach((p, pi) => {
+        const panel = document.querySelector(p.sel);
+        const pipe = panel.querySelector('.pipe');
+        const sigs = panel.querySelector('[data-signals]');
+        const obs = panel.querySelector('[data-obs]'), want = panel.querySelector('[data-want]');
+        const it = panel.querySelector('[data-it]'), res = panel.querySelector('[data-res]');
+        const scr = panel.querySelector('[data-screen]'), dots = panel.querySelectorAll('.steps i');
+        let i = 0;
+        const render = () => {
+          const s = p.steps[i];
+          sigs.innerHTML = s.sig.map((x,xi)=>'<span style="animation-delay:'+(xi*0.08)+'s">'+x+'</span>').join('');
+          obs.textContent = s.obs;
+          want.textContent = s.want;
+          it.textContent = s.it;
+          res.textContent = s.res;
+          scr.className = 'pscreen ' + s.ph.th;
+          scr.innerHTML = screenHTML(s.ph);
+          dots.forEach((d, di) => d.classList.toggle('on', di === i));
+        };
+        render();
+        const id = setInterval(() => {
+          pipe.classList.add('swap'); sigs.style.opacity = '0';
+          setTimeout(() => { i = (i + 1) % p.steps.length; render(); pipe.classList.remove('swap'); sigs.style.opacity = '1'; }, 240);
+        }, 2600 + pi * 220);
+        timers.push(id);
+      });
+    }
+    function replay(){
+      const s = document.getElementById('stage'); clearCycles();
+      document.querySelectorAll('.pipe').forEach(p => p.classList.remove('swap'));
+      s.classList.remove('play'); void s.offsetWidth; s.classList.add('play');
+      setTimeout(startCycles, 1700);
+    }
+    setTimeout(startCycles, 1700);
+  </script>
+</body>
+</html>

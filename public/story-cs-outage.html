@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>스토리보드 — 전화하기 전에 상담이 끝난다 (장애 선제 대응)</title>
+<style>
+  :root{--pp:#7c3aed;--red:#dc2626;--grn:#16a34a;--blu:#2563eb;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;color:#0f172a;background:linear-gradient(180deg,#f8fafc,#eef2f7);padding:22px;}
+  h1{font-size:1.24rem;margin:0 0 4px;}
+  .sub{color:#64748b;margin:0 0 12px;font-size:.86rem;} .sub b{color:var(--pp);}
+  .stage{position:relative;width:960px;max-width:98vw;height:620px;background:#0b1020;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(15,23,42,.25);display:flex;flex-direction:column;}
+
+  .badge{height:34px;flex:none;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(#1e1b3a,#241d44);color:#fff;font-weight:800;font-size:.86rem;}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:gpulse 1.4s ease-in-out infinite;}
+
+  /* 타임라인 바 */
+  .tl{flex:none;height:62px;display:flex;align-items:center;gap:0;padding:0 18px;background:#11162a;border-bottom:1px solid #20283f;position:relative;}
+  .tl .clock{position:absolute;right:16px;top:6px;font-size:.7rem;font-weight:800;color:#a5b4fc;}
+  .tl .node{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;color:#64748b;font-size:.64rem;font-weight:700;}
+  .tl .node::before{content:'';position:absolute;top:14px;left:50%;width:100%;height:2px;background:#283149;z-index:0;}
+  .tl .node:last-child::before{display:none;}
+  .tl .node .pt{width:14px;height:14px;border-radius:50%;background:#283149;border:2px solid #475569;z-index:1;margin-bottom:6px;transition:all .3s;}
+  .tl .node.on{color:#e9d5ff;} .tl .node.on .pt{background:var(--pp);border-color:#c4b5fd;box-shadow:0 0 0 4px rgba(124,58,237,.3);}
+  .tl .node.done .pt{background:var(--grn);border-color:#86efac;}
+  .tl .node b{font-size:.6rem;}
+
+  /* 본문: 엔진(좌) | 고객(우) */
+  .main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:0;}
+  .col{position:relative;padding:10px 12px;overflow:hidden;display:flex;flex-direction:column;}
+  .engine{background:linear-gradient(160deg,#0f1830,#0a1020);border-right:1px solid #20283f;}
+  .cust{background:linear-gradient(160deg,#241b14,#1a130d);}
+  .coltag{font-size:.66rem;font-weight:800;padding:.2rem .5rem;border-radius:999px;display:inline-flex;align-items:center;gap:5px;}
+  .engine .coltag{background:rgba(124,58,237,.2);color:#c4b5fd;}
+  .cust .coltag{background:rgba(251,191,36,.18);color:#fcd34d;}
+
+  /* 엔진: 지도 히트맵 */
+  .map{position:relative;height:96px;margin:7px 0;border-radius:10px;background:#0c1426;overflow:hidden;border:1px solid #1e293b;}
+  .map::before{content:'';position:absolute;inset:0;background:linear-gradient(#16203a 0 0) 0 34%/100% 2px no-repeat,linear-gradient(#16203a 0 0) 0 68%/100% 2px no-repeat,linear-gradient(#16203a 0 0) 30% 0/2px 100% no-repeat,linear-gradient(#16203a 0 0) 66% 0/2px 100% no-repeat;}
+  .odot{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,.95),rgba(220,38,38,0) 70%);opacity:0;transform:scale(.4);}
+  .odot.show{animation:odot .5s ease forwards;}
+  @keyframes odot{to{opacity:1;transform:scale(1);}}
+  .cust-pin{position:absolute;left:53%;top:42%;z-index:4;opacity:0;display:flex;flex-direction:column;align-items:center;font-size:14px;}
+  .cust-pin.show{opacity:1;}
+  .cust-pin .ring{position:absolute;top:-2px;width:24px;height:24px;border-radius:50%;border:2px solid #38bdf8;}
+  .cust-pin.show .ring{animation:ring 1.6s ease-out infinite;}
+  @keyframes ring{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+  .cust-pin .lbl{font-size:.5rem;font-weight:800;color:#7dd3fc;background:rgba(2,6,23,.78);padding:0 4px;border-radius:4px;margin-top:2px;white-space:nowrap;}
+
+  /* 관측 신호 칩 */
+  .profile{font-size:.64rem;font-weight:800;color:#fcd34d;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:.24rem .5rem;margin:0 0 6px;}
+  .sigs{display:flex;flex-direction:column;gap:4px;margin-bottom:6px;}
+  .sig{display:flex;align-items:center;gap:6px;font-size:.68rem;font-weight:700;color:#cbd5e1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.22rem .5rem;opacity:0;transform:translateX(-8px);}
+  .sig.show{animation:sigin .4s ease forwards;}
+  @keyframes sigin{to{opacity:1;transform:none;}}
+  .sig .v{margin-left:auto;color:#fca5a5;font-weight:800;}
+
+  /* Intent 게이지 */
+  .gauge-wrap{margin-top:auto;}
+  .gauge-lab{display:flex;justify-content:space-between;font-size:.66rem;font-weight:800;color:#94a3b8;margin-bottom:4px;}
+  .gauge{position:relative;height:14px;border-radius:8px;background:#1e293b;overflow:hidden;}
+  .gauge .fill{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#a78bfa);transition:width .1s linear;}
+  .gauge .thr{position:absolute;top:-3px;bottom:-3px;left:70%;width:2px;background:#fbbf24;}
+  .gauge .thr::after{content:'임계';position:absolute;top:-13px;left:-9px;font-size:.5rem;color:#fbbf24;font-weight:800;white-space:nowrap;}
+  .intent-fixed{margin-top:8px;text-align:center;font-size:.78rem;font-weight:800;color:#fff;background:linear-gradient(90deg,var(--pp),#9333ea);border-radius:9px;padding:.4rem;opacity:0;transform:scale(.9);}
+  .intent-fixed.show{animation:pop .4s cubic-bezier(.2,.8,.3,1.2) forwards;}
+  @keyframes pop{to{opacity:1;transform:none;}}
+
+  /* 고객 트랙 */
+  .home{position:relative;flex:1;min-height:0;margin:8px 0;border-radius:10px;overflow:hidden;}
+  .c-floor{position:absolute;bottom:0;left:0;right:0;height:22px;background:rgba(120,86,52,.4);}
+  .c-win{position:absolute;top:8px;left:12px;width:50px;height:38px;background:linear-gradient(#0f2138,#1b365c);border:3px solid #5b4a6e;border-radius:4px;}
+  .c-win .moon{position:absolute;top:2px;right:4px;font-size:11px;}
+  .loc-tag{position:absolute;top:14px;left:70px;z-index:6;font-size:.58rem;font-weight:800;color:#fcd34d;background:rgba(0,0,0,.35);padding:.16rem .5rem;border-radius:999px;}
+  .router{position:absolute;left:16px;bottom:78px;width:54px;height:30px;background:linear-gradient(#3a4556,#222b3a);border-radius:7px;border:1px solid #4b5563;z-index:3;box-shadow:0 3px 8px rgba(0,0,0,.35);}
+  .router .ant{position:absolute;top:-13px;width:3px;height:15px;background:#5b6675;border-radius:2px;transform-origin:bottom;}
+  .router .ant.l{left:12px;transform:rotate(-16deg);} .router .ant.r{right:12px;transform:rotate(16deg);}
+  .router .led{position:absolute;bottom:6px;left:9px;width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);}
+  .person{position:absolute;left:48%;transform:translateX(-50%);bottom:18px;z-index:3;}
+  .face-q{opacity:1;} .face-relief{opacity:0;position:absolute;inset:0;}
+  .home.resolved .face-q{opacity:0;} .home.resolved .face-relief{opacity:1;}
+  .qmark{position:absolute;left:48%;transform:translateX(-50%);bottom:104px;font-size:20px;color:#fca5a5;opacity:0;z-index:4;}
+  .qmark.show{animation:fade .4s ease forwards;}
+  .home.resolved .qmark{opacity:0 !important;}
+
+  /* 폰 push 목업 */
+  .phone{position:absolute;right:18px;bottom:14px;width:104px;height:160px;background:#0f172a;border-radius:14px;border:3px solid #1e293b;padding:5px;z-index:5;box-shadow:0 6px 16px rgba(0,0,0,.5);}
+  .pscreen{width:100%;height:100%;border-radius:10px;background:linear-gradient(165deg,#243047,#0f172a);display:flex;flex-direction:column;align-items:center;overflow:hidden;}
+  .pscreen .ptime{font-size:1.1rem;font-weight:800;color:#fff;margin:6px 0 0;}
+  .pscreen .pdate{font-size:.46rem;color:#cbd5e1;opacity:.7;}
+  .push{width:92%;margin-top:auto;margin-bottom:auto;background:rgba(248,250,252,.97);border-radius:9px;padding:6px;text-align:left;box-shadow:0 4px 10px rgba(0,0,0,.4);opacity:0;}
+  .push.show{animation:pushdown .55s cubic-bezier(.2,.85,.25,1) forwards;}
+  @keyframes pushdown{from{transform:translateY(-120%);opacity:0}to{transform:translateY(0);opacity:1}}
+  .push .ph{display:flex;align-items:center;gap:4px;margin-bottom:3px;}
+  .push .pic{width:13px;height:13px;border-radius:3px;background:linear-gradient(135deg,#e11d48,#9333ea);}
+  .push .pname{font-size:.5rem;font-weight:800;color:#475569;}
+  .push .pt{font-size:.56rem;font-weight:800;color:#0f172a;line-height:1.2;}
+  .push .pb{font-size:.5rem;color:#475569;line-height:1.25;margin-top:2px;}
+  .ai-bubble{position:absolute;left:10px;bottom:14px;max-width:150px;background:#fff;border-radius:12px 12px 12px 3px;padding:.4rem .55rem;font-size:.62rem;font-weight:700;color:#0f172a;box-shadow:0 4px 10px rgba(0,0,0,.25);opacity:0;transform:translateY(8px);}
+  .ai-bubble.show{animation:sigin .4s ease forwards;} .ai-bubble .who{display:block;font-size:.52rem;color:var(--pp);font-weight:800;margin-bottom:1px;}
+
+  /* 다채널 방사 */
+  .hub{flex:none;height:128px;background:#0c1224;border-top:1px solid #20283f;display:flex;align-items:center;justify-content:center;gap:14px;padding:8px 16px;position:relative;}
+  .hub .db{flex:none;width:118px;text-align:center;color:#c4b5fd;}
+  .hub .db .ic{font-size:26px;} .hub .db .nm{font-size:.62rem;font-weight:800;margin-top:2px;}
+  .hub .db .pulse{display:inline-block;margin-top:3px;font-size:.52rem;color:#86efac;}
+  .chans{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .chan{background:#131c33;border:1px solid #20304f;border-radius:10px;padding:7px 8px;opacity:.25;transform:translateY(6px);transition:all .35s;}
+  .chan.on{opacity:1;transform:none;border-color:var(--pp);box-shadow:0 0 0 2px rgba(124,58,237,.25);}
+  .chan .ct{font-size:.64rem;font-weight:800;color:#e9d5ff;display:flex;align-items:center;gap:4px;}
+  .chan .cb{font-size:.56rem;color:#9fb0c6;line-height:1.25;margin-top:3px;}
+  .arrow-fly{position:absolute;left:120px;top:50%;color:#7c3aed;font-weight:900;opacity:0;}
+
+  .foot{flex:none;min-height:34px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px 10px;font-size:.78rem;font-weight:800;color:#fff;background:rgba(124,58,237,.96);}
+  .foot b{color:#fde68a;}
+
+  @keyframes fade{to{opacity:1;}}
+  @keyframes gpulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}60%{box-shadow:0 0 0 5px rgba(74,222,128,0)}}
+  .replay{margin-top:12px;font-size:.85rem;font-weight:700;color:var(--pp);background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:.45rem .9rem;cursor:pointer;}
+</style>
+</head>
+<body>
+  <h1>🎬 A. 전화하기 전에 상담이 끝난다 — 인터넷 장애 선제 대응</h1>
+  <p class="sub">고객이 장애를 인지하기도 전에, KT가 <b>과거 특성(가입 정보·VIP)과 실시간 신호를 함께 분석</b>해 의도를 추론하고 → 안내·보상까지 <b>먼저</b> 제공합니다.</p>
+
+  <div id="stage" class="stage">
+    <div class="badge"><span class="dot"></span> KT Context Engine · 실시간 장애 선제 대응</div>
+
+    <!-- 타임라인 -->
+    <div class="tl">
+      <div class="clock" id="clock">+0s</div>
+      <div class="node" data-n="0"><span class="pt"></span>장애 발생</div>
+      <div class="node" data-n="1"><span class="pt"></span>KT 감지<b>+12초</b></div>
+      <div class="node" data-n="2"><span class="pt"></span>의도 추론</div>
+      <div class="node" data-n="3"><span class="pt"></span>선제 안내<b>+30초</b></div>
+      <div class="node" data-n="4"><span class="pt"></span>고객 인지 전 ✓</div>
+    </div>
+
+    <!-- 본문 2-트랙 -->
+    <div class="main">
+      <!-- 엔진 트랙 -->
+      <div class="col engine">
+        <span class="coltag">⚙️ KT 엔진 — 과거 특성 + 실시간 관측</span>
+        <div class="map" id="map">
+          <span class="odot" style="left:20%;top:30%"></span><span class="odot" style="left:40%;top:55%"></span>
+          <span class="odot" style="left:60%;top:40%"></span><span class="odot" style="left:48%;top:62%"></span>
+          <span class="odot" style="left:64%;top:58%"></span><span class="odot" style="left:34%;top:42%"></span>
+          <div class="cust-pin"><span class="ring"></span>🏠<span class="lbl">고객 위치</span></div>
+        </div>
+        <div class="profile">📇 과거 특성 · 가입(인터넷+IPTV) · VIP 등급 · 설치주소</div>
+        <div class="sigs">
+          <div class="sig" data-s="0">📉 인터넷 사용량 급감 <span class="v">-86%</span></div>
+          <div class="sig" data-s="1">🏘 동일 지역 장애 신고 <span class="v">↑ 12건</span></div>
+          <div class="sig" data-s="2">📡 기지국 영향권 진입 <span class="v">일치</span></div>
+          <div class="sig" data-s="3">📍 현재 위치 · 패턴 <span class="v">귀가 후 자택</span></div>
+        </div>
+        <div class="gauge-wrap">
+          <div class="gauge-lab"><span>⟳ 추론 Intent: 인터넷 장애 문의 가능성</span><span id="gval">0%</span></div>
+          <div class="gauge"><div class="fill" id="fill"></div><div class="thr"></div></div>
+          <div class="intent-fixed" id="intent">⚡ Intent 확정 — 장애 문의 · 고객센터 인입 가능성 高</div>
+        </div>
+      </div>
+
+      <!-- 고객 트랙 -->
+      <div class="col cust">
+        <span class="coltag">🙍 고객 — 아직 문제를 모름</span>
+        <div class="home" id="home">
+          <div class="c-floor"></div>
+          <div class="c-win"><span class="moon">🌙</span></div>
+          <span class="loc-tag">🏠 자택 · 거실</span>
+          <span class="qmark" id="qmark">❓</span>
+          <div class="router" id="router"><span class="ant l"></span><span class="ant r"></span><span class="led"></span></div>
+          <div class="person">
+            <svg viewBox="0 0 120 120" width="86">
+              <ellipse cx="60" cy="50" rx="22" ry="23" fill="#f2c6a0"/><path d="M38 48 Q37 24 60 24 Q83 24 82 48 Q76 38 60 38 Q44 38 38 48 Z" fill="#3b2f2a"/>
+              <g class="face-q"><path d="M49 49 Q54 46 59 49" stroke="#3a2a1e" stroke-width="2.3" fill="none" stroke-linecap="round"/><path d="M61 49 Q66 46 71 49" stroke="#3a2a1e" stroke-width="2.3" fill="none" stroke-linecap="round"/><path d="M53 64 Q60 60 67 64" stroke="#7a5b48" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>
+              <g class="face-relief"><path d="M49 50 Q54 53 59 50" stroke="#3a2a1e" stroke-width="2.3" fill="none" stroke-linecap="round"/><path d="M61 50 Q66 53 71 50" stroke="#3a2a1e" stroke-width="2.3" fill="none" stroke-linecap="round"/><path d="M52 61 Q60 69 68 61" stroke="#7a5b48" stroke-width="2.4" fill="none" stroke-linecap="round"/></g>
+              <path d="M28 120 Q26 92 60 92 Q94 92 92 120 Z" fill="#6c7a95"/>
+            </svg>
+          </div>
+          <div class="phone">
+            <div class="pscreen">
+              <div class="ptime">18:07</div><div class="pdate">화요일 · 자택</div>
+              <div class="push" id="push">
+                <div class="ph"><span class="pic"></span><span class="pname">MY KT</span></div>
+                <div class="pt">인터넷 장애 안내</div>
+                <div class="pb">거주 지역 장애 확인 · 복구 예상 <b>18:25</b> · 보상 적용 예정</div>
+              </div>
+            </div>
+          </div>
+          <div class="ai-bubble" id="ai"><span class="who">🤖 AI Agent</span>장애 현황·복구 시간·보상 내역을 안내해 드릴까요?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 다채널 방사 -->
+    <div class="hub">
+      <div class="db"><div class="ic">🗄️</div><div class="nm">고객 Context 자산 DB</div><div class="pulse" id="hubpulse">● 동기화</div></div>
+      <div class="chans">
+        <div class="chan" data-c="0"><div class="ct">📱 앱 푸시</div><div class="cb">장애·복구 예상·보상 선제 안내</div></div>
+        <div class="chan" data-c="1"><div class="ct">🤖 AI Agent</div><div class="cb">현황·복구·보상 자동 응대</div></div>
+        <div class="chan" data-c="2"><div class="ct">🎧 상담사 콘솔</div><div class="cb">인입 시 장애 현황 자동 표출</div></div>
+        <div class="chan" data-c="3"><div class="ct">🏬 매장</div><div class="cb">방문 시 품질 이슈 이력 제공</div></div>
+      </div>
+    </div>
+
+    <div class="foot"><span>고객이 문의해서 KT가 대응하는 것이 아니라, KT가 <b>먼저 인지하고 해결까지</b> — 고객센터에 연락할 일 자체가 사라진 경험.</span></div>
+  </div>
+  <button class="replay" onclick="run()">↻ 다시 재생</button>
+
+  <script>
+    const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+    let timers=[],intervals=[];
+    const at=(t,fn)=>timers.push(setTimeout(fn,t));
+    function reset(){
+      timers.forEach(clearTimeout);timers=[];intervals.forEach(clearInterval);intervals=[];
+      $$('.odot').forEach(d=>d.classList.remove('show'));
+      $$('.sig').forEach(d=>d.classList.remove('show'));
+      $$('.tl .node').forEach(d=>d.classList.remove('on','done'));
+      $$('.chan').forEach(d=>d.classList.remove('on'));
+      $('.cust-pin').classList.remove('show');
+      $('#router').classList.remove('fault');$('#home').classList.remove('resolved');
+      $('#qmark').classList.remove('show');$('#push').classList.remove('show');$('#ai').classList.remove('show');
+      $('#intent').classList.remove('show');
+      $('#fill').style.width='0%';$('#gval').textContent='0%';$('#clock').textContent='+0s';
+    }
+    function node(n,state){const el=$(`.tl .node[data-n="${n}"]`);el.classList.add(state);}
+    function gaugeTo(target,dur){
+      const fill=$('#fill'),val=$('#gval');let v=0;const stepN=Math.max(1,Math.round(dur/40)),inc=target/stepN;
+      const id=setInterval(()=>{v+=inc;if(v>=target){v=target;clearInterval(id);}fill.style.width=v+'%';val.textContent=Math.round(v)+'%';},40);
+      intervals.push(id);
+    }
+    function clockRun(){
+      let t=0;const c=$('#clock');
+      const id=setInterval(()=>{t+=1;c.textContent='+'+t+'s';if(t>=30)clearInterval(id);},90);
+      intervals.push(id);
+    }
+    function run(){
+      reset();
+      // 0) 장애 발생 + 라우터 빨강
+      node(0,'on');clockRun();
+      at(150,()=>$('#router').classList.add('fault'));
+      // 장애 신고 점 번짐
+      const dots=$$('.odot');dots.forEach((d,i)=>at(250+i*180,()=>d.classList.add('show')));
+      at(700,()=>$('.cust-pin').classList.add('show'));
+      // 1) KT 감지 — 신호 칩 누적 + 게이지
+      at(900,()=>{node(0,'done');node(1,'on');});
+      $$('.sig').forEach((s,i)=>at(1000+i*420,()=>s.classList.add('show')));
+      at(1000,()=>gaugeTo(92,2300));
+      // 2) 의도 추론 — 임계 돌파
+      at(2700,()=>{node(1,'done');node(2,'on');});
+      at(3300,()=>{node(2,'done');$('#intent').classList.add('show');});
+      // 3) 선제 안내 — 허브 → 다채널 방사
+      at(3700,()=>node(3,'on'));
+      $$('.chan').forEach((c,i)=>at(3900+i*350,()=>c.classList.add('on')));
+      // 4) 고객 트랙: 의아 → 폰 push 도착(고객 인지 전) → AI → 안도
+      at(4100,()=>$('#qmark').classList.add('show'));
+      at(5300,()=>{node(3,'done');node(4,'on');$('#push').classList.add('show');});
+      at(6100,()=>$('#ai').classList.add('show'));
+      at(6700,()=>{$('#home').classList.add('resolved');node(4,'done');});
+    }
+    run();
+  </script>
+</body>
+</html>

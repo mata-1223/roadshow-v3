@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>활용예시 애니메이션 — 기가지니 동굴 모드</title>
+<style>
+  :root { --kt-red:#e6002d; --pp:#7c3aed; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif; color:#0f172a;
+         background:linear-gradient(180deg,#f8fafc,#eef2f7); padding:32px; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .sub { color:#64748b; margin:0 0 24px; font-size:.95rem; }
+  .card { background:#fff; border:1px solid #e2e8f0; border-radius:18px; padding:18px; width:580px; max-width:94vw;
+          box-shadow:0 8px 28px rgba(15,23,42,.1); }
+  .card h2 { font-size:1.05rem; margin:0 0 6px; }
+  .ctx { font-size:.9rem; color:#475569; margin:0 0 14px; }
+  .ctx b { color:var(--kt-red); }
+  .replay { margin-top:14px; font-size:.85rem; font-weight:700; color:var(--pp); background:#f5f3ff;
+            border:1px solid #ddd6fe; border-radius:8px; padding:.45rem .9rem; cursor:pointer; }
+
+  .scene { position:relative; height:320px; border-radius:16px; overflow:hidden;
+           background:linear-gradient(#fff3d6,#ffe9c7); }
+  .scene-bg { position:absolute; inset:0; }
+  .play .scene-bg { animation:dim 1.1s ease 1.6s forwards; }
+  @keyframes dim { to { background:rgba(10,16,30,.85); } }
+
+  .clock { position:absolute; top:12px; right:16px; font-size:.95rem; font-weight:800; color:#7c5e2e; z-index:6; }
+  .play .clock { animation:txt-light 1s ease 1.8s forwards; }
+  @keyframes txt-light { to { color:#cbd5e1; } }
+
+  /* 거실등 (천장 LED 패널 + 빛 퍼짐) */
+  .ceiling { position:absolute; top:0; left:50%; transform:translateX(-50%); width:150px; z-index:1; }
+  .fixture { position:relative; width:150px; height:24px; margin:0 auto; border-radius:0 0 14px 14px;
+             background:linear-gradient(#fffef6,#fff1c8); border:2px solid #e6cf94; border-top:none;
+             box-shadow:0 0 34px 10px rgba(255,214,102,.75); }
+  .fixture::before { content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+                     width:40px; height:6px; background:#cbb97a; border-radius:0 0 4px 4px; }  /* 천장 부착부 */
+  .cone { width:230px; height:200px; margin:-2px auto 0;
+          background:linear-gradient(rgba(255,224,150,.55),rgba(255,224,150,0));
+          clip-path:polygon(34% 0,66% 0,100% 100%,0 100%); }
+  .play .fixture { animation:fixoff 1s ease 2.1s forwards; }
+  .play .cone { animation:fade-out 1s ease 2.1s forwards; }
+  @keyframes fixoff { to { background:#2b3445; border-color:#3f4a5e; box-shadow:none; } }
+
+  .window { position:absolute; top:40px; left:24px; width:120px; height:98px;
+            background:linear-gradient(#bfe3ff,#e8f6ff); border:6px solid #b08968; border-radius:6px; overflow:hidden; z-index:2; }
+  .star { position:absolute; color:#fff; opacity:0; font-size:10px; }
+  .play .star { animation:fade .6s ease 2.4s forwards; }
+  .curtain { position:absolute; top:0; height:100%; width:54%; background:linear-gradient(#9d174d,#be185d); z-index:2; }
+  .curtain.l { left:0; transform:translateX(-88%); }
+  .curtain.r { right:0; transform:translateX(88%); }
+  .play .curtain.l, .play .curtain.r { animation:cur 1s ease .7s forwards; }
+  @keyframes cur { to { transform:translateX(0); } }
+
+  .door { position:absolute; bottom:0; right:22px; width:62px; height:158px; background:#cbd5e1;
+          border:2px solid #94a3b8; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:center; z-index:3; }
+  .door::after { content:''; position:absolute; left:8px; top:50%; width:7px; height:7px; border-radius:50%; background:#94a3b8; }
+  .lock { font-size:26px; opacity:0; }
+  .play .lock { animation:lockin .5s ease 2.8s forwards; }
+  @keyframes lockin { 0%{opacity:0;transform:scale(1.7)} 60%{transform:scale(.85)} 100%{opacity:1;transform:scale(1)} }
+
+  .sofa { position:absolute; bottom:8px; left:150px; width:210px; height:66px; background:#5b6678;
+          border-radius:20px; z-index:3; box-shadow:inset 0 10px 0 #6e7a8e; }
+  .sofa::before, .sofa::after { content:''; position:absolute; top:-20px; width:28px; height:44px; background:#5b6678; border-radius:13px; }
+  .sofa::before { left:-12px; } .sofa::after { right:-12px; }
+
+  .person { position:absolute; bottom:42px; left:202px; width:118px; z-index:4; }
+  .face-relax { opacity:0; }
+  .play .face-tired { animation:fade-out .5s ease 3.2s forwards; }
+  .play .face-relax { animation:fade .5s ease 3.2s forwards; }
+  .zzz { opacity:0; }
+  .play .zzz { animation:fade .5s ease 3.5s forwards; }
+
+  .bubble { position:absolute; bottom:166px; left:182px; background:#fff; border:1.5px solid var(--pp);
+            border-radius:14px 14px 14px 3px; padding:.5rem .8rem; font-weight:800; color:#5b21b6; z-index:6; opacity:0;
+            box-shadow:0 4px 12px rgba(124,58,237,.25); }
+  .play .bubble { animation:pop .4s ease .7s forwards; }
+  @keyframes pop { 0%{opacity:0;transform:translateY(8px) scale(.9)} 100%{opacity:1;transform:none} }
+
+  .notes { position:absolute; bottom:130px; left:118px; z-index:5; }
+  .notes span { position:absolute; font-size:18px; opacity:0; color:#f9a8d4; }
+  .notes span:nth-child(1){left:0}.notes span:nth-child(2){left:24px}.notes span:nth-child(3){left:48px}
+  .play .notes span { animation:floatup 2.2s ease 3.5s infinite; }
+  .play .notes span:nth-child(2){ animation-delay:3.8s; } .play .notes span:nth-child(3){ animation-delay:4.1s; }
+  @keyframes floatup { 0%{opacity:0;transform:translateY(0)} 20%{opacity:1} 100%{opacity:0;transform:translateY(-46px)} }
+
+  .done { position:absolute; bottom:0; left:0; right:0; padding:8px; text-align:center; font-weight:800;
+          color:#fff; background:rgba(124,58,237,.9); opacity:0; z-index:7; font-size:.9rem; }
+  .play .done { animation:fade .5s ease 3.9s forwards; }
+
+  @keyframes fade { to { opacity:1; } }
+  @keyframes fade-out { to { opacity:0; } }
+</style>
+</head>
+<body>
+  <h1>🎬 활용예시 애니메이션 — 거실등 + 사실적 캐릭터</h1>
+  <p class="sub">"야근 후 귀가한 직장인의 저녁" — 천장 거실등이 꺼지고, 캐릭터 표정이 편안해집니다.</p>
+
+  <div class="card">
+    <h2>🏠 기가지니 — "동굴 모드"</h2>
+    <p class="ctx">🌙 밤 11:30 · 야근 후 귀가 — 통신 데이터로 <b>'동굴속 휴식'(번아웃·고립)</b> 상태 포착 → 동굴 모드 선제 제안</p>
+    <div id="scene" class="scene play">
+      <div class="scene-bg"></div>
+      <div class="clock">🕦 23:30</div>
+
+      <!-- 거실등 -->
+      <div class="ceiling"><div class="fixture"></div><div class="cone"></div></div>
+
+      <div class="window">
+        <span class="star" style="top:14px;left:18px">✦</span>
+        <span class="star" style="top:32px;left:78px">✦</span>
+        <span class="star" style="top:58px;left:44px">✦</span>
+        <div class="curtain l"></div><div class="curtain r"></div>
+      </div>
+      <div class="door"><span class="lock">🔒</span></div>
+      <div class="sofa"></div>
+
+      <div class="bubble">🎙️ "동굴 모드 켜줘"</div>
+
+      <div class="person">
+        <svg viewBox="0 0 150 170" width="118">
+          <defs>
+            <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f8d2ac"/><stop offset="1" stop-color="#e8b083"/>
+            </linearGradient>
+            <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#4a3526"/><stop offset="1" stop-color="#271a12"/>
+            </linearGradient>
+            <linearGradient id="top" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#93a0b6"/><stop offset="1" stop-color="#6c7a93"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 니트 상의 -->
+          <path d="M22 170 Q20 104 75 104 Q130 104 128 170 Z" fill="url(#top)"/>
+          <path d="M75 170 Q60 140 64 110 L86 110 Q90 140 75 170 Z" fill="#5f6d85" opacity=".5"/> <!-- 가운데 음영 -->
+          <path d="M55 108 Q75 124 95 108" fill="none" stroke="#5d6a81" stroke-width="5"/>          <!-- 라운드넥 -->
+          <!-- 팔 + 손(무릎 위로 모음) -->
+          <path d="M22 170 Q18 134 34 122 Q44 150 60 152 Z" fill="#7d8aa1"/>
+          <path d="M128 170 Q132 134 116 122 Q106 150 90 152 Z" fill="#7d8aa1"/>
+          <ellipse cx="64" cy="154" rx="12" ry="9" fill="url(#skin)"/>
+          <ellipse cx="86" cy="154" rx="12" ry="9" fill="url(#skin)"/>
+          <!-- 목 + 턱 그림자 -->
+          <rect x="64" y="86" width="22" height="22" rx="9" fill="#e8b083"/>
+          <path d="M55 84 Q75 100 95 84" fill="#d99c6e" opacity=".45"/>
+          <!-- 귀 -->
+          <circle cx="44" cy="56" r="7" fill="url(#skin)"/><circle cx="106" cy="56" r="7" fill="url(#skin)"/>
+          <!-- 머리 -->
+          <ellipse cx="75" cy="54" rx="30" ry="31" fill="url(#skin)"/>
+          <ellipse cx="92" cy="60" rx="12" ry="18" fill="#d99c6e" opacity=".3"/>  <!-- 볼 음영 -->
+          <!-- 머리카락 -->
+          <path d="M44 56 Q42 20 75 20 Q108 20 106 56 Q104 44 92 42 Q98 34 75 34 Q52 34 56 44 Q46 46 44 56 Z" fill="url(#hair)"/>
+          <path d="M75 21 Q92 22 100 38 Q90 30 75 31 Z" fill="#5a4332" opacity=".6"/> <!-- 머리 하이라이트 -->
+
+          <!-- 지친 표정 -->
+          <g class="face-tired">
+            <path d="M52 46 Q58 44 64 47" stroke="#3a2a1e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+            <path d="M86 46 Q80 44 74 47" stroke="#3a2a1e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+            <ellipse cx="59" cy="57" rx="5" ry="3.4" fill="#fff"/>
+            <ellipse cx="79" cy="57" rx="5" ry="3.4" fill="#fff"/>
+            <circle cx="59.5" cy="57.5" r="2.3" fill="#2a1d12"/>
+            <circle cx="79.5" cy="57.5" r="2.3" fill="#2a1d12"/>
+            <path d="M54 54 Q59 51 64 54" stroke="#3a2a1e" stroke-width="2.4" fill="none" stroke-linecap="round"/> <!-- 처진 윗눈꺼풀 -->
+            <path d="M74 54 Q79 51 84 54" stroke="#3a2a1e" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path d="M55 62 Q59 64 63 62" stroke="#c99" stroke-width="1.6" fill="none"/> <!-- 다크서클 -->
+            <path d="M75 62 Q79 64 83 62" stroke="#c99" stroke-width="1.6" fill="none"/>
+            <path d="M64 73 Q71 70 78 73" stroke="#7a5b48" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path d="M108 42 q4 8 0 12 q-4 -4 0 -12 Z" fill="#7dd3fc"/> <!-- 땀방울 -->
+          </g>
+          <!-- 편안한 표정 -->
+          <g class="face-relax">
+            <path d="M53 56 Q59 50 65 56" stroke="#3a2a1e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+            <path d="M73 56 Q79 50 85 56" stroke="#3a2a1e" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+            <path d="M62 70 Q71 80 80 70" stroke="#7a5b48" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+            <circle cx="50" cy="66" r="5" fill="#ffb4a8" opacity=".55"/>
+            <circle cx="92" cy="66" r="5" fill="#ffb4a8" opacity=".55"/>
+          </g>
+        </svg>
+        <span class="zzz" style="position:absolute;top:-4px;right:0;font-size:16px;color:#a78bfa;font-weight:800">z<sup>z</sup></span>
+      </div>
+
+      <div class="notes"><span>🎵</span><span>♪</span><span>🎵</span></div>
+      <div class="done">🌙 오늘도 수고했어요 — 커튼·조명·도어락 + 지니뮤직 ASMR로 혼자만의 휴식</div>
+    </div>
+    <button class="replay" onclick="replay()">↻ 다시 재생</button>
+  </div>
+
+  <script>
+    function replay(){ const s=document.getElementById('scene');
+      s.classList.remove('play'); void s.offsetWidth; s.classList.add('play'); }
+  </script>
+</body>
+</html>

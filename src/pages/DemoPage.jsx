@@ -14,6 +14,7 @@ import TopBar from '../components/TopBar.jsx';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 import SurveySummaryPanel from '../components/SurveySummaryPanel.jsx';
+import ProactiveStory from '../components/ProactiveStory.jsx';
 import { SCENARIOS } from '../constants/scenarios.js';
 
 export default function DemoPage() {
@@ -234,6 +235,8 @@ export default function DemoPage() {
               )}
             </div>
           )}
+
+          <ProactiveStory scenarioId={scenarioId} />
 
           <div style={{ marginTop: '0.9rem' }}>
             <VectorSpace
