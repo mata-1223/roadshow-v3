@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>스토리보드 — 앱 활동 추론 → 기가지니 선제 실행 (3분할)</title>
+<style>
+  :root{--pp:#7c3aed;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;color:#0f172a;background:linear-gradient(180deg,#f8fafc,#eef2f7);padding:22px;}
+  h1{font-size:1.2rem;margin:0 0 4px;} .sub{color:#64748b;margin:0 0 12px;font-size:.85rem;} .sub b{color:var(--pp);}
+  .stage{position:relative;width:1000px;max-width:98vw;height:600px;background:#0b1020;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(15,23,42,.25);display:flex;flex-direction:column;}
+  .badge{height:34px;flex:none;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(#1e1b3a,#241d44);color:#fff;font-weight:800;font-size:.84rem;}
+  .badge b{color:#c4b5fd;}
+  .grid{flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;min-height:0;}
+  .panel{position:relative;display:flex;flex-direction:column;overflow:hidden;background:#0e1424;}
+  .pcap{flex:none;text-align:center;font-size:.76rem;font-weight:800;padding:7px 2px 4px;color:#fff;}
+
+  /* 관측 → 추론 스트립 */
+  .obs{flex:none;display:flex;align-items:center;gap:5px;justify-content:center;padding:3px 4px 6px;font-size:.58rem;font-weight:800;}
+  .obs span{padding:.16rem .42rem;border-radius:7px;opacity:0;transition:.3s;white-space:nowrap;}
+  .obs .o-app{color:#7dd3fc;background:rgba(56,189,248,.16);}
+  .obs .arr{color:#94a3b8;background:none;}
+  .obs .o-int{color:#e9d5ff;background:rgba(167,139,250,.2);}
+  .obs.s1 .o-app{opacity:1;} .obs.s2 .arr,.obs.s2 .o-int{opacity:1;}
+
+  .room{position:relative;flex:1;overflow:hidden;transition:background .9s;}
+  .p1 .room{background:linear-gradient(#241b3d,#140e26);}
+  .p2 .room{background:linear-gradient(#1a1430,#0e0a1e);}
+  .p3 .room{background:linear-gradient(#241b30,#160f22);}
+
+  .win{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:104px;height:64px;border:5px solid #4a3f5e;border-radius:5px;background:linear-gradient(#0c1b3a,#13294f);overflow:hidden;}
+  .win .moon{position:absolute;top:4px;right:6px;font-size:13px;}
+  .curtain{position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#5a2230,#7a2f3e);transition:transform 1.4s ease;z-index:2;}
+  .curtain.l{left:0;transform:translateX(-86%);} .curtain.r{right:0;transform:translateX(86%);}
+  .p1.run .curtain.l,.p1.run .curtain.r{transform:translateX(0);}
+
+  .tv{position:absolute;bottom:34px;right:12px;width:38px;height:24px;background:#0f1626;border:2px solid #2a3852;border-radius:3px;z-index:4;}
+  .tv .scr{position:absolute;inset:2px;border-radius:1px;background:#3b82f6;transition:background .9s;}
+  .p1.run .tv .scr{background:#0a0f1a;}
+
+  .dim{position:absolute;inset:0;background:#05030a;opacity:0;transition:opacity 1.4s;z-index:5;pointer-events:none;} .p1.run .dim{opacity:.5;}
+  .disco{position:absolute;inset:0;opacity:0;transition:opacity .8s;z-index:4;pointer-events:none;
+         background:radial-gradient(circle at 28% 32%,rgba(244,63,94,.5),transparent 48%),radial-gradient(circle at 72% 40%,rgba(59,130,246,.5),transparent 48%),radial-gradient(circle at 50% 78%,rgba(34,197,94,.45),transparent 48%);}
+  .p2.run .disco{opacity:1;animation:disco 2s linear infinite;}
+  @keyframes disco{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(360deg)}}
+  .warm{position:absolute;inset:0;background:radial-gradient(circle at 50% 70%,rgba(255,176,90,.55),rgba(255,140,60,0) 60%);opacity:0;transition:opacity 1.4s;z-index:4;pointer-events:none;} .p3.run .warm{opacity:1;}
+  .diffuser{position:absolute;bottom:18px;left:46px;width:14px;height:22px;background:#cbb6e6;border-radius:5px 5px 3px 3px;z-index:6;}
+  .mist{position:absolute;bottom:40px;left:48px;font-size:12px;opacity:0;z-index:6;} .p3.run .mist{opacity:1;animation:mist 2.2s ease-in-out infinite;}
+  @keyframes mist{0%{transform:translateY(6px) scale(.8);opacity:0}40%{opacity:.8}100%{transform:translateY(-16px) scale(1.2);opacity:0}}
+
+  .genie{position:absolute;bottom:48px;left:12px;width:24px;height:36px;background:linear-gradient(#2a3346,#1a212e);border-radius:12px;border:1px solid #3a4456;z-index:7;}
+  .genie::after{content:'';position:absolute;top:5px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;background:#334155;transition:.5s;}
+  .run .genie::after{background:#a78bfa;box-shadow:0 0 8px #a78bfa;animation:gp 1.2s ease-in-out infinite;}
+  @keyframes gp{0%,100%{box-shadow:0 0 5px #a78bfa}50%{box-shadow:0 0 14px #c4b5fd}}
+
+  .couch{position:absolute;bottom:2px;left:54%;transform:translateX(-50%);width:120px;height:28px;background:#3b3357;border-radius:10px;z-index:5;} .p2 .couch{background:#33304f;} .p3 .couch{background:#4a3f5e;}
+  .person{position:absolute;bottom:8px;left:54%;transform:translateX(-50%);z-index:6;}
+  .p2.run .person{animation:bob .5s ease-in-out infinite;} @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+
+  /* 기가지니 선제 실행 배너 (고객 명령 없이) */
+  .genie-msg{position:absolute;bottom:6px;left:6px;right:6px;z-index:9;background:rgba(124,58,237,.96);color:#fff;font-size:.6rem;font-weight:800;
+             padding:.3rem .5rem;border-radius:9px;opacity:0;transform:translateY(6px);transition:.35s;text-align:left;box-shadow:0 4px 10px rgba(0,0,0,.3);}
+  .genie-msg.show{opacity:1;transform:none;} .genie-msg .who{display:block;font-size:.5rem;color:#ddd6fe;margin-bottom:1px;}
+  .music{position:absolute;bottom:48px;right:8px;z-index:9;background:rgba(15,23,42,.85);color:#a7f0c8;border:1px solid rgba(167,240,200,.4);font-size:.55rem;font-weight:800;padding:.18rem .42rem;border-radius:999px;opacity:0;transition:.3s;white-space:nowrap;} .music.show{opacity:1;}
+
+  .acts{flex:none;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:6px 6px 8px;background:#0c1224;}
+  .chip{font-size:.57rem;font-weight:800;color:#e9d5ff;background:#1e1b3a;border:1px solid #4c3a8a;border-radius:8px;padding:.16rem .4rem;opacity:0;transform:translateY(4px);transition:.3s;} .chip.show{opacity:1;transform:none;}
+
+  .foot{flex:none;min-height:30px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px 10px;font-size:.76rem;font-weight:800;color:#fff;background:rgba(124,58,237,.96);} .foot b{color:#fde68a;}
+  .replay{margin-top:12px;font-size:.85rem;font-weight:700;color:var(--pp);background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:.45rem .9rem;cursor:pointer;}
+</style>
+</head>
+<body>
+  <h1>🎬 앱 활동으로 의도를 읽고 — 기가지니가 먼저 맞춰줍니다</h1>
+  <p class="sub">고객이 <b>말하기 전에</b>, <b>과거 취향·이용 이력(특성)과 앱 활동(실시간)을 함께 분석</b>해 의도를 추론하고 기가지니가 <b>스스로 알맞은 환경·음악</b>을 선제 실행합니다. (3개 상황 동시 시연)</p>
+
+  <div id="stage" class="stage">
+    <div class="badge">🏠 과거 취향 + 앱 활동 추론 → <b>기가지니 선제 실행</b> · 고객 음성 명령 없이</div>
+    <div class="grid">
+
+      <!-- P1: 늦은 밤 디지털 → 취침/수면 -->
+      <div class="panel p1">
+        <div class="pcap">🌙 늦은 밤 디지털 활동</div>
+        <div class="obs"><span class="o-app">📱 올레tv 심야 시청</span><span class="arr">→</span><span class="o-int">🧠 취침 준비</span></div>
+        <div class="room">
+          <div class="win"><span class="moon">🌙</span><div class="curtain l"></div><div class="curtain r"></div></div>
+          <div class="tv"><div class="scr"></div></div>
+          <div class="couch"></div>
+          <div class="person"><svg viewBox="0 0 120 100" width="76">
+            <ellipse cx="60" cy="46" rx="19" ry="20" fill="#f2c6a0"/><path d="M41 44 Q40 25 60 25 Q80 25 79 44 Q73 36 60 36 Q47 36 41 44 Z" fill="#3b2f2a"/>
+            <path d="M51 47 Q56 50 61 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M62 47 Q67 50 72 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M53 59 Q60 56 67 59" stroke="#7a5b48" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+            <path d="M32 100 Q30 76 60 76 Q90 76 88 100 Z" fill="#6c7a95"/></svg></div>
+          <div class="dim"></div><div class="genie"></div>
+          <div class="music">🎵 지니뮤직 ▸ 수면 플레이리스트</div>
+          <div class="genie-msg"><span class="who">🤖 기가지니 · 선제 실행</span>늦은 밤이네요 — 취침 환경으로 맞췄어요</div>
+        </div>
+        <div class="acts"><span class="chip">📺 올레tv OFF</span><span class="chip">💡 조명↓</span><span class="chip">🪟 커튼</span><span class="chip">🛏 모션베드 슬립</span></div>
+      </div>
+
+      <!-- P2: 즉각 스트레스 해소 → 신나는 플리 -->
+      <div class="panel p2">
+        <div class="pcap">🔁 즉각 스트레스 해소</div>
+        <div class="obs"><span class="o-app">📱 잦은 앱 전환·기분전환 탐색</span><span class="arr">→</span><span class="o-int">🧠 스트레스 해소</span></div>
+        <div class="room">
+          <div class="disco"></div>
+          <div class="couch"></div>
+          <div class="person"><svg viewBox="0 0 120 100" width="76">
+            <ellipse cx="60" cy="46" rx="19" ry="20" fill="#f2c6a0"/><path d="M41 44 Q40 25 60 25 Q80 25 79 44 Q73 36 60 36 Q47 36 41 44 Z" fill="#3b2f2a"/>
+            <path d="M51 46 Q56 42 61 46" stroke="#3a2a1e" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M62 46 Q67 42 72 46" stroke="#3a2a1e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <path d="M52 58 Q60 65 68 58" stroke="#7a5b48" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <path d="M32 100 Q30 76 60 76 Q90 76 88 100 Z" fill="#d9466a"/></svg></div>
+          <div class="genie"></div>
+          <div class="music">🎵 지니뮤직 ▸ 신나는 플리(도파민)</div>
+          <div class="genie-msg"><span class="who">🤖 기가지니 · 선제 실행</span>기분 전환이 필요해 보여요 — 신나는 플리를 켰어요</div>
+        </div>
+        <div class="acts"><span class="chip">🎵 업비트 재생</span><span class="chip">💡 컬러 무드등</span><span class="chip">✨ 비트 싱크</span></div>
+      </div>
+
+      <!-- P3: 심리·감정 회복 → 힐링 -->
+      <div class="panel p3">
+        <div class="pcap">🎧 심리·감정 회복</div>
+        <div class="obs"><span class="o-app">📱 명상·힐링 콘텐츠 탐색</span><span class="arr">→</span><span class="o-int">🧠 감정 회복</span></div>
+        <div class="room">
+          <div class="win"><span class="moon">🌙</span></div>
+          <div class="couch"></div>
+          <div class="person"><svg viewBox="0 0 120 100" width="76">
+            <ellipse cx="60" cy="46" rx="19" ry="20" fill="#f2c6a0"/><path d="M41 44 Q40 25 60 25 Q80 25 79 44 Q73 36 60 36 Q47 36 41 44 Z" fill="#3b2f2a"/>
+            <path d="M51 47 Q56 50 61 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M62 47 Q67 50 72 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M53 58 Q60 61 67 58" stroke="#7a5b48" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+            <path d="M32 100 Q30 76 60 76 Q90 76 88 100 Z" fill="#7c6f8f"/></svg></div>
+          <div class="diffuser"></div><span class="mist">💨</span>
+          <div class="warm"></div><div class="genie"></div>
+          <div class="music">🎵 지니뮤직 ▸ 힐링 음악</div>
+          <div class="genie-msg"><span class="who">🤖 기가지니 · 선제 실행</span>오늘 지치셨네요 — 힐링 모드로 맞췄어요</div>
+        </div>
+        <div class="acts"><span class="chip">🕯 디퓨저 ON</span><span class="chip">💡 웜 라이트</span><span class="chip">🌿 아로마</span></div>
+      </div>
+
+    </div>
+    <div class="foot">고객이 말하기 전에 — 앱 활동으로 <b>의도를 추론</b>하고, 기가지니가 알맞은 환경·음악을 <b>먼저 실행</b>합니다.</div>
+  </div>
+  <button class="replay" onclick="start()">↻ 다시 재생</button>
+
+  <script>
+    const $$=s=>[...document.querySelectorAll(s)];
+    const panels=$$('.panel').map(el=>({el,obs:el.querySelector('.obs'),room:el.querySelector('.room'),
+      msg:el.querySelector('.genie-msg'),music:el.querySelector('.music'),chips:[...el.querySelectorAll('.chip')]}));
+    let timers=[],loop=null;
+    const at=(t,fn)=>timers.push(setTimeout(fn,t));
+    function reset(){panels.forEach(P=>{P.el.classList.remove('run');P.obs.classList.remove('s1','s2');P.msg.classList.remove('show');P.music.classList.remove('show');P.chips.forEach(c=>c.classList.remove('show'));});}
+    function cycle(){
+      reset();
+      at(700,()=>panels.forEach(P=>P.obs.classList.add('s1')));         // 앱 활동 관측
+      at(1700,()=>panels.forEach(P=>P.obs.classList.add('s2')));        // → 의도 추론
+      at(2700,()=>panels.forEach(P=>{P.el.classList.add('run');P.msg.classList.add('show');P.music.classList.add('show');})); // 기가지니 선제 실행
+      panels.forEach(P=>P.chips.forEach((c,ci)=>at(3000+ci*320,()=>c.classList.add('show'))));
+    }
+    function start(){timers.forEach(clearTimeout);timers=[];if(loop)clearInterval(loop);cycle();loop=setInterval(cycle,8500);}
+    start();
+  </script>
+</body>
+</html>
