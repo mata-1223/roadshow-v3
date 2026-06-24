@@ -123,20 +123,6 @@ export default function DemoPage() {
       <TopBar connected={wsReady} />
       <DemoStepper current={reflectedCount > 0 ? 5 : 4} />
 
-      {showExitConfirm && (
-        <div className="exit-backdrop" onClick={exitBack}>
-          <div className="exit-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="exit-ic">🚪</div>
-            <h3>시연을 종료하시겠습니까?</h3>
-            <p>‘뒤로 가기’를 누르면 행동 선택으로 돌아가고, ‘시연 종료’를 누르면 시작 화면으로 이동합니다.</p>
-            <div className="exit-btns">
-              <button type="button" className="exit-btn back" onClick={exitBack}>← 뒤로 가기</button>
-              <button type="button" className="exit-btn end" onClick={exitEnd}>시연 종료</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="container demo-grid">
 
         {/* ── 좌 · 시스템 구성(별개) + 고객 입력(행동·설문) ──────────── */}
@@ -162,7 +148,16 @@ export default function DemoPage() {
           <div className="behavior-block">
             <h2>행동 선택지</h2>
 
-            {mode !== 'ended' ? (
+            {showExitConfirm ? (
+              <div className="exit-inline">
+                <div className="exit-inline-h">🚪 시연을 종료하시겠습니까?</div>
+                <p className="exit-inline-d">‘뒤로 가기’를 누르면 행동 선택으로 돌아가고, ‘시연 종료’를 누르면 시작 화면으로 이동합니다.</p>
+                <div className="exit-inline-btns">
+                  <button type="button" className="exit-btn back" onClick={exitBack}>← 뒤로 가기</button>
+                  <button type="button" className="exit-btn end" onClick={exitEnd}>시연 종료</button>
+                </div>
+              </div>
+            ) : mode !== 'ended' ? (
               <BehaviorPanel
                 mode={mode}
                 step1Block={step1Block}
@@ -268,14 +263,11 @@ export default function DemoPage() {
       </div>
 
       <style>{`
-        .exit-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(15,23,42,.55);
-                         display: flex; align-items: center; justify-content: center; }
-        .exit-modal { background: #fff; border-radius: 18px; padding: 1.8rem 2rem; width: min(420px, 92vw);
-                      text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
-        .exit-modal .exit-ic { font-size: 2.2rem; }
-        .exit-modal h3 { margin: 0.4rem 0 0.5rem; font-size: 1.15rem; }
-        .exit-modal p { margin: 0 0 1.2rem; font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
-        .exit-btns { display: flex; gap: 0.6rem; justify-content: center; }
+        /* 앱 이탈 — 행동 선택지 영역 인라인 선택 */
+        .exit-inline { background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 14px; padding: 1.1rem 1.2rem; }
+        .exit-inline-h { font-weight: 800; font-size: 1.02rem; color: #9a3412; }
+        .exit-inline-d { margin: 0.4rem 0 0.9rem; font-size: 0.84rem; color: var(--muted); line-height: 1.5; }
+        .exit-inline-btns { display: flex; gap: 0.6rem; }
         .exit-btn { font-size: 0.92rem; font-weight: 800; border-radius: 10px; padding: 0.6rem 1.2rem; cursor: pointer; border: none; }
         .exit-btn.back { color: #1e293b; background: #e2e8f0; }
         .exit-btn.back:hover { background: #cbd5e1; }

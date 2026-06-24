@@ -3,20 +3,19 @@ import { useEffect, useRef, useState } from 'react';
 // 시나리오 ↔ 서사형 스토리보드 매핑 (public/*.html)
 export const STORY_MAP = {
   'cs-myk-v3': [
-    { label: '전화하기 전에 상담이 끝난다 · 장애 선제', src: '/story-cs-outage.html' },
-    { label: '요금 불만, 말하기 전에 선제 해결',        src: '/story-scenarios.html?embed=1#B' },
-    { label: '부모보다 먼저 아이를 챙긴다',            src: '/story-scenarios.html?embed=1#C' },
+    { label: '114 누르기 10초 전',          src: '/story-cs-outage.html' },
+    { label: '말하기 전에 해결하는 요금 불만', src: '/story-scenarios.html?embed=1#B' },
+    { label: '우리 아이 AI 보호자',          src: '/story-scenarios.html?embed=1#C' },
   ],
   'bundle-v3': [
-    { label: '결혼하기도 전에 결합을 제안한다',        src: '/story-scenarios.html?embed=1#D' },
-    { label: '이사 당일, 모든 통신이 이미 준비된다',   src: '/story-scenarios.html?embed=1#E' },
-    { label: '가족 결합이 깨질 미래를 막는다',         src: '/story-scenarios.html?embed=1#F' },
+    { label: '고객보다 먼저 찾는 결합 기회',       src: '/story-scenarios.html?embed=1#D' },
+    { label: '짐은 아직 안 왔는데, 인터넷은 도착', src: '/story-scenarios.html?embed=1#E' },
+    { label: '결합 이탈 신호, 깨지기 전에 포착',   src: '/story-scenarios.html?embed=1#F' },
   ],
   'worker-v3': [
-    { label: '행동 여정 · 의도 적중 리빌 (퇴근→잠들기)', src: '/story-journey-evening.html?auto=1' },
-    { label: '같은 고객, 연속 변화하는 의도',          src: '/story-same-customer.html' },
-    { label: '앱 활동 추론 → 기가지니 선제 실행 (3종)', src: '/story-genie-modes.html' },
-    { label: '동굴 모드 · 기가지니 (영상형)',          src: '/anim-demo.html' },
+    { label: '당신의 저녁을 읽는 AI',        src: '/story-journey-evening.html?auto=1' },
+    { label: '같은 사람, 달라지는 마음',      src: '/story-same-customer.html' },
+    { label: '눈치 100단, 먼저 움직이는 AI',  src: '/story-genie-modes.html' },
   ],
 };
 
