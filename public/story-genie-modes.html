@@ -7,7 +7,7 @@
 <style>
   :root{--pp:#7c3aed;}
   *{box-sizing:border-box;}
-  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;color:#0f172a;background:linear-gradient(180deg,#f8fafc,#eef2f7);padding:22px;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;color:#0f172a;background:linear-gradient(180deg,#f8fafc,#eef2f7);padding:22px;display:flex;flex-direction:column;align-items:center;}
   h1{font-size:1.2rem;margin:0 0 4px;} .sub{color:#64748b;margin:0 0 12px;font-size:.85rem;} .sub b{color:var(--pp);}
   .stage{position:relative;width:1000px;max-width:98vw;height:600px;background:#0b1020;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(15,23,42,.25);display:flex;flex-direction:column;}
   .badge{height:34px;flex:none;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(#1e1b3a,#241d44);color:#fff;font-weight:800;font-size:.84rem;}
@@ -141,7 +141,10 @@
     </div>
     <div class="foot">고객이 말하기 전에 — 앱 활동으로 <b>의도를 추론</b>하고, 기가지니가 알맞은 환경·음악을 <b>먼저 실행</b>합니다.</div>
   </div>
-  <button class="replay" onclick="start()">↻ 다시 재생</button>
+  <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+    <button onclick="parent.postMessage('story-start-demo','*')" style="font-size:.92rem;font-weight:800;color:#fff;background:#7c3aed;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">▶ 시나리오 체험형 시연 시작</button>
+    <button onclick="parent.postMessage('story-close','*')" style="font-size:.92rem;font-weight:700;color:#334155;background:#e2e8f0;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">✕ 닫기</button>
+  </div>
 
   <script>
     const $$=s=>[...document.querySelectorAll(s)];

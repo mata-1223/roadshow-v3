@@ -53,14 +53,14 @@ export default function FeatureVectorPanel({ survey, answers, batchFeatures }) {
   return (
     <div className="fv-panel">
       <div className="fv-head">
-        <h3>배치 feature vector</h3>
+        <h3>고객 기본 상태 변수</h3>
         <span className="fv-count">{doneCount} / {order.length}</span>
       </div>
-      <p className="fv-note">설문 응답마다 base feature 행이 실시간 갱신됩니다. 파생 feature는 제출 후 계산.</p>
+      <p className="fv-note">설문 응답마다 고객 기본 정보 변수 데이터가 실시간 갱신됩니다. 파생 변수는 제출 후 계산.</p>
 
       <div className="fv-table">
         <div className="fv-row fv-hd">
-          <span>Feature</span><span>값</span><span>상태</span>
+          <span>변수</span><span>값</span><span>상태</span>
         </div>
         {order.map((fname) => {
           const r = baseRow(fname);
@@ -75,7 +75,7 @@ export default function FeatureVectorPanel({ survey, answers, batchFeatures }) {
 
         {derived.length > 0 && (
           <>
-            <div className="fv-sub">파생 feature (Index / Score)</div>
+            <div className="fv-sub">파생 변수 (Index / Score)</div>
             {derived.map((fname) => (
               <div key={fname} className="fv-row done">
                 <span className="fv-name">{featureLabel(fname)}</span>
