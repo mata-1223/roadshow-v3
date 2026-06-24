@@ -1,7 +1,7 @@
 // 분석 서사 오버레이 — 설문 제출 후 "입력 → 즉시 출력"이 아니라
-//   ① 데이터 적재  →  ② 파생 변수 생성(Index/Score 계산)  →  ③ 의도 추론
+//   ① 데이터 적재  →  ② 분석 지표 생성(Index/Score 계산)  →  ③ 의도 추론
 // 3단계를 시각적으로 연출해 "실제 데이터가 분석되는" 느낌을 준다.
-// 핵심: ②에서 '고객이 직접 입력하지 않은' 파생 변수를 엔진이 만들어냄을 강조 → passthrough 느낌 제거.
+// 핵심: ②에서 '고객이 직접 입력하지 않은' 분석 지표를 엔진이 만들어냄을 강조 → passthrough 느낌 제거.
 // 시나리오 무관(범용): survey + 응답 + 추론 결과만으로 동작.
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { featureLabel } from '../utils/featureLabel.js';
@@ -19,8 +19,8 @@ function fmt(v) {
 export default function AnalysisOverlay({ survey, answers, result, onDone, onStep }) {
   const [step, setStep] = useState(0); // 0,1,2 진행 → 3 완료(CTA)
   const [showAllRows, setShowAllRows] = useState(false); // 적재 응답 6건 초과분 펼침
-  const [selFeat, setSelFeat] = useState(null); // 산식 표시 중인 파생 변수
-  const trace = result?.feature_trace || {};    // 파생 변수별 산출 근거
+  const [selFeat, setSelFeat] = useState(null); // 산식 표시 중인 분석 지표
+  const trace = result?.feature_trace || {};    // 분석 지표별 산출 근거
 
   // 내부 단계 → 상단 글로벌 스텝퍼 단계 동기화 (적재=2, 파생변수=3, 의도 추론=4)
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
 
   const STEPS = [
     { icon: '📥', title: '데이터 적재', desc: '고객 데이터 테이블에 적재' },
-    { icon: '⚙️', title: '파생 변수 생성', desc: '파생 변수(Index·Score) 계산' },
+    { icon: '⚙️', title: '분석 지표 생성', desc: '분석 지표(Index·Score) 계산' },
     { icon: '🧠', title: '의도 추론', desc: '의도 도출' },
   ];
 
@@ -105,12 +105,12 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
             </div>
           </div>
 
-          {/* ② 파생 변수 생성 */}
+          {/* ② 분석 지표 생성 */}
           {step >= 1 && (
             <div className="ao-card show ao-hl">
-              <div className="ao-card-h">⚙️ 고객 기본 상태 변수를 조합하여 <b>파생 변수</b>를 계산합니다</div>
+              <div className="ao-card-h">⚙️ 고객 기본 상태 변수를 조합하여 <b>분석 지표</b>를 계산합니다</div>
               <div className="ao-feats">
-                {derived.length === 0 && <span className="ao-none">파생 변수 없음</span>}
+                {derived.length === 0 && <span className="ao-none">분석 지표 없음</span>}
                 {derived.map((f) => (
                   <button
                     key={f.name}
@@ -123,7 +123,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
                   </button>
                 ))}
               </div>
-              <div className="ao-hint">↑ 고객 기본 상태 변수를 조합하여 <b>파생 변수 생성</b> · <span className="ao-hint-click">변수를 클릭하면 산식이 표시됩니다</span></div>
+              <div className="ao-hint">↑ 고객 기본 상태 변수를 조합하여 <b>분석 지표 생성</b> · <span className="ao-hint-click">변수를 클릭하면 산식이 표시됩니다</span></div>
 
               {selFeat && trace[selFeat] && (
                 <div className="ao-trace">
@@ -179,7 +179,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
               <span className="ao-spin" />
               {[
                 `고객 응답 ${answeredRows.length}건을 데이터 테이블에 적재하고 있어요`,
-                '응답을 조합해 파생 변수(Index·Score)를 계산하고 있어요',
+                '응답을 조합해 분석 지표(Index·Score)를 계산하고 있어요',
                 '계산된 특성으로 고객의 의도를 추론하고 있어요',
               ][Math.min(step, 2)]}
               <span className="ao-dots"><span /><span /><span /></span>
@@ -243,7 +243,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
         .ao-hint b { color: #c2410c; }
         .ao-hint-click { color: #c2410c; font-weight: 700; }
 
-        /* 파생 변수 산식 팝오버 */
+        /* 분석 지표 산식 팝오버 */
         .ao-trace { margin-top: 0.7rem; background: #fff; border: 1px solid #fed7aa; border-radius: 10px;
                     padding: 0.7rem 0.8rem; animation: ao-pop .25s ease-out; }
         .ao-trace-h { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.5rem; }
