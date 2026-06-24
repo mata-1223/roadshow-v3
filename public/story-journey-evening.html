@@ -125,7 +125,8 @@
 
     <div class="ctrl">
       <button class="btn" id="nextBtn" onclick="next()">▶ 행동 시작</button>
-      <button class="btn ghost" onclick="reset()">↻ 처음부터</button>
+      <button class="btn ghost" id="resetBtn" onclick="reset()">↻ 처음부터</button>
+      <button class="btn" id="pauseBtn" style="display:none" onclick="togglePause()">⏸ 정지</button>
     </div>
     <div class="foot" id="foot">관람객이 행동을 더할수록 — 의도가 실시간으로 갈리고, KT는 매번 먼저 도착합니다.</div>
   </div>
@@ -214,11 +215,28 @@
       renderBread();
     }
     reset();
-    // 자동재생 모드(?auto): 부스 어트랙트/미리보기용
-    if(new URLSearchParams(location.search).has('auto')){
-      const tick=()=>{ if(idx>=STEPS.length-1){ setTimeout(()=>{reset();setTimeout(loop,1200);},3500); } else { next(); setTimeout(tick,3200); } };
-      const loop=()=>tick();
-      setTimeout(loop,1000);
+    // 자동재생 모드(?auto): 행동이 자동 진행 → [다음 행동] 대신 [정지/재생] 토글 제공
+    let autoTimer = null, paused = false;
+    function autoTick(){
+      if (paused) return;
+      if (idx >= STEPS.length - 1) {
+        autoTimer = setTimeout(() => { if (paused) return; reset(); autoTimer = setTimeout(autoTick, 1200); }, 3500);
+      } else {
+        next();
+        autoTimer = setTimeout(autoTick, 3200);
+      }
+    }
+    function togglePause(){
+      paused = !paused;
+      const b = document.getElementById('pauseBtn');
+      if (paused) { if (autoTimer) clearTimeout(autoTimer); b.textContent = '▶ 재생'; }
+      else { b.textContent = '⏸ 정지'; autoTick(); }
+    }
+    if (new URLSearchParams(location.search).has('auto')) {
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('resetBtn').style.display = 'none';
+      document.getElementById('pauseBtn').style.display = '';
+      autoTimer = setTimeout(autoTick, 1000);
     }
   </script>
 </body>
