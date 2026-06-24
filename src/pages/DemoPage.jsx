@@ -14,7 +14,6 @@ import TopBar from '../components/TopBar.jsx';
 import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 import SurveySummaryPanel from '../components/SurveySummaryPanel.jsx';
-import ProactiveStory from '../components/ProactiveStory.jsx';
 import { SCENARIOS } from '../constants/scenarios.js';
 
 export default function DemoPage() {
@@ -33,6 +32,7 @@ export default function DemoPage() {
   const [history, setHistory]   = useState([]);          // [{seq, behavior}]
   const [ackPending, setAckPending] = useState(false);
   const [wsReady, setWsReady]   = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);  // 앱 이탈 확인 다이얼로그
   const wsRef = useRef(null);
 
   // Vector Space 좌표 사전 fetch
@@ -90,17 +90,15 @@ export default function DemoPage() {
   function handleSelect(b) {
     if (ackPending || !wsReady || mode === 'ended') return;
 
+    // 앱 이탈 → 즉시 종료하지 않고 확인 다이얼로그 표시
+    if (b.event_type === 'app_exit') { setShowExitConfirm(true); return; }
+
     setAckPending(true);
     wsRef.current.sendBehavior(b.id, b.event_type, b.entity);
     setHistory([...history, { seq: history.length + 1, behavior: b, from: mode, parent }]);
 
     // 다음 모드 결정
-    if (b.event_type === 'app_exit') {
-      setMode('ended');
-      setParent(null);
-      // app_exit은 서버가 INTENT_UPDATE를 보내지 않으므로 ackPending을 직접 해제
-      setTimeout(() => setAckPending(false), 200);
-    } else if (b.event_type === 'navigate_back') {
+    if (b.event_type === 'navigate_back') {
       setMode('step1');
       setParent(null);
     } else if (mode === 'step1') {
@@ -110,6 +108,10 @@ export default function DemoPage() {
     }
     // 2-X 클릭 → step2 유지: 섹션 내에서 연속 행동 가능. 메인 메뉴 복귀는 BACK으로.
   }
+
+  // 앱 이탈 확인 — 뒤로 가기(Step 1 복귀) / 시연 종료(초기 화면)
+  function exitBack() { setShowExitConfirm(false); setMode('step1'); setParent(null); }
+  function exitEnd() { setShowExitConfirm(false); handleReset(); }
 
   function handleReset() {
     if (wsRef.current) wsRef.current.close();
@@ -121,6 +123,20 @@ export default function DemoPage() {
       <TopBar connected={wsReady} />
       <DemoStepper current={reflectedCount > 0 ? 5 : 4} />
 
+      {showExitConfirm && (
+        <div className="exit-backdrop" onClick={exitBack}>
+          <div className="exit-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="exit-ic">🚪</div>
+            <h3>시연을 종료하시겠습니까?</h3>
+            <p>‘뒤로 가기’를 누르면 행동 선택으로 돌아가고, ‘시연 종료’를 누르면 시작 화면으로 이동합니다.</p>
+            <div className="exit-btns">
+              <button type="button" className="exit-btn back" onClick={exitBack}>← 뒤로 가기</button>
+              <button type="button" className="exit-btn end" onClick={exitEnd}>시연 종료</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container demo-grid">
 
         {/* ── 좌 · 시스템 구성(별개) + 고객 입력(행동·설문) ──────────── */}
@@ -129,11 +145,11 @@ export default function DemoPage() {
             👆 {scenarioId === 'worker-v3'
               ? <>고객의 <b>앱 진입 행동</b>을 선택하면,</>
               : <>고객이 <b>마이케이티 앱에서 하는 활동</b>을 선택하면,</>}
-            {' '}엔진이 <b>매 행동마다 Intent를 실시간 재추론</b>합니다. 행동이 쌓일수록 의도가 또렷해집니다.
+            {' '}엔진이 <b>매 행동마다 고객 의도를 실시간으로 재추론</b>합니다.
             <span className="stage-note">
               {scenarioId === 'worker-v3'
-                ? <>※ 실제 운영 시에는 고객의 <b>앱 진입 로그</b>를 활용하는 단계로, 본 시연에서는 실제 고객 데이터 대신 <b>앱 진입 행동 응답(선택)</b>으로 대체합니다.</>
-                : <>※ 실제 운영 시에는 고객의 <b>마이케이티 앱 내 실시간 행동 로그</b>를 활용하는 단계로, 본 시연에서는 실제 고객 데이터 대신 <b>마이케이티 앱에서 가능한 행동 응답(선택)</b>으로 대체합니다.</>}
+                ? <>※ 고객의 <b>앱 진입 로그</b>를 활용하는 단계로, 본 시연에서는 실제 고객 데이터 대신 <b>앱 진입 행동 응답(선택)</b>으로 대체합니다.</>
+                : <>※ 고객의 <b>마이케이티 앱 내 실시간 행동 로그</b>를 활용하는 단계로, 본 시연에서는 실제 고객 데이터 대신 <b>마이케이티 앱에서 가능한 행동 응답(선택)</b>으로 대체합니다.</>}
             </span>
           </div>
 
@@ -141,17 +157,10 @@ export default function DemoPage() {
           <div className="col-head col-head-input">
             <span className="col-step">①</span>
             <span className="col-role">고객 입력</span>
-            <span className="col-desc">행동 선택 · 설문</span>
           </div>
 
           <div className="behavior-block">
             <h2>행동 선택지</h2>
-            <p className="caption">
-              {mode === 'single'  && `앱을 선택하세요 (${behaviorsData?.apps?.length ?? ''}개 중 · 반복 선택할수록 의도가 또렷해집니다)`}
-              {mode === 'step1'   && `Step 1: ${step1Block?.behaviors?.length ?? ''}개 상위 메뉴 중 선택`}
-              {mode === 'step2'   && 'Step 2: 섹션 내 행동 선택 (연속 선택 가능 · 뒤로가기로 메뉴 복귀)'}
-              {mode === 'ended'   && '시연 종료'}
-            </p>
 
             {mode !== 'ended' ? (
               <BehaviorPanel
@@ -201,10 +210,9 @@ export default function DemoPage() {
           <div className="col-head col-head-infer">
             <span className="col-step">②</span>
             <span className="col-role">엔진 추론 결과</span>
-            <span className="col-desc">Intent 분포 · Vector Space</span>
           </div>
           <h2>
-            {reflectedCount === 0 ? 'Base Intent Top 5' : '실시간 행동 반영 Intent Top 5'}
+            {reflectedCount === 0 ? '고객 의도 Top 5' : '실시간 행동 반영 고객 의도 Top 5'}
             <span className={`top5-badge ${reflectedCount === 0 ? 'base' : 'live'}`}>
               {reflectedCount === 0 ? '행동 대기 중' : `행동 ${reflectedCount}회 반영`}
             </span>
@@ -218,10 +226,12 @@ export default function DemoPage() {
           </h2>
           <p className="caption">
             {reflectedCount === 0
-              ? <>아직 행동이 없습니다 · 아래는 설문만으로 추론한 <b>Base Intent</b>이며, 왼쪽에서 행동을 선택하면 실시간으로 갱신됩니다</>
-              : <>{allIntents.length}개 Intent 중 상위 5개 · <b>Base 대비</b> 변화가 ▲▼로 표시됩니다 · 각 행의 <b>[활용 예시]</b>에서 상세를 확인하세요</>}
+              ? <>아직 행동이 없습니다 · 아래는 설문만으로 추론한 <b>고객 의도</b>이며, 행동 선택지에서 행동을 선택하면 실시간으로 갱신됩니다</>
+              : <>{allIntents.length}개 의도 중 상위 5개 · <b>기준 대비</b> 변화가 ▲▼로 표시됩니다 · 각 행의 <b>[활용 예시]</b>에서 상세를 확인하세요</>}
           </p>
-          <BusinessImpactBanner topN={topN} actionsData={scenario.actions} reflected={reflectedCount > 0} />
+          {scenarioId !== 'worker-v3' && (
+            <BusinessImpactBanner topN={topN} actionsData={scenario.actions} reflected={reflectedCount > 0} />
+          )}
           <IntentChart topN={topN} actionsData={scenario.actions} l1Zones={l1Zones} bundleProfile={bundleProfile} scenarioId={scenarioId} />
 
           {others && (
@@ -235,8 +245,6 @@ export default function DemoPage() {
               )}
             </div>
           )}
-
-          <ProactiveStory scenarioId={scenarioId} />
 
           <div style={{ marginTop: '0.9rem' }}>
             <VectorSpace
@@ -260,6 +268,19 @@ export default function DemoPage() {
       </div>
 
       <style>{`
+        .exit-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(15,23,42,.55);
+                         display: flex; align-items: center; justify-content: center; }
+        .exit-modal { background: #fff; border-radius: 18px; padding: 1.8rem 2rem; width: min(420px, 92vw);
+                      text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+        .exit-modal .exit-ic { font-size: 2.2rem; }
+        .exit-modal h3 { margin: 0.4rem 0 0.5rem; font-size: 1.15rem; }
+        .exit-modal p { margin: 0 0 1.2rem; font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+        .exit-btns { display: flex; gap: 0.6rem; justify-content: center; }
+        .exit-btn { font-size: 0.92rem; font-weight: 800; border-radius: 10px; padding: 0.6rem 1.2rem; cursor: pointer; border: none; }
+        .exit-btn.back { color: #1e293b; background: #e2e8f0; }
+        .exit-btn.back:hover { background: #cbd5e1; }
+        .exit-btn.end { color: #fff; background: #dc2626; }
+        .exit-btn.end:hover { background: #b91c1c; }
         .demo-page { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .demo-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1.35fr;
                      gap: clamp(0.8rem, 1.3vw, 1.4rem); padding-top: 0.5rem; padding-bottom: 0.5rem; align-items: stretch; }

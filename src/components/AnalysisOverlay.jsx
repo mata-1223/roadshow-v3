@@ -3,7 +3,7 @@
 // 3단계를 시각적으로 연출해 "실제 데이터가 분석되는" 느낌을 준다.
 // 핵심: ②에서 '고객이 직접 입력하지 않은' 파생 변수를 엔진이 만들어냄을 강조 → passthrough 느낌 제거.
 // 시나리오 무관(범용): survey + 응답 + 추론 결과만으로 동작.
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { featureLabel } from '../utils/featureLabel.js';
 import { intentName } from '../utils/intent.js';
 
@@ -22,7 +22,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
   const [selFeat, setSelFeat] = useState(null); // 산식 표시 중인 파생 변수
   const trace = result?.feature_trace || {};    // 파생 변수별 산출 근거
 
-  // 내부 단계 → 상단 글로벌 스텝퍼 단계 동기화 (적재=2, 파생변수=3, Base Intent 추론=4)
+  // 내부 단계 → 상단 글로벌 스텝퍼 단계 동기화 (적재=2, 파생변수=3, 의도 추론=4)
   useEffect(() => {
     if (onStep) onStep(2 + Math.min(step, 2));
   }, [step, onStep]);
@@ -45,9 +45,13 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
   }, [survey, answers]);
 
   // 파생 feature = batch_features 키 중 base에 없는 것 (= 고객이 입력하지 않은 계산값)
+  // 표출은 지수(Index)·점수(Score)만 — 증감률·중간 프록시 등 다른 성격 변수는 숨김
+  const isIndexScore = (k) => /Index|Score|지수|점수/.test(k);
   const derived = useMemo(() => {
     const bf = result?.batch_features || {};
-    return Object.keys(bf).filter((k) => !baseNames.has(k)).map((k) => ({ name: k, value: bf[k] }));
+    return Object.keys(bf)
+      .filter((k) => !baseNames.has(k) && isIndexScore(k))
+      .map((k) => ({ name: k, value: bf[k] }));
   }, [result, baseNames]);
 
   const topN = result?.top_n || [];
@@ -61,7 +65,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
   const STEPS = [
     { icon: '📥', title: '데이터 적재', desc: '고객 데이터 테이블에 적재' },
     { icon: '⚙️', title: '파생 변수 생성', desc: '파생 변수(Index·Score) 계산' },
-    { icon: '🧠', title: '의도 추론', desc: 'Base Intent 도출' },
+    { icon: '🧠', title: '의도 추론', desc: '의도 도출' },
   ];
 
   return (
@@ -69,18 +73,22 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
       <div className="ao-modal" onClick={(e) => e.stopPropagation()}>
         <div className="ao-stepper">
           {STEPS.map((s, i) => (
-            <div key={i} className={`ao-step ${step > i ? 'done' : step === i ? 'active' : ''}`}>
-              <span className="ao-step-ic">{s.icon}</span>
-              <span className="ao-step-tx"><b>{s.title}</b><small>{s.desc}</small></span>
-              {i < STEPS.length - 1 && <span className="ao-step-line" />}
-            </div>
+            <Fragment key={i}>
+              <div className={`ao-step ${step > i ? 'done' : step === i ? 'active' : ''}`}>
+                <span className="ao-step-ic">{s.icon}</span>
+                <span className="ao-step-tx"><b>{s.title}</b></span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <span className={`ao-step-arrow ${step > i ? 'done' : ''}`}>→</span>
+              )}
+            </Fragment>
           ))}
         </div>
 
         <div className="ao-stage">
           {/* ① 데이터 적재 */}
           <div className={`ao-card ${step >= 0 ? 'show' : ''}`}>
-            <div className="ao-card-h">📥 설문 응답 {answeredRows.length}건이 고객 데이터로 적재됩니다</div>
+            <div className="ao-card-h">📥 설문 응답 {answeredRows.length}건이 시연용 임시 DB에 적재됩니다. <small className="ao-tmp">(* 시연 종료 후 DB 삭제 예정)</small></div>
             <div className="ao-rows">
               {(showAllRows ? answeredRows : answeredRows.slice(0, 6)).map((r) => (
                 <div key={r.qid} className="ao-row">
@@ -100,7 +108,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
           {/* ② 파생 변수 생성 */}
           {step >= 1 && (
             <div className="ao-card show ao-hl">
-              <div className="ao-card-h">⚙️ 엔진이 <b>고객이 직접 입력하지 않은</b> 파생 변수를 계산합니다</div>
+              <div className="ao-card-h">⚙️ 고객 기본 상태 변수를 조합하여 <b>파생 변수</b>를 계산합니다</div>
               <div className="ao-feats">
                 {derived.length === 0 && <span className="ao-none">파생 변수 없음</span>}
                 {derived.map((f) => (
@@ -151,7 +159,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
           {/* ③ 의도 추론 */}
           {step >= 2 && (
             <div className="ao-card show">
-              <div className="ao-card-h">🧠 고객 상태 분석을 통해 <b>Base Intent</b>를 추론합니다</div>
+              <div className="ao-card-h">🧠 고객 상태 분석을 통해 <b>의도</b>를 추론합니다</div>
               <div className="ao-intents">
                 {topN.slice(0, 3).map((t, i) => (
                   <div key={t.intent_id} className={`ao-int ${i === 0 ? 'top' : ''}`}>
@@ -172,7 +180,7 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
               {[
                 `고객 응답 ${answeredRows.length}건을 데이터 테이블에 적재하고 있어요`,
                 '응답을 조합해 파생 변수(Index·Score)를 계산하고 있어요',
-                '계산된 특성으로 고객의 Base Intent를 추론하고 있어요',
+                '계산된 특성으로 고객의 의도를 추론하고 있어요',
               ][Math.min(step, 2)]}
               <span className="ao-dots"><span /><span /><span /></span>
             </span>
@@ -187,8 +195,8 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
                        display: flex; align-items: center; justify-content: center; }
         .ao-modal { background: #fff; border-radius: 20px; padding: 1.6rem 1.8rem; width: min(720px, 94vw);
                     max-height: 92vh; overflow: auto; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
-        .ao-stepper { display: flex; gap: 0; margin-bottom: 1.3rem; }
-        .ao-step { position: relative; flex: 1; display: flex; align-items: center; gap: 0.5rem; opacity: 0.4;
+        .ao-stepper { display: flex; align-items: center; justify-content: center; gap: 0.7rem; margin-bottom: 1.3rem; flex-wrap: wrap; }
+        .ao-step { flex: none; display: flex; align-items: center; gap: 0.5rem; opacity: 0.4;
                    transition: opacity .3s; }
         .ao-step.active, .ao-step.done { opacity: 1; }
         .ao-step-ic { width: 34px; height: 34px; border-radius: 50%; flex: none; display: inline-flex;
@@ -199,14 +207,15 @@ export default function AnalysisOverlay({ survey, answers, result, onDone, onSte
         .ao-step-tx { display: flex; flex-direction: column; line-height: 1.2; }
         .ao-step-tx b { font-size: 0.9rem; }
         .ao-step-tx small { font-size: 0.72rem; color: var(--muted); }
-        .ao-step-line { position: absolute; right: 6px; top: 17px; width: calc(100% - 44px); height: 2px; background: var(--border); }
-        .ao-step.done .ao-step-line { background: var(--border); }
+        .ao-step-arrow { flex: none; font-size: 1.1rem; font-weight: 800; color: #cbd5e1; padding: 0 0.2rem; transition: color 0.3s; }
+        .ao-step-arrow.done { color: #16a34a; }
         .ao-stage { display: flex; flex-direction: column; gap: 0.8rem; min-height: 220px; }
         .ao-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 0.9rem 1rem;
                    opacity: 0; transform: translateY(6px); transition: opacity .35s, transform .35s; }
         .ao-card.show { opacity: 1; transform: none; }
         .ao-hl { background: #fff7ed; border-color: #fed7aa; }
         .ao-card-h { font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 0.6rem; }
+        .ao-tmp { font-weight: 600; font-size: 0.78rem; color: var(--muted); }
         .ao-card-h b { color: #c2410c; }
         .ao-rows { display: flex; flex-direction: column; gap: 0.25rem; }
         .ao-row { display: grid; grid-template-columns: 3rem 2rem 1fr; gap: 0.5rem; align-items: center;

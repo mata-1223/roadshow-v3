@@ -109,8 +109,7 @@ export default function VectorSpace({
   return (
     <div className="vector-space">
       <div className="vs-header">
-        <h3>Vector Space — {intentCount}개 Intent</h3>
-        <p>고객 위치는 {intentCount}개 정규화 분포의 가중 평균. 행동마다 이동 경로 누적. <b>강조된 점을 클릭</b>하면 상세가 표시됩니다.</p>
+        <h3>Vector Space 시각화 ({intentCount}개 고객 의도)</h3>
       </div>
 
       <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="vs-svg">
@@ -269,7 +268,7 @@ export default function VectorSpace({
                 현재 <b>{(t.probability * 100).toFixed(1)}%</b>
                 {Math.abs(delta) >= 0.05 && (
                   <span className={`vd-delta ${delta > 0 ? 'up' : 'down'}`}>
-                    {' · '}Base 대비 {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}%p
+                    {' · '}기준 대비 {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}%p
                   </span>
                 )}
               </div>
@@ -278,15 +277,9 @@ export default function VectorSpace({
                 <div className="vd-sec">
                   <div className="vd-sec-t">CORE FEATURES</div>
                   <div className="vd-chips">
-                    {feats.map((f) => {
-                      const ko = featureLabel(f);
-                      return (
-                        <span key={f} className="vd-chip">
-                          <span className="vd-chip-en">{f}</span>
-                          {ko && ko !== f && <span className="vd-chip-ko">{ko}</span>}
-                        </span>
-                      );
-                    })}
+                    {feats.map((f) => (
+                      <span key={f} className="vd-chip">{featureLabel(f) || f}</span>
+                    ))}
                   </div>
                 </div>
               )}
