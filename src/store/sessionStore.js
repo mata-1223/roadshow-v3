@@ -23,6 +23,7 @@ export const useSessionStore = create((set, get) => ({
   topN:          [],
   others:        null,
   batchFeatures: null,
+  personaHistory: {},                  // 선택한 페르소나의 이력 프리셋(개인화 제안용)
 
   // Vector Space 상태
   intentPositions:    null,           // { intent_id → {x, y} }
@@ -36,6 +37,7 @@ export const useSessionStore = create((set, get) => ({
   setSurveyAnswers:  (a)         => set({ surveyAnswers: a }),
   setStage:          (s)         => set({ stage: s }),
   setBatchFeatures:  (f)         => set({ batchFeatures: f }),
+  setPersonaHistory: (h)         => set({ personaHistory: h || {} }),
 
   // INTENT_UPDATE 한 번에 모두 갱신
   applyIntentUpdate: (msg) => {
@@ -75,7 +77,7 @@ export const useSessionStore = create((set, get) => ({
 
   reset: () => set({
     sessionId: null, scenarioId: null, scenario: null,
-    surveyAnswers: {}, stage: 'initial', topN: [], others: null, batchFeatures: null,
+    surveyAnswers: {}, stage: 'initial', topN: [], others: null, batchFeatures: null, personaHistory: {},
     customerPosition: null, baselinePosition: null, customerPath: [],
     intentPositions: null, l1Zones: [],   // 시나리오 전환 시 좌표 재로딩되도록 초기화
   }),

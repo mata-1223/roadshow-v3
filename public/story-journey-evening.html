@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>스토리보드 — 행동 여정 · 의도 적중 리빌 (퇴근→잠들기)</title>
+<style>
+  :root{--pp:#7c3aed;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;color:#0f172a;background:linear-gradient(180deg,#f8fafc,#eef2f7);padding:20px;display:flex;flex-direction:column;align-items:center;}
+  h1{font-size:1.18rem;margin:0 0 4px;} .sub{color:#64748b;margin:0 0 12px;font-size:.85rem;} .sub b{color:var(--pp);}
+  .stage{position:relative;width:980px;max-width:98vw;height:600px;background:#0b1020;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(15,23,42,.25);display:flex;flex-direction:column;transition:background 1s;}
+  .stage.dusk{background:linear-gradient(#3a2f55,#241d3e);} .stage.evening{background:linear-gradient(#2a2350,#181230);}
+  .stage.home{background:linear-gradient(#241d44,#140e26);} .stage.night{background:linear-gradient(#160f28,#0a0715);}
+
+  .badge{height:34px;flex:none;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(#1e1b3a,#241d44);color:#fff;font-weight:800;font-size:.84rem;} .badge b{color:#c4b5fd;}
+  .profile{flex:none;margin:7px 12px 0;font-size:.64rem;font-weight:800;color:#fcd34d;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:.22rem .5rem;align-self:flex-start;}
+
+  /* 타임라인 */
+  .tl{flex:none;display:flex;padding:8px 14px 4px;gap:0;}
+  .tl .node{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;color:#64748b;font-size:.64rem;font-weight:800;}
+  .tl .node::before{content:'';position:absolute;top:11px;left:50%;width:100%;height:2px;background:#2a3350;}
+  .tl .node:last-child::before{display:none;}
+  .tl .node .pt{width:12px;height:12px;border-radius:50%;background:#2a3350;border:2px solid #475569;z-index:1;margin-bottom:4px;transition:.3s;}
+  .tl .node.on{color:#e9d5ff;} .tl .node.on .pt{background:var(--pp);border-color:#c4b5fd;box-shadow:0 0 0 4px rgba(124,58,237,.3);}
+  .tl .node.done .pt{background:#16a34a;border-color:#86efac;}
+  .tl .node .t{font-size:.55rem;font-weight:600;opacity:.8;}
+
+  .main{flex:1;display:grid;grid-template-columns:1fr 1.05fr;gap:3px;min-height:0;padding:0 3px;}
+  .col{position:relative;min-height:0;display:flex;flex-direction:column;padding:8px 10px;overflow:hidden;}
+  .ctag{font-size:.66rem;font-weight:800;color:#c4b5fd;background:rgba(124,58,237,.18);padding:.18rem .5rem;border-radius:999px;align-self:flex-start;margin-bottom:6px;}
+
+  /* 좌: 씬 + 여정 로그 */
+  .scene{position:relative;height:150px;flex:none;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);overflow:hidden;margin-bottom:8px;}
+  .ctx-emoji{position:absolute;top:8px;left:10px;font-size:24px;}
+  .ctx-label{position:absolute;top:12px;right:10px;font-size:.62rem;font-weight:800;color:#e2e8f0;background:rgba(0,0,0,.3);padding:.14rem .45rem;border-radius:999px;}
+  .person{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);}
+  .jlog-head{font-size:.62rem;font-weight:800;color:#94a3b8;margin-bottom:4px;}
+  .jlog{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+  .jrow{display:flex;align-items:center;gap:6px;font-size:.64rem;font-weight:700;color:#cbd5e1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:.2rem .45rem;animation:slidein .35s ease;}
+  .jrow .jt{color:#a78bfa;font-weight:800;flex:none;}
+  @keyframes slidein{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+
+  /* 우: 적중 리빌 */
+  .detect{font-size:.7rem;font-weight:800;color:#fff;background:rgba(56,189,248,.18);border:1px solid rgba(56,189,248,.4);border-radius:9px;padding:.35rem .55rem;margin-bottom:8px;opacity:0;transition:.3s;}
+  .detect.show{opacity:1;} .detect .lab{color:#7dd3fc;font-size:.58rem;display:block;}
+  .gauge-lab{display:flex;justify-content:space-between;font-size:.62rem;font-weight:800;color:#94a3b8;margin-bottom:3px;}
+  .gauge{position:relative;height:14px;border-radius:8px;background:#1e293b;overflow:hidden;}
+  .gauge .fill{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#a78bfa);}
+  .gauge .thr{position:absolute;top:-3px;bottom:-3px;left:70%;width:2px;background:#fbbf24;}
+  .gauge .thr::after{content:'임계';position:absolute;top:-12px;left:-9px;font-size:.5rem;color:#fbbf24;font-weight:800;}
+
+  .reveal{margin-top:10px;position:relative;border-radius:12px;background:linear-gradient(135deg,#2a2350,#1e1b3a);border:1px solid #4c3a8a;padding:12px;text-align:center;opacity:0;transform:scale(.92);transition:.1s;}
+  .reveal.show{animation:pop .45s cubic-bezier(.2,.8,.3,1.3) forwards;}
+  @keyframes pop{to{opacity:1;transform:none;}}
+  .reveal .hit{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:900;color:#052e16;background:#4ade80;padding:.1rem .5rem;border-radius:999px;box-shadow:0 2px 8px rgba(74,222,128,.5);}
+  .reveal .rl{font-size:.62rem;font-weight:800;color:#c4b5fd;}
+  .reveal .ri{font-size:1.4rem;font-weight:900;color:#fff;margin:2px 0 8px;}
+  .reveal .offer{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:.5rem .65rem;text-align:left;}
+  .reveal .offer-head{font-size:.6rem;font-weight:800;color:#a7f0c8;margin-bottom:3px;}
+  .reveal .offer-msg{font-size:.8rem;font-weight:700;color:#fff;line-height:1.32;}
+  .reveal .hist{margin-top:7px;font-size:.58rem;font-weight:800;color:#fcd34d;background:rgba(251,191,36,.13);border:1px solid rgba(251,191,36,.35);border-radius:7px;padding:.18rem .5rem;display:inline-block;}
+
+  .bread{margin-top:auto;display:flex;flex-wrap:wrap;gap:5px;padding-top:8px;}
+  .bread .bc{font-size:.6rem;font-weight:800;color:#64748b;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:.16rem .45rem;}
+  .bread .bc.done{color:#e9d5ff;background:rgba(124,58,237,.25);border-color:#a78bfa;}
+  .bread .bc.cur{color:#fff;background:var(--pp);border-color:#c4b5fd;}
+
+  .ctrl{flex:none;display:flex;align-items:center;justify-content:center;gap:10px;padding:8px;background:#0c1224;}
+  .btn{font-size:.92rem;font-weight:800;color:#fff;background:var(--pp);border:none;border-radius:10px;padding:.55rem 1.3rem;cursor:pointer;box-shadow:0 4px 14px rgba(124,58,237,.5);transition:.15s;}
+  .btn:hover{background:#6d28d9;transform:translateY(-1px);} .btn.ghost{background:#334155;box-shadow:none;}
+  .foot{flex:none;min-height:32px;display:flex;align-items:center;justify-content:center;text-align:center;padding:5px 12px;font-size:.8rem;font-weight:800;color:#fff;background:rgba(124,58,237,.96);} .foot b{color:#fde68a;}
+  .replay{margin-top:12px;font-size:.85rem;font-weight:700;color:var(--pp);background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:.45rem .9rem;cursor:pointer;}
+</style>
+</head>
+<body>
+  <h1>🎬 행동 여정 · 의도 적중 리빌 — 같은 고객의 하루(퇴근→잠들기)</h1>
+  <p class="sub">관람객이 <b>다음 행동</b>을 누를 때마다, KT는 <b>과거 특성 + 실시간 시그널</b>로 <b>지금의 의도를 적중</b>시키고 액션을 먼저 건넵니다. 하루 동안 의도는 계속 갈립니다.</p>
+
+  <div id="stage" class="stage">
+    <div class="badge">👤 같은 고객 · 평일 저녁 · <b>행동 여정에 따라 변하는 의도</b></div>
+    <div class="profile">📇 과거 특성 · 30대 1인가구 · 데이터 헤비 · 지니뮤직 애청</div>
+
+    <div class="tl" id="tl">
+      <div class="node" data-n="0"><span class="pt"></span>🚶 퇴근길<span class="t">18:30</span></div>
+      <div class="node" data-n="1"><span class="pt"></span>🍽 저녁<span class="t">19:10</span></div>
+      <div class="node" data-n="2"><span class="pt"></span>🏠 귀가<span class="t">20:00</span></div>
+      <div class="node" data-n="3"><span class="pt"></span>🌙 취침<span class="t">23:30</span></div>
+    </div>
+
+    <div class="main">
+      <div class="col">
+        <span class="ctag">🙍 고객의 하루</span>
+        <div class="scene">
+          <span class="ctx-emoji" id="ctxEmoji">🌆</span>
+          <span class="ctx-label" id="ctxLabel">행동 대기 중</span>
+          <div class="person"><svg viewBox="0 0 120 100" width="78">
+            <ellipse cx="60" cy="46" rx="19" ry="20" fill="#f2c6a0"/><path d="M41 44 Q40 25 60 25 Q80 25 79 44 Q73 36 60 36 Q47 36 41 44 Z" fill="#3b2f2a"/>
+            <path d="M51 47 Q56 50 61 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M62 47 Q67 50 72 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M53 59 Q60 56 67 59" stroke="#7a5b48" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+            <path d="M32 100 Q30 76 60 76 Q90 76 88 100 Z" fill="#6c7a95"/></svg></div>
+        </div>
+        <div class="jlog-head">🧭 행동 여정 로그 (실시간 시그널 누적)</div>
+        <div class="jlog" id="jlog"></div>
+      </div>
+
+      <div class="col">
+        <span class="ctag">⚙️ KT 엔진 — 의도 적중</span>
+        <div class="detect" id="detect"><span class="lab">👁 방금 감지한 라이프 시그널</span><span id="detectTxt">—</span></div>
+        <div class="gauge-lab"><span>의도 확신도</span><span id="gval">0%</span></div>
+        <div class="gauge"><div class="fill" id="fill"></div><div class="thr"></div></div>
+        <div class="reveal" id="reveal">
+          <span class="hit">🎯 적중</span>
+          <div class="rl">⚡ 지금 의도</div>
+          <div class="ri" id="rIntent">—</div>
+          <div class="offer">
+            <div class="offer-head"><span id="aIc">🎁</span> <span id="aKind">선제 제안</span></div>
+            <div class="offer-msg" id="aMsg">—</div>
+          </div>
+          <div class="hist" id="aHist">📚 —</div>
+        </div>
+        <div class="bread" id="bread"></div>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn" id="nextBtn" onclick="next()">▶ 행동 시작</button>
+      <button class="btn ghost" onclick="reset()">↻ 처음부터</button>
+    </div>
+    <div class="foot" id="foot">관람객이 행동을 더할수록 — 의도가 실시간으로 갈리고, KT는 매번 먼저 도착합니다.</div>
+  </div>
+  <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+    <button onclick="parent.postMessage('story-start-demo','*')" style="font-size:.92rem;font-weight:800;color:#fff;background:#7c3aed;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">▶ 시나리오 체험형 시연 시작</button>
+    <button onclick="parent.postMessage('story-close','*')" style="font-size:.92rem;font-weight:700;color:#334155;background:#e2e8f0;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">✕ 닫기</button>
+  </div>
+
+  <script>
+    const $=s=>document.querySelector(s);
+    const STEPS=[
+      {tint:'dusk', emoji:'🚶', ctx:'퇴근길 · 이동 중',
+       signals:[['18:30','📍 회사→집 이동 감지'],['18:31','📱 음악앱 실행']],
+       conf:90, intent:'이동 · 콘텐츠',
+       act:{ic:'🎵', kind:'지니뮤직', msg:'퇴근길이네요. 평소 즐겨 듣는 시티팝으로 퇴근 플레이리스트를 준비했어요.', hist:'평소 청취 취향 · 시티팝/R&B 애청'}},
+      {tint:'evening', emoji:'🍽', ctx:'저녁 · 출출함',
+       signals:[['19:10','📱 배달앱 탐색'],['19:11','🕘 저녁 시간대']],
+       conf:86, intent:'저녁 · 식사',
+       act:{ic:'🍜', kind:'배달 제휴', msg:'어제 치킨 드셨네요 — 오늘은 든든한 마라탕 어떠세요? 제휴 쿠폰도 함께 드릴게요.', hist:'어제 21:00 · 치킨 주문'}},
+      {tint:'home', emoji:'🏠', ctx:'귀가 · 거실',
+       signals:[['20:00','🏠 귀가 감지(자택)'],['20:01','📺 거실 TV ON']],
+       conf:92, intent:'휴식 · 홈',
+       act:{ic:'🛋️', kind:'기가지니', msg:'집 도착하셨네요. 평소처럼 거실 조명 따뜻하게, 온도 맞춰둘게요.', hist:'평소 귀가 후 · 웜 조명 선호'}},
+      {tint:'night', emoji:'🌙', ctx:'심야 · OTT 시청',
+       signals:[['23:30','📺 OTT 심야 시청'],['23:50','📉 활동량 ↓']],
+       conf:94, intent:'늦은 밤 · 콘텐츠',
+       act:{ic:'📺', kind:'지니TV', msg:'오늘 하루도 수고하셨어요. 어제 보던 “OO 드라마” 4화를 이어볼까요? 다 보시면 수면 사운드로 전환해 드릴게요.', hist:'어제 · “OO 드라마” 3화까지 시청'}},
+    ];
+    let idx=-1, timers=[], gaugeTimer=null;
+    const at=(t,fn)=>timers.push(setTimeout(fn,t));
+
+    function reset(){
+      timers.forEach(clearTimeout);timers=[];if(gaugeTimer)clearInterval(gaugeTimer);
+      idx=-1;
+      $('#stage').className='stage';
+      $('#jlog').innerHTML=''; $('#ctxEmoji').textContent='🌆'; $('#ctxLabel').textContent='행동 대기 중';
+      $('#detect').classList.remove('show'); $('#detectTxt').textContent='—';
+      $('#fill').style.width='0%'; $('#gval').textContent='0%';
+      $('#reveal').classList.remove('show'); $('#rIntent').textContent='—'; $('#aMsg').textContent='—'; $('#aIc').textContent='🎁'; $('#aKind').textContent='선제 제안'; $('#aHist').textContent='📚 —';
+      document.querySelectorAll('.tl .node').forEach(n=>n.classList.remove('on','done'));
+      $('#nextBtn').textContent='▶ 행동 시작'; $('#nextBtn').disabled=false;
+      $('#foot').innerHTML='관람객이 행동을 더할수록 — 의도가 실시간으로 갈리고, KT는 매번 먼저 도착합니다.';
+      renderBread();
+    }
+    function renderBread(){
+      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#64748b">의도 여정:</span>'+
+        STEPS.map((s,i)=>`<span class="bc ${i<idx?'done':''} ${i===idx?'cur':''}">${i+1}. ${s.intent}</span>`).join(' ');
+    }
+    function gaugeTo(target){
+      if(gaugeTimer)clearInterval(gaugeTimer);
+      let v=0;const fill=$('#fill'),val=$('#gval');
+      gaugeTimer=setInterval(()=>{v+=3;if(v>=target){v=target;clearInterval(gaugeTimer);}fill.style.width=v+'%';val.textContent=Math.round(v)+'%';},35);
+    }
+    function next(){
+      if(idx>=STEPS.length-1){reset();return;}
+      idx++; const s=STEPS[idx];
+      timers.forEach(clearTimeout);timers=[];
+      // 타임라인 + 씬 + tint
+      document.querySelectorAll('.tl .node').forEach((n,i)=>{n.classList.toggle('on',i===idx);n.classList.toggle('done',i<idx);});
+      $('#stage').className='stage '+s.tint;
+      $('#ctxEmoji').textContent=s.emoji; $('#ctxLabel').textContent=s.ctx;
+      // 시그널 누적 (좌 로그) + 감지(우)
+      s.signals.forEach(([t,txt],i)=>at(i*250,()=>{
+        const r=document.createElement('div');r.className='jrow';r.innerHTML=`<span class="jt">${t}</span> ${txt}`;
+        $('#jlog').appendChild(r); $('#jlog').scrollTop=$('#jlog').scrollHeight;
+      }));
+      $('#detect').classList.remove('show'); $('#reveal').classList.remove('show');
+      $('#detectTxt').textContent=s.signals.map(x=>x[1]).join('  ·  ');
+      at(300,()=>$('#detect').classList.add('show'));
+      // 게이지 → 임계 돌파 → 적중 리빌
+      at(700,()=>gaugeTo(s.conf));
+      at(1700,()=>{
+        $('#rIntent').textContent=s.intent;
+        $('#aIc').textContent=s.act.ic; $('#aKind').textContent=s.act.kind; $('#aMsg').textContent=s.act.msg;
+        $('#aHist').textContent='📚 이력 기반 · '+s.act.hist;
+        void $('#reveal').offsetWidth; $('#reveal').classList.add('show');
+        renderBread();
+      });
+      // 버튼/푸터
+      if(idx===STEPS.length-1){
+        $('#nextBtn').textContent='✓ 하루 완료 · 다시 보기';
+        at(2200,()=>$('#foot').innerHTML='오늘 저녁, 말하기 전에 <b>4번</b> — 이동·저녁·휴식·취침까지 KT가 <b>먼저</b> 도왔습니다.');
+      }else{
+        $('#nextBtn').textContent='▶ 다음 행동';
+      }
+      renderBread();
+    }
+    reset();
+    // 자동재생 모드(?auto): 부스 어트랙트/미리보기용
+    if(new URLSearchParams(location.search).has('auto')){
+      const tick=()=>{ if(idx>=STEPS.length-1){ setTimeout(()=>{reset();setTimeout(loop,1200);},3500); } else { next(); setTimeout(tick,3200); } };
+      const loop=()=>tick();
+      setTimeout(loop,1000);
+    }
+  </script>
+</body>
+</html>

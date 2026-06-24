@@ -10,7 +10,7 @@ import TopBar from '../components/TopBar.jsx';
 
 export default function SurveyPage() {
   const navigate = useNavigate();
-  const { sessionId, scenario, batchFeatures, setSurveyAnswers, setStage, setBatchFeatures, applyInitialResult } = useSessionStore();
+  const { sessionId, scenario, batchFeatures, setSurveyAnswers, setStage, setBatchFeatures, applyInitialResult, setPersonaHistory } = useSessionStore();
   const [answers, setAnswers] = useState({});
   const [busy, setBusy] = useState(false);
   const [presetSel, setPresetSel] = useState('');
@@ -25,9 +25,10 @@ export default function SurveyPage() {
   if (!scenario) return null;
   const questions = scenario.survey.questions;
   const presets = scenario.survey.presets || [];
-  function applyPreset() {
-    const p = presets.find((x) => x.id === presetSel);
-    if (p) setAnswers({ ...p.answers });
+  function applyPresetById(id) {
+    setPresetSel(id);
+    const p = presets.find((x) => x.id === id);
+    if (p) { setAnswers({ ...p.answers }); setPersonaHistory(p.history || {}); }
   }
   // 조건부 문항(show_if): 특정 문항 응답에 따라 노출. 예) Q9는 Q5=인터넷/IPTV 포함일 때만
   const isVisible = (q) => {
@@ -84,7 +85,7 @@ export default function SurveyPage() {
             <div className="intro-ic">🔒</div>
             <h3 className="intro-title">시연 데이터 이용 안내</h3>
             <p className="intro-p">
-              실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로,
+              <b>실제 KT 고객 상태·과거 행동 데이터</b>를 활용하는 단계로,
               본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다.
             </p>
             <p className="intro-p">
@@ -117,23 +118,20 @@ export default function SurveyPage() {
           </div>
 
           <div className="stage-guide">
-            🧩 고객의 <b>상태 정보</b>를 입력하는 단계입니다. 이 응답만으로 먼저 <b>Base Intent</b>(행동 전 추론)가 만들어집니다.
-            <span className="stage-note">※ 실제 운영 시에는 <b>KFM·SGI 등 실제 고객 상태·과거 행동 데이터</b>를 활용하는 단계로, 본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다. 입력 데이터는 시연용 임시 DB에 적재되며, <span className="del-emph">시연 종료 후 전부 삭제</span>됩니다.</span>
+            🧩 고객의 <b>상태 정보</b>를 입력하는 단계입니다. 이 설문 응답으로 <b>고객 상태 기반 의도</b>가 만들어집니다.
+            <span className="stage-note">※ <b>KT 고객 상태·과거 행동 데이터</b>를 활용하는 단계로, 본 시연에서는 이를 <b>설문 응답으로 대체</b>합니다. <br></br>입력 데이터는 시연용 임시 DB에 적재되며, <span className="del-emph">시연 종료 후 전부 삭제</span>됩니다.</span>
           </div>
 
           {presets.length > 0 && (
             <div className="preset-bar">
               <span className="preset-label">설문 응답 프리셋</span>
               <span className="preset-selwrap">
-                <select className="preset-select" value={presetSel} onChange={(e) => setPresetSel(e.target.value)}>
+                <select className="preset-select" value={presetSel} onChange={(e) => applyPresetById(e.target.value)}>
                   <option value="">선택</option>
                   {presets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
                 <span className="preset-caret">▾</span>
               </span>
-              <button type="button" className="btn btn-primary preset-apply" disabled={!presetSel} onClick={applyPreset}>
-                선택
-              </button>
             </div>
           )}
 
@@ -188,8 +186,6 @@ export default function SurveyPage() {
         .preset-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
         .preset-caret { position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);
                         pointer-events: none; color: var(--muted); font-size: 0.8rem; }
-        .preset-apply { padding: 0.6rem 1.4rem; font-size: 0.92rem; border-radius: 10px; }
-        .preset-apply:disabled { opacity: 0.45; cursor: not-allowed; }
         .progress { display: flex; align-items: center; gap: 1rem; font-weight: 600; }
         .progress .bar { width: 240px; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
         .progress .fill { height: 100%; background: var(--primary); transition: width 0.3s; }

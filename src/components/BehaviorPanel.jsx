@@ -90,7 +90,6 @@ function BehaviorButton({ b, disabled, onSelect, variant }) {
     <button className={cls} disabled={disabled} onClick={() => onSelect(b)}>
       <span className="bid">{b.id}</span>
       <span className="bname">{b.icon && <span className="bemoji">{b.icon}</span>}{b.name}</span>
-      <span className="bevent">{b.event_type}</span>
     </button>
   );
 }

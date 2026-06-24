@@ -180,17 +180,16 @@ export default function IntentChart({ topN, actionsData, l1Zones, bundleProfile 
         .ax-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #bfdbfe; }
         .ax-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.5); z-index: 190; }
         .ax-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 200;
-                    width: max-content; max-width: 96vw; max-height: 92vh; overflow: auto; text-align: left;
+                    width: min(1200px, 96vw); max-width: 96vw; max-height: 92vh; overflow: auto; text-align: left;
                     background: #fff; border-radius: 20px; padding: 1.6rem 1.9rem;
                     box-shadow: 0 30px 80px rgba(0,0,0,.45); }
         .ax-modal h2 { font-size: 1.55rem; margin: 0 0 0.4rem; }
         .ax-modal .caption { font-size: 1rem; margin-bottom: 1.25rem; max-width: 640px; }
         .ax-modal .ac-match { font-size: 1.15rem; padding: 0.8rem 1.1rem; margin-bottom: 1.25rem; }
         .ax-modal .ac-iname { font-size: 1.35rem; }
-        /* 채널을 가로로 나열 → 넓고 낮게 (한눈에) */
-        .ax-modal .ac-channels { flex-direction: row; flex-wrap: wrap; gap: 1.5rem; justify-content: center; align-items: stretch; }
-        .ax-modal .ac-ch { width: 360px; flex: 0 0 auto; }
-        .ax-modal .ac-ch.ch-call_center { width: 540px; }   /* 상담사 콘솔: 문구 길이 따라 자연스럽게 */
+        /* 활용 예시 1개당 한 행 — 각 채널이 전체 폭 사용 (여유 있게) */
+        .ax-modal .ac-channels { display: flex; flex-direction: column; gap: 1.2rem; }
+        .ax-modal .ac-ch { width: auto; }
         .ax-modal .phone-push { width: 250px; }
         .ax-modal .pp-nmsg { font-size: 12.5px; }
         .ax-modal .ac-msg, .ax-modal .ab-msg { font-size: 1.06rem; }

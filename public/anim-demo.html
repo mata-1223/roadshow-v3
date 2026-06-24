@@ -8,7 +8,7 @@
   :root { --kt-red:#e6002d; --pp:#7c3aed; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif; color:#0f172a;
-         background:linear-gradient(180deg,#f8fafc,#eef2f7); padding:32px; }
+         background:linear-gradient(180deg,#f8fafc,#eef2f7); padding:32px; display:flex; flex-direction:column; align-items:center; }
   h1 { font-size:1.4rem; margin:0 0 4px; }
   .sub { color:#64748b; margin:0 0 24px; font-size:.95rem; }
   .card { background:#fff; border:1px solid #e2e8f0; border-radius:18px; padding:18px; width:580px; max-width:94vw;
@@ -183,7 +183,10 @@
       <div class="notes"><span>🎵</span><span>♪</span><span>🎵</span></div>
       <div class="done">🌙 오늘도 수고했어요 — 커튼·조명·도어락 + 지니뮤직 ASMR로 혼자만의 휴식</div>
     </div>
-    <button class="replay" onclick="replay()">↻ 다시 재생</button>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+      <button onclick="parent.postMessage('story-start-demo','*')" style="font-size:.92rem;font-weight:800;color:#fff;background:#7c3aed;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">▶ 시나리오 체험형 시연 시작</button>
+      <button onclick="parent.postMessage('story-close','*')" style="font-size:.92rem;font-weight:700;color:#334155;background:#e2e8f0;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">✕ 닫기</button>
+    </div>
   </div>
 
   <script>

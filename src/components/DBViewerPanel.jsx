@@ -103,7 +103,7 @@ export default function DBViewerPanel({
       </div>
 
       <p className="db-note">
-        ※ 설문 응답·행동 선택 데이터는 <b>실제 고객 데이터를 대체하기 위한 시연용</b>으로 임시 DB에 적재됩니다.
+        ※ 설문 응답·행동 선택 데이터는 <b>실제 고객 데이터를 대체하기 위한 시연용</b>으로 임시 DB에 적재됩니다.<br />
         <span className="db-note-del">시연 종료 후 전부 삭제됩니다.</span>
       </p>
 

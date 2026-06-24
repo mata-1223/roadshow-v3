@@ -7,11 +7,13 @@ import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 import DemoStepper from '../components/DemoStepper.jsx';
 import TopBar from '../components/TopBar.jsx';
+import { StoryOverlay } from '../components/ProactiveStory.jsx';
 
 export default function WelcomePage() {
   const navigate = useNavigate();
   const { setSession, setScenario, reset } = useSessionStore();
   const [busy, setBusy] = useState(false);
+  const [storyScn, setStoryScn] = useState(null);  // 클릭한 시나리오의 스토리 팝업
 
   async function start(scn) {
     if (!scn.active || busy) return;
@@ -38,11 +40,12 @@ export default function WelcomePage() {
         <div className="left-col">
           <div className="badge">AX Tech Connect 2026</div>
           <h1>초개인화 Context Engine</h1>
-          <p className="lead">
+          {/* <p className="lead">
             고객의 상태 정보와 실시간 행동을 기반으로<br />실시간 Intent를 추론하고, 고객 Context를 생성하여 상황에 맞는 활용 방안을 제안합니다.
-          </p>
+          </p> */}
           <div className="value-prop">
-            <span className="vp-quote">“고객의 상황과 행동을 이해해, 지금의 의도를 읽고 최적의 Action을 제공한다”</span>
+            {/* <span className="vp-quote">“고객의 상황과 행동을 이해해, 지금의 의도를 읽고 최적의 Action을 제공한다”</span> */}
+            <span className="vp-quote">“고객의 상황과 행동에서 <b className="vp-em">의도</b>를 파악하고, 가장 적절한 서비스를 실시간으로 제공합니다.”</span>
             <div className="vp-kpis">
               <span className="vp-kpi">✨ 고객 경험 혁신</span>
               <span className="vp-kpi">📈 비즈니스 성과 향상</span>
@@ -56,7 +59,7 @@ export default function WelcomePage() {
               <button
                 key={scn.key}
                 className={`scenario-card ${scn.active ? '' : 'disabled'}`}
-                onClick={() => start(scn)}
+                onClick={() => scn.active && setStoryScn(scn)}
                 disabled={!scn.active || busy}
               >
                 <span className="scn-main">
@@ -67,7 +70,7 @@ export default function WelcomePage() {
                   {scn.desc && <span className="scn-desc">{scn.desc}</span>}
                 </span>
                 {scn.active
-                  ? <span className="scn-go">{busy ? '준비 중…' : '시작 →'}</span>
+                  ? <span className="scn-go">🎬 스토리 보기</span>
                   : <span className="scn-soon">준비 중</span>}
               </button>
             ))}
@@ -84,10 +87,18 @@ export default function WelcomePage() {
           </div>
           <SystemStatusPanel states={{ batch: 'idle', realtime: 'idle', infer: 'idle' }} />
           <DBViewerPanel tables={['sessions', 'event_log']} defaultTable="sessions" limit={5} title="DB 조회 — 적재 현황" />
-          <p className="hint">시나리오를 선택하면 배치 → 실시간 → 추론 순으로 컴포넌트가 활성화됩니다.</p>
         </div>
 
       </div>
+
+      {storyScn && (
+        <StoryOverlay
+          scenarioId={storyScn.id}
+          title={storyScn.name}
+          onClose={() => setStoryScn(null)}
+          onStart={() => start(storyScn)}
+        />
+      )}
 
       <style>{`
         .welcome-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
@@ -101,7 +112,8 @@ export default function WelcomePage() {
         .lead { font-size: clamp(1.25rem, 1.7vw, 1.9rem); color: var(--fg); margin-bottom: 1.5rem; }
         .value-prop { margin-bottom: 2.2rem; padding: 1rem 1.25rem; border-radius: 14px;
           background: #fafbfc; border: 1px solid var(--border); border-left: 3px solid var(--kt-red); }
-        .vp-quote { display: block; font-size: clamp(1.1rem, 1.35vw, 1.5rem); font-weight: 800; color: var(--fg); }
+        .vp-quote { display: block; font-size: clamp(0.85rem, 1.15vw, 1.3rem); font-weight: 800; color: var(--fg); white-space: nowrap; }
+        .vp-em { color: #e11d48; font-weight: 900; }
         .vp-kpis { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
         .vp-kpi { font-size: clamp(0.92rem, 1vw, 1.15rem); font-weight: 700; color: var(--fg);
           background: #fff; border: 1.5px solid var(--border); border-radius: 999px; padding: 0.3rem 0.9rem; }

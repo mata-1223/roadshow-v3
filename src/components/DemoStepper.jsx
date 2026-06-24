@@ -1,14 +1,14 @@
 // 데모 진행 스텝퍼 — 시연 흐름에서 지금 어느 단계인지 상단에 항상 표시.
 //   1. 시나리오 선택
 //   2. 고객 상태 입력  /  3. 파생 변수 생성            (고객 상태 단계)
-//   4. Base Intent 추론 /  5. 실시간 행동 반영 추론      (의도 추론 단계)
+//   4. 의도 추론 /  5. 실시간 행동 반영 추론      (의도 추론 단계)
 // 각 화면(Welcome=1 / Survey=2 / Demo=4|5)에서 current(1~5)만 넘기면 됨.
 const STEPS = [
-  { n: 1, label: '시나리오 선택',        desc: '데모 시작',          group: '' },
+  { n: 1, label: '시나리오 선택',        desc: '시연 시작',          group: '' },
   { n: 2, label: '고객 상태 입력',        desc: '설문 응답',          group: '고객 상태' },
   { n: 3, label: '파생 변수 생성',        desc: 'Index·Score 계산',   group: '고객 상태' },
-  { n: 4, label: 'Base Intent 추론',     desc: '고객 상태 기반',      group: '의도 추론' },
-  { n: 5, label: '실시간 행동 반영 추론',  desc: '상태 + 실시간 행동',  group: '의도 추론' },
+  { n: 4, label: '의도 추론',     desc: '고객 상태 기반',      group: '의도 추론' },
+  { n: 5, label: '실시간 의도 갱신',  desc: '상태 + 실시간 행동',  group: '의도 추론' },
 ];
 
 export default function DemoStepper({ current = 1 }) {

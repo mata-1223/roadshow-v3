@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // 시나리오 ↔ 서사형 스토리보드 매핑 (public/*.html)
-const STORY_MAP = {
+export const STORY_MAP = {
   'cs-myk-v3': [
     { label: '전화하기 전에 상담이 끝난다 · 장애 선제', src: '/story-cs-outage.html' },
-    { label: '화나기 직전의 감정을 읽는다',            src: '/story-scenarios.html?embed=1#B' },
+    { label: '요금 불만, 말하기 전에 선제 해결',        src: '/story-scenarios.html?embed=1#B' },
     { label: '부모보다 먼저 아이를 챙긴다',            src: '/story-scenarios.html?embed=1#C' },
   ],
   'bundle-v3': [
@@ -13,73 +13,93 @@ const STORY_MAP = {
     { label: '가족 결합이 깨질 미래를 막는다',         src: '/story-scenarios.html?embed=1#F' },
   ],
   'worker-v3': [
+    { label: '행동 여정 · 의도 적중 리빌 (퇴근→잠들기)', src: '/story-journey-evening.html?auto=1' },
     { label: '같은 고객, 연속 변화하는 의도',          src: '/story-same-customer.html' },
     { label: '앱 활동 추론 → 기가지니 선제 실행 (3종)', src: '/story-genie-modes.html' },
     { label: '동굴 모드 · 기가지니 (영상형)',          src: '/anim-demo.html' },
   ],
 };
 
-export default function ProactiveStory({ scenarioId }) {
+// 풀스크린 스토리 팝업 — 초기 화면(시나리오 선택)에서 시나리오 클릭 시 표시
+export function StoryOverlay({ scenarioId, title, onClose, onStart }) {
   const stories = STORY_MAP[scenarioId] || [];
-  const [open, setOpen] = useState(false);
   const [idx, setIdx] = useState(0);
+  const frameRef = useRef(null);
+
+  // transform scale는 비트맵 확대라 흐려짐 → 동일 origin iframe 문서에 zoom 적용(재렌더, 선명)
+  // 스토리 콘텐츠 기준 크기(아래) 대비 창(가용 영역) 비율로 zoom — 창에 맞춰 크고 선명하게
+  const BASE_W = 1000;
+  const BASE_H = 760;
+  const fitZoom = () => {
+    const f = frameRef.current;
+    if (!f || !f.parentElement) return;
+    let doc;
+    try { doc = f.contentDocument; } catch { return; }
+    if (!doc || !doc.documentElement) return;
+    const availW = f.parentElement.clientWidth;
+    const availH = f.parentElement.clientHeight;
+    const z = Math.max(0.6, Math.min(availW / BASE_W, availH / BASE_H));
+    doc.documentElement.style.zoom = String(z);
+  };
+
+  useEffect(() => {
+    window.addEventListener('resize', fitZoom);
+    return () => window.removeEventListener('resize', fitZoom);
+  }, []);
+
+  // 스토리(iframe) 하단 버튼 → 부모로 메시지 전달
+  useEffect(() => {
+    const onMsg = (e) => {
+      if (e.data === 'story-start-demo') { if (onStart) onStart(); }
+      else if (e.data === 'story-close') { if (onClose) onClose(); }
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [onStart, onClose]);
+
   if (!stories.length) return null;
 
-  const launch = (i) => { setIdx(i); setOpen(true); };
-
   return (
-    <div className="pstory">
-      <div className="ps-head">🎬 이 의도가 실제로는 이렇게 펼쳐집니다</div>
-      <div className="ps-sub">
-        엔진이 추론한 의도가 고객의 <b>실제 일상</b>에서 어떻게 <b>선제 대응</b>으로 이어지는지 — 스토리로 확인하세요.
-      </div>
-      <div className="ps-list">
-        {stories.map((s, i) => (
-          <button key={s.src} className="ps-btn" onClick={() => launch(i)}>▶ {s.label}</button>
-        ))}
-      </div>
-
-      {open && (
-        <div className="ps-overlay" onClick={(e) => { if (e.target.classList.contains('ps-overlay')) setOpen(false); }}>
-          <div className="ps-bar">
-            <div className="ps-tabs">
-              {stories.map((s, i) => (
-                <button key={s.src} className={i === idx ? 'on' : ''} onClick={() => setIdx(i)}>{s.label}</button>
-              ))}
-            </div>
-            <button className="ps-close" onClick={() => setOpen(false)}>✕ 닫기</button>
-          </div>
-          <iframe key={stories[idx].src} className="ps-frame" src={stories[idx].src} title={stories[idx].label} />
+    <div className="ps-overlay" onClick={(e) => { if (e.target.classList.contains('ps-overlay')) onClose(); }}>
+      <div className="ps-bar">
+        {title && <span className="ps-title">🎬 {title}</span>}
+        <div className="ps-tabs">
+          {stories.map((s, i) => (
+            <button key={s.src} className={i === idx ? 'on' : ''} onClick={() => setIdx(i)}>{s.label}</button>
+          ))}
         </div>
-      )}
+        <button className="ps-close" onClick={onClose}>✕ 닫기</button>
+      </div>
+      <div className="ps-stage">
+        <iframe
+          ref={frameRef}
+          key={stories[idx].src}
+          className="ps-frame"
+          src={stories[idx].src}
+          title={stories[idx].label}
+          onLoad={fitZoom}
+        />
+      </div>
 
       <style>{`
-        .pstory { margin-top: 0.9rem; background: linear-gradient(135deg, #2a2350, #1e1b3a);
-                  border: 1px solid #4c3a8a; border-radius: 14px; padding: 0.9rem 1rem; color: #fff; }
-        .ps-head { font-weight: 800; font-size: 1.02rem; }
-        .ps-sub { font-size: 0.82rem; color: #c4b5fd; margin: 0.25rem 0 0.7rem; }
-        .ps-sub b { color: #fff; }
-        .ps-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .ps-btn { font-size: 0.82rem; font-weight: 700; color: #fff; background: rgba(124,58,237,0.85);
-                  border: 1px solid #a78bfa; border-radius: 10px; padding: 0.45rem 0.7rem; cursor: pointer;
-                  transition: all 0.15s; }
-        .ps-btn:hover { background: #7c3aed; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,58,237,0.5); }
-
-        .ps-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(8,10,22,0.92);
-                      display: flex; flex-direction: column; align-items: center; padding: 1.2rem;
-                      animation: psfade 0.2s ease; }
+        .ps-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(8,10,22,0.94);
+                      display: flex; flex-direction: column; padding: 0.6rem 0.8rem; animation: psfade 0.2s ease; }
         @keyframes psfade { from { opacity: 0; } to { opacity: 1; } }
-        .ps-bar { width: 100%; max-width: 1100px; display: flex; align-items: center; gap: 0.6rem;
-                  margin-bottom: 0.8rem; }
+        .ps-bar { flex: none; display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .ps-title { flex: none; font-size: 0.95rem; font-weight: 800; color: #fff; }
         .ps-tabs { flex: 1; display: flex; flex-wrap: wrap; gap: 0.4rem; }
         .ps-tabs button { font-size: 0.8rem; font-weight: 700; color: #cbd5e1; background: #1e293b;
                           border: 1px solid #334155; border-radius: 9px; padding: 0.4rem 0.7rem; cursor: pointer; }
         .ps-tabs button.on { color: #fff; background: #7c3aed; border-color: #a78bfa; }
-        .ps-close { font-size: 0.85rem; font-weight: 800; color: #fff; background: #334155;
-                    border: none; border-radius: 9px; padding: 0.5rem 0.9rem; cursor: pointer; flex: none; }
+        .ps-start { flex: none; font-size: 0.82rem; font-weight: 800; color: #fff; background: #2563eb;
+                    border: none; border-radius: 9px; padding: 0.5rem 0.9rem; cursor: pointer; }
+        .ps-start:hover { background: #1d4ed8; }
+        .ps-close { flex: none; font-size: 0.85rem; font-weight: 800; color: #fff; background: #334155;
+                    border: none; border-radius: 9px; padding: 0.5rem 0.9rem; cursor: pointer; }
         .ps-close:hover { background: #475569; }
-        .ps-frame { flex: 1; width: 100%; max-width: 1100px; border: none; border-radius: 14px;
-                    background: #0b1020; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .ps-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .ps-frame { width: 100%; height: 100%; border: none; border-radius: 14px; background: #0b1020;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
       `}</style>
     </div>
   );

@@ -6,6 +6,10 @@ import { useEffect, useState } from 'react';
 import ktAppIcon from '../assets/kt-app-icon.png';
 import { intentName } from '../utils/intent.js';
 import { wonText, bundleCardForIntent } from '../utils/bundleSim.js';
+import { useSessionStore } from '../store/sessionStore.js';
+
+// 이력 placeholder 기본값(페르소나 미선택 시) — {key}가 비면 일반 표현으로 대체
+const HIST_DEFAULT = { fav_genre: '취향 음악', last_meal: '최근 식사', last_watched: '보시던 콘텐츠', home_pref: '평소 설정' };
 
 // 절감액 카운트업 (마운트 시 0→target) — 극적 연출
 function useCountUp(target, ms = 900) {
@@ -236,27 +240,33 @@ function CallDeflection({ intent, selfText }) {
 
 export default function ActionPanel({ actionsData, topN = [], reasoning = null, bundleProfile = null, scenarioId = null }) {
   const channels = actionsData?.channels || [];
+  // 상담사 컨텍스트(call_center)는 마지막 행 전체 폭 — 앱 Push·AI Agent를 한 행에 배치
+  const orderedChannels = [...channels].sort((a, b) => (a.id === 'call_center' ? 1 : 0) - (b.id === 'call_center' ? 1 : 0));
   const actionsMap = actionsData?.actions || {};
+
+  const personaHistory = useSessionStore((s) => s.personaHistory) || {};
+  // 이력 기반 개인화: 액션 텍스트의 {key}를 페르소나 이력으로 치환
+  const interp = (s) => (typeof s === 'string'
+    ? s.replace(/\{(\w+)\}/g, (m, k) => personaHistory[k] ?? HIST_DEFAULT[k] ?? m) : s);
 
   const best = topN.find((t) => actionsMap[t.intent_id]);
   const act = best ? actionsMap[best.intent_id] : null;
+  // 이력 근거 칩: 매칭 액션에 쓰인 placeholder 중 페르소나 이력에 값이 있는 것
+  const histKeys = act
+    ? [...new Set((JSON.stringify(act).match(/\{(\w+)\}/g) || []).map((x) => x.slice(1, -1)))].filter((k) => personaHistory[k])
+    : [];
+  const histChip = histKeys.length ? histKeys.map((k) => personaHistory[k]).join(' · ') : null;
   // 결합 시나리오: 의도에 맞는 카드 — 신규/추가는 시뮬레이터, 재약정/장기는 특별혜택
   const card = bundleProfile ? bundleCardForIntent(bundleProfile, intentName(topN[0])) : null;
   // CS 시나리오: 옴니채널 컨텍스트 연속성 + 셀프 해결 안내 (의도 기반)
   const isCS = scenarioId === 'cs-myk-v3';
   const csIntent = intentName(topN[0]);
-  const selfText = act?.agent || act?.push || null;
+  const selfText = interp(act?.agent || act?.push || null);
   const deflectable = isCS && !/(해지|이탈|상담\s*연결)/.test(csIntent || '');
 
   return (
     <div className="action-panel">
       <h2>활용 예시</h2>
-      <p className="caption">해당 Intent의 채널별 활용 예시</p>
-
-      {card?.kind === 'sim' && <BundleSim sim={card} />}
-      {card?.kind === 'loyalty' && <BundleLoyalty card={card} />}
-      {isCS && <OmniChannel intent={csIntent} />}
-      {deflectable && <CallDeflection intent={csIntent} selfText={selfText} />}
 
       {!act ? (
         <div className="ac-empty">상위 Intent에 매칭된 활용 예시가 없습니다. 행동을 선택하면 갱신됩니다.</div>
@@ -268,6 +278,13 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
             <span className="ac-iid">{best.intent_id}</span>
             <span className="ac-prob">{(best.probability * 100).toFixed(1)}%</span>
           </div>
+
+          {card?.kind === 'sim' && <BundleSim sim={card} />}
+          {card?.kind === 'loyalty' && <BundleLoyalty card={card} />}
+
+          {histChip && (
+            <div className="ac-hist">📚 이력 기반 개인화 · <b>{histChip}</b> 반영</div>
+          )}
 
           {act.business_value && (
             <div className="ac-biz">
@@ -281,7 +298,7 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
           )}
 
           <div className="ac-channels">
-            {channels.map((c) => {
+            {orderedChannels.map((c) => {
               const body = act[c.id];
               if (body == null) return null;
               const icon = c.icon || FALLBACK_ICON[c.id] || '•';
@@ -291,34 +308,42 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
                 || (c.id === 'push' ? 'phone-push'
                   : c.id === 'agent' ? 'chat-bubble'
                   : c.id === 'call_center' ? 'agent-console' : null);
+              // CS 셀프 해결 AI Agent — AI Agent 채널에 셀프 해결 안내 통합
+              const isSelfAgent = isCS && deflectable && (c.id === 'agent' || kind === 'chat-bubble');
               return (
                 <div key={c.id} className={`ac-ch ch-${c.id} kind-${kind || 'text'}`}>
                   <div className="ac-ch-head">
-                    <span className="ac-ch-icon">{icon}</span>
-                    <span className="ac-ch-name">{c.name}</span>
+                    <span className="ac-ch-icon">{isSelfAgent ? '🤖' : icon}</span>
+                    <span className="ac-ch-name">{isSelfAgent ? '셀프 해결 AI Agent' : c.name}</span>
+                    {isSelfAgent && <span className="ac-self-tag">상담효율 ↑ · 비용 ↓</span>}
                   </div>
                   {kind === 'phone-push' ? (
                     <>
                       {act.service && (
-                        <div className="ac-service"><span className="ac-service-tag">추천 서비스</span>{act.service}</div>
+                        <div className="ac-service"><span className="ac-service-tag">추천 서비스</span>{interp(act.service)}</div>
                       )}
-                      <PhonePush message={body} />
+                      <PhonePush message={interp(body)} />
                     </>
                   ) : kind === 'chat-bubble' ? (
-                    <AgentBubble message={body} />
+                    <>
+                      <AgentBubble message={interp(body)} />
+                      {isSelfAgent && (
+                        <div className="ac-self-note">✅ 셀프로 해결되면 상담 연결 불필요 — 상담 인입·대기시간 감소</div>
+                      )}
+                    </>
                   ) : kind === 'agent-console' ? (
                     <AgentConsole
-                      situation={(reasoning && reasoning.situation_text) || body.situation}
-                      guidance={body.guidance}
+                      situation={interp((reasoning && reasoning.situation_text) || body.situation)}
+                      guidance={interp(body.guidance)}
                     />
                   ) : kind === 'music-card' ? (
-                    <MusicCard playlist={body.playlist} desc={body.desc} />
+                    <MusicCard playlist={interp(body.playlist)} desc={interp(body.desc)} />
                   ) : kind === 'device-voice' ? (
-                    <DeviceVoice command={body.command} devices={body.devices} desc={body.desc} />
+                    <DeviceVoice command={interp(body.command)} devices={(body.devices || []).map(interp)} desc={interp(body.desc)} />
                   ) : typeof body === 'object' ? (
-                    <AgentConsole situation={body.situation} guidance={body.guidance} />
+                    <AgentConsole situation={interp(body.situation)} guidance={interp(body.guidance)} />
                   ) : (
-                    <div className="ac-msg">{body}</div>
+                    <div className="ac-msg">{interp(body)}</div>
                   )}
                 </div>
               );
@@ -334,6 +359,9 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
                     background: #f8fafc; border: 2px dashed var(--border); border-radius: 12px; }
         .ac-match { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 1rem;
                     padding: 0.6rem 0.9rem; background: #f8fafc; border-radius: 10px; }
+        .ac-hist { margin: -0.5rem 0 1rem; padding: 0.4rem 0.7rem; font-size: 0.82rem; font-weight: 700;
+                   color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 9px; }
+        .ac-hist b { color: #b45309; }
         .ac-rank { font-weight: 800; color: var(--primary); }
         .ac-iname { font-weight: 700; font-size: 1.1rem; }
         .ac-iid { font-size: 0.75rem; color: var(--muted); }
@@ -444,6 +472,10 @@ export default function ActionPanel({ actionsData, topN = [], reasoning = null, 
         .ac-ch-head { display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.45rem; }
         .ac-ch-icon { font-size: 1.1rem; }
         .ac-ch-name { font-weight: 700; font-size: 0.95rem; }
+        .ac-self-tag { font-size: 0.72rem; font-weight: 800; color: #fff; background: #0891b2;
+                       padding: 0.12rem 0.55rem; border-radius: 999px; margin-left: auto; }
+        .ac-self-note { margin-top: 0.5rem; font-size: 0.82rem; font-weight: 700; color: #155e75;
+                        background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 8px; padding: 0.4rem 0.6rem; }
         .ac-msg { font-size: 1rem; color: #1e293b; line-height: 1.45; }
         .ac-service { display: flex; align-items: center; gap: 0.4rem; font-size: 0.92rem; font-weight: 700;
                       color: #6d28d9; margin-bottom: 0.5rem; }
