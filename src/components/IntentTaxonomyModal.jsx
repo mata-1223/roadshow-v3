@@ -1,4 +1,4 @@
-// Intent Taxonomy 팝업 — 해당 시나리오의 L1(대분류) → L2(중분류) → 개별 Intent 계층을 한눈에.
+// 고객 의도 분류 체계 팝업 — 해당 시나리오의 L1(대분류) → L2(중분류) → 개별 Intent 계층을 한눈에.
 // L1/L2 개념이 낯선 참여자가 Top5·Vector Space의 레벨 차이를 이해하도록 돕는다.
 import { useState } from 'react';
 
@@ -38,20 +38,20 @@ export default function IntentTaxonomyModal({ intents, l1Zones, scenarioName }) 
 
   return (
     <span className="tax-wrap">
-      <button type="button" className="tax-btn" onClick={() => setOpen(true)}>📂 Intent Taxonomy</button>
+      <button type="button" className="tax-btn" onClick={() => setOpen(true)}>📂 고객 의도 분류 체계</button>
       {open && (
         <>
           <div className="tax-backdrop" onClick={() => setOpen(false)} />
           <div className="tax-modal" role="dialog">
             <button type="button" className="rx-close" onClick={() => setOpen(false)}>✕</button>
-            <h2>Intent Taxonomy{scenarioName ? ` — ${scenarioName}` : ''}</h2>
+            <h2>고객 의도 분류 체계{scenarioName ? ` — ${scenarioName}` : ''}</h2>
             <p className="tax-intro">
-              이 시나리오의 Intent는 <b>L1(대분류)</b> → <b>L2(중분류)</b>
-              {hasLeaves ? <> → <b>개별 Intent</b></> : ''} 계층으로 정의됩니다.
-              {' '}Top 5·Vector Space에 표시되는 항목은 이 체계의 최하위 Intent입니다.
+              이 시나리오의 의도는 <b>L1(대분류)</b> → <b>L2(중분류)</b>
+              {hasLeaves ? <> → <b>개별 의도</b></> : ''} 계층으로 정의됩니다.
+              {' '}Top 5·Vector Space에 표시되는 항목은 이 체계의 최하위 의도입니다.
             </p>
             <div className="tax-summary">
-              L1 {tree.length}개 · L2 {l2Count}개{hasLeaves ? ` · Intent ${intents.length}개` : ''}
+              L1 {tree.length}개 · L2 {l2Count}개{hasLeaves ? ` · 의도 ${intents.length}개` : ''}
             </div>
             <div className="tax-tree">
               {tree.map((l1) => (
