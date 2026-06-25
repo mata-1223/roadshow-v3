@@ -168,7 +168,7 @@
       $('#reveal').classList.remove('show'); $('#rIntent').textContent='—'; $('#aMsg').textContent='—'; $('#aIc').textContent='🎁'; $('#aKind').textContent='선제 제안'; $('#aHist').textContent='📚 —';
       document.querySelectorAll('.tl .node').forEach(n=>n.classList.remove('on','done'));
       $('#nextBtn').textContent='▶ 행동 시작'; $('#nextBtn').disabled=false;
-      $('#foot').innerHTML='관람객이 행동을 더할수록 — 의도가 실시간으로 갈리고, KT는 매번 먼저 도착합니다.';
+      $('#foot').innerHTML='고객이 행동을 더할수록 의도가 실시간으로 변화하고, KT는 매번 먼저 인지하여 행동합니다.';
       renderBread();
     }
     function renderBread(){
@@ -208,7 +208,7 @@
       // 버튼/푸터
       if(idx===STEPS.length-1){
         $('#nextBtn').textContent='✓ 하루 완료 · 다시 보기';
-        at(2200,()=>$('#foot').innerHTML='오늘 저녁, 말하기 전에 <b>4번</b> — 이동·저녁·휴식·취침까지 KT가 <b>먼저</b> 도왔습니다.');
+        at(2200,()=>$('#foot').innerHTML='고객이 행동을 더할수록 의도가 실시간으로 변화하고, KT는 매번 먼저 인지하여 행동합니다.');
       }else{
         $('#nextBtn').textContent='▶ 다음 행동';
       }
