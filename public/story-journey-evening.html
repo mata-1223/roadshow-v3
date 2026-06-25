@@ -3,277 +3,327 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>스토리보드 — 번아웃 행동 여정 · 회복 유도 (회사 신호→저녁→회복)</title>
+<title>스토리보드 v2 — 번아웃이 쌓인 하루 (KT Context Engine · CS 디자인)</title>
 <style>
-  :root{--pp:#7c3aed;}
-  *{box-sizing:border-box;}
-  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;color:#0f172a;background:linear-gradient(180deg,#f8fafc,#eef2f7);padding:20px;display:flex;flex-direction:column;align-items:center;}
-  h1{font-size:1.18rem;margin:0 0 4px;} .sub{color:#64748b;margin:0 0 12px;font-size:.85rem;} .sub b{color:var(--pp);}
-  .stage{position:relative;width:980px;max-width:98vw;height:600px;background:#0b1020;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(15,23,42,.25);display:flex;flex-direction:column;transition:background 1s;}
-  /* 시간/감정 흐름: 야근(차가운 밤 사무실)→퇴근→집(어둠)→심야(가장 어둠)→주말 전환(밝아짐)→회복(가장 밝음) */
-  .stage.office{background:linear-gradient(#27314d,#1a2238);} .stage.dusk{background:linear-gradient(#3a2f55,#241d3e);}
-  .stage.home{background:linear-gradient(#241d44,#140e26);} .stage.night{background:linear-gradient(#160f28,#0a0715);}
-  .stage.recover{background:linear-gradient(#1f3f38,#15302b);} .stage.bright{background:linear-gradient(#2c4a3e,#20392f);}
+  :root{
+    --txt:#eef0ff; --muted:#a6acd4; --faint:#727aa6;
+    --purple:#8b5cf6; --purple2:#b39bff; --mint:#2dd4bf; --mint2:#5eead4;
+    --green:#34d399; --amber:#f6c453; --red:#ff5a6a;
+    --panel:rgba(255,255,255,.035); --line:rgba(255,255,255,.09);
+  }
+  *{box-sizing:border-box;margin:0;}
+  body{
+    background:radial-gradient(1100px 560px at 50% -8%,#222a63 0%,#10142f 52%,#0a0d20 100%),#0a0d20;
+    color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    /* 팝업(StoryOverlay)은 BASE 1000×760 고정 배율로 줌. 콘텐츠를 상단정렬 후 zoom으로 BASE 안에 맞춤(CS v1과 동일 방식) — min-height:100vh/flex 중앙정렬 금지(세로 중앙정렬+확대 시 상단여백·하단잘림 발생) */
+    margin:0;padding:4px 14px;zoom:0.92;
+  }
+  .shell{width:1000px;max-width:100%;margin:0 auto;}
 
-  .badge{height:34px;flex:none;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(#1e1b3a,#241d44);color:#fff;font-weight:800;font-size:.84rem;} .badge b{color:#c4b5fd;}
-  .profile{flex:none;margin:7px 12px 0;font-size:.64rem;font-weight:800;color:#fcd34d;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:.22rem .5rem;align-self:flex-start;}
+  .eyebrow{display:flex;align-items:center;gap:9px;font-size:11.5px;letter-spacing:.06em;font-weight:800;margin-bottom:6px;text-transform:uppercase;}
+  .eyebrow .k{color:var(--mint2);} .eyebrow .c{color:var(--purple2);}
+  .h-title{font-size:26px;line-height:1.14;font-weight:900;letter-spacing:-.02em;margin:0 0 5px;text-align:center;}
+  .h-title .hl{background:linear-gradient(100deg,var(--mint2),var(--purple2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .h-sub{font-size:12.5px;color:var(--muted);text-align:center;max-width:820px;margin:0 auto 8px;line-height:1.5;}
+  .h-sub .hl{color:#fff;font-weight:700;}
 
-  /* 타임라인 */
-  .tl{flex:none;display:flex;padding:8px 14px 4px;gap:0;}
-  .tl .node{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;color:#64748b;font-size:.62rem;font-weight:800;text-align:center;}
-  .tl .node::before{content:'';position:absolute;top:11px;left:50%;width:100%;height:2px;background:#2a3350;}
-  .tl .node:last-child::before{display:none;}
-  .tl .node .pt{width:12px;height:12px;border-radius:50%;background:#2a3350;border:2px solid #475569;z-index:1;margin-bottom:4px;transition:.3s;}
-  .tl .node.on{color:#e9d5ff;} .tl .node.on .pt{background:var(--pp);border-color:#c4b5fd;box-shadow:0 0 0 4px rgba(124,58,237,.3);}
-  .tl .node.done .pt{background:#16a34a;border-color:#86efac;}
-  .tl .node .t{font-size:.53rem;font-weight:600;opacity:.8;}
+  /* tint carrier = ambient emotion halo behind card (낮→밤→회복) */
+  .stage{position:relative;border-radius:26px;padding:8px 10px 8px;transition:background 1s;}
+  .stage.office {background:radial-gradient(760px 260px at 50% -6%,rgba(91,123,176,.30),transparent 70%);}
+  .stage.dusk   {background:radial-gradient(760px 260px at 50% -6%,rgba(139,92,246,.30),transparent 70%);}
+  .stage.home   {background:radial-gradient(760px 260px at 50% -6%,rgba(124,58,237,.34),transparent 70%);}
+  .stage.night  {background:radial-gradient(760px 300px at 50% -6%,rgba(59,47,107,.42),transparent 72%);}
+  .stage.recover{background:radial-gradient(760px 260px at 50% -6%,rgba(45,212,191,.30),transparent 70%);}
+  .stage.bright {background:radial-gradient(760px 260px at 50% -6%,rgba(52,211,153,.32),transparent 70%);}
 
-  .main{flex:1;display:grid;grid-template-columns:1fr 1.05fr;gap:3px;min-height:0;padding:0 3px;}
-  .col{position:relative;min-height:0;display:flex;flex-direction:column;padding:8px 10px;overflow:hidden;}
-  .ctag{font-size:.66rem;font-weight:800;color:#c4b5fd;background:rgba(124,58,237,.18);padding:.18rem .5rem;border-radius:999px;align-self:flex-start;margin-bottom:6px;}
+  .card{position:relative;border-radius:22px;overflow:hidden;
+    background:linear-gradient(165deg,rgba(35,40,82,.92),rgba(20,23,52,.94));
+    border:1px solid rgba(139,120,255,.22);
+    box-shadow:0 40px 90px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);}
+  .card::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(600px 200px at 18% 0%,rgba(45,212,191,.10),transparent 60%),radial-gradient(600px 220px at 88% 0%,rgba(139,92,246,.12),transparent 60%);}
+  /* mood line — per-beat emotion accent at card top */
+  .mood{height:3px;width:100%;background:linear-gradient(90deg,var(--purple),var(--mint));transition:background 1s;}
 
-  /* 좌: 씬 + 여정 로그 */
-  .scene{position:relative;height:150px;flex:none;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);overflow:hidden;margin-bottom:8px;}
-  .ctx-emoji{position:absolute;top:8px;left:10px;font-size:24px;}
-  .ctx-label{position:absolute;top:12px;right:10px;font-size:.62rem;font-weight:800;color:#e2e8f0;background:rgba(0,0,0,.3);padding:.14rem .45rem;border-radius:999px;}
-  .person{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);}
-  .jlog-head{font-size:.62rem;font-weight:800;color:#94a3b8;margin-bottom:4px;}
-  .jlog{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
-  .jrow{display:flex;align-items:center;gap:6px;font-size:.64rem;font-weight:700;color:#cbd5e1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:.2rem .45rem;animation:slidein .35s ease;}
-  .jrow .jt{color:#a78bfa;font-weight:800;flex:none;}
-  @keyframes slidein{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+  .card-head{position:relative;display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--line);font-size:13px;font-weight:800;}
+  .card-head .brand{display:flex;align-items:center;gap:9px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.16),0 0 12px var(--green);}
+  .card-head .brand b{background:linear-gradient(90deg,#fff,#cfd0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .card-head .elapsed{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--purple2);font-weight:800;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.3);padding:4px 10px;border-radius:999px;font-size:11px;}
 
-  /* 우: 적중 리빌 */
-  .detect{font-size:.7rem;font-weight:800;color:#fff;background:rgba(56,189,248,.18);border:1px solid rgba(56,189,248,.4);border-radius:9px;padding:.35rem .55rem;margin-bottom:8px;opacity:0;transition:.3s;}
-  .detect.show{opacity:1;} .detect .lab{color:#7dd3fc;font-size:.58rem;display:block;}
-  /* 번아웃 누적도 게이지 */
-  .gauge-lab{display:flex;justify-content:space-between;font-size:.62rem;font-weight:800;color:#94a3b8;margin-bottom:3px;}
-  .gauge-lab b{color:#fca5a5;}
-  .gauge{position:relative;height:14px;border-radius:8px;background:#1e293b;overflow:hidden;}
-  .gauge .fill{height:100%;width:0;background:linear-gradient(90deg,#f59e0b,#fbbf24);transition:background .5s;}
-  .gauge .thr{position:absolute;top:-3px;bottom:-3px;left:70%;width:2px;background:#fbbf24;}
-  .gauge .thr::after{content:'번아웃 임계';position:absolute;top:-12px;left:-22px;font-size:.5rem;color:#fbbf24;font-weight:800;white-space:nowrap;}
+  .traits{display:flex;flex-wrap:wrap;gap:7px;padding:8px 20px 0;}
+  .chip{font-size:11px;font-weight:700;color:#ddd8ff;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.3);border-radius:999px;padding:5px 10px;}
+  .chip.cp{color:#bff3ea;background:rgba(45,212,191,.14);border-color:rgba(45,212,191,.34);}
+  .chip.am{color:#ffe6ab;background:rgba(246,196,83,.14);border-color:rgba(246,196,83,.34);}
 
-  .reveal{margin-top:10px;position:relative;border-radius:12px;background:linear-gradient(135deg,#2a2350,#1e1b3a);border:1px solid #4c3a8a;padding:12px;text-align:center;opacity:0;transform:scale(.92);transition:.1s;}
-  .reveal.show{animation:pop .45s cubic-bezier(.2,.8,.3,1.3) forwards;}
+  .timeline{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:12px 22px 6px;}
+  .tl-line{position:absolute;left:9%;right:9%;top:31px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
+  .node{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:2;opacity:.5;transition:.3s;}
+  .node.active,.node.done{opacity:1;}
+  .node .pt{width:14px;height:14px;border-radius:50%;background:#2a3350;border:3px solid #11142f;box-shadow:0 0 0 3px rgba(124,150,255,.12);transition:.3s;}
+  .node.active .pt{background:var(--purple);box-shadow:0 0 0 6px rgba(139,92,246,.3),0 0 16px var(--purple);}
+  .node.done .pt{background:var(--mint);box-shadow:0 0 0 3px rgba(45,212,191,.25);}
+  .node .lbl{font-size:11px;font-weight:800;margin-top:8px;color:#e7e9ff;white-space:nowrap;}
+  .node .sub{font-size:9px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums;}
+
+  /* 카드 높이 고정 — 행동이 누적돼도 높이가 변하지 않도록 body 높이 고정 */
+  .body{position:relative;display:grid;grid-template-columns:1.05fr 1.1fr;gap:16px;padding:10px 20px 4px;height:410px;}
+  .panel{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+  .panel-title{font-size:12px;font-weight:800;color:#dfe2ff;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .panel-title .tag{margin-left:auto;font-size:9.5px;color:var(--faint);font-weight:700;background:rgba(255,255,255,.05);padding:3px 8px;border-radius:6px;}
+
+  /* scene */
+  .scene{position:relative;height:96px;border-radius:13px;overflow:hidden;margin-bottom:10px;
+    background:linear-gradient(160deg,rgba(124,150,255,.06),rgba(20,23,52,.2));border:1px solid rgba(255,255,255,.07);
+    display:flex;align-items:center;justify-content:center;gap:14px;}
+  .scene .emo{font-size:46px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));}
+  .scene .ctxlab{position:absolute;top:10px;right:11px;font-size:10.5px;font-weight:800;color:#e2e8f0;background:rgba(0,0,0,.32);padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.08);}
+  .person{opacity:.9;}
+
+  .loghead{font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.03em;margin-bottom:7px;text-transform:uppercase;}
+  .jlog{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow-y:auto;}
+  .sig{display:flex;align-items:center;gap:10px;font-size:12px;color:#e9eaff;font-weight:700;background:rgba(255,255,255,.04);border:1px solid var(--line);border-left:2px solid var(--mint);border-radius:9px;padding:8px 10px;animation:slin .35s ease;transition:font-size .4s,padding .4s,opacity .4s;flex:none;}
+  .sig .t{font-family:inherit;font-variant-numeric:tabular-nums;font-size:9.5px;font-weight:800;color:var(--faint);flex:none;min-width:52px;}
+  /* 이전 시각 행동: 축약(작은 폰트·낮은 높이·흐리게)하여 누적 */
+  .sig.past{font-size:10px;padding:4px 9px;opacity:.5;border-left-color:rgba(45,212,191,.25);background:rgba(255,255,255,.022);}
+  .sig.past .t{font-size:8.5px;min-width:44px;}
+  @keyframes slin{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
+
+  /* detect */
+  .detect{font-size:11.5px;font-weight:800;color:#fff;background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.32);border-radius:10px;padding:8px 11px;margin-bottom:11px;opacity:0;transition:.3s;}
+  .detect.show{opacity:1;}
+  .detect .lab{display:block;font-size:9.5px;color:var(--mint2);font-weight:800;margin-bottom:2px;letter-spacing:.02em;}
+
+  /* burnout gauge — CS bar shape + tone color */
+  .g-lab{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:#dfe2ff;margin-bottom:6px;}
+  .g-lab .vt{font-size:10px;color:var(--faint);font-weight:700;}
+  .g-lab .pct{margin-left:auto;font-size:19px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--amber);}
+  .bar{position:relative;height:12px;border-radius:7px;background:rgba(255,255,255,.08);overflow:visible;}
+  .bar>i{display:block;height:100%;width:0;border-radius:7px;background:linear-gradient(90deg,#f6c453,#ffd97a);transition:width .1s,background .5s;box-shadow:0 0 14px rgba(246,196,83,.4);}
+  .bar .thr{position:absolute;top:-4px;bottom:-4px;left:70%;width:2px;background:#fff7cf;opacity:.7;}
+  .bar .thr::after{content:'임계';position:absolute;top:-13px;left:-9px;font-size:8px;color:#fff7cf;font-weight:800;}
+  .crisis .pct{animation:pulse .9s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+  /* reveal — CS confirm/intent style */
+  .reveal{margin-top:13px;position:relative;border-radius:13px;padding:12px;background:linear-gradient(135deg,rgba(124,77,255,.2),rgba(20,23,52,.5));border:1px solid rgba(139,120,255,.3);opacity:0;transform:scale(.96);transition:.1s;}
+  .reveal.show{animation:pop .4s cubic-bezier(.2,.8,.3,1.3) forwards;}
   @keyframes pop{to{opacity:1;transform:none;}}
-  .reveal .hit{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:900;padding:.1rem .5rem;border-radius:999px;white-space:nowrap;}
-  .reveal .hit.deep{color:#450a0a;background:#fca5a5;box-shadow:0 2px 8px rgba(248,113,113,.5);}
-  .reveal .hit.ease{color:#052e16;background:#4ade80;box-shadow:0 2px 8px rgba(74,222,128,.5);}
-  .reveal .rl{font-size:.62rem;font-weight:800;color:#c4b5fd;}
-  .reveal .ri{font-size:1.3rem;font-weight:900;color:#fff;margin:2px 0 8px;}
-  .reveal .offer{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:.5rem .65rem;text-align:left;}
-  .reveal .offer-head{font-size:.6rem;font-weight:800;color:#a7f0c8;margin-bottom:3px;}
-  .reveal .offer-msg{font-size:.78rem;font-weight:700;color:#fff;line-height:1.34;}
-  .reveal .hist{margin-top:7px;font-size:.57rem;font-weight:800;color:#fcd34d;background:rgba(251,191,36,.13);border:1px solid rgba(251,191,36,.35);border-radius:7px;padding:.18rem .5rem;display:inline-block;}
+  .reveal .hit{position:absolute;top:-10px;left:14px;font-size:9.5px;font-weight:900;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .reveal .hit.deep{color:#3a0a12;background:#ff8a93;}
+  .reveal .hit.ease{color:#052e16;background:var(--green);}
+  .reveal .rl{font-size:10px;font-weight:800;color:var(--purple2);letter-spacing:.02em;margin-top:3px;}
+  .reveal .ri{font-size:18px;font-weight:900;color:#fff;margin:1px 0 9px;}
+  .reveal .offer{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:10px;padding:9px 11px;}
+  .reveal .offer-head{font-size:10px;font-weight:800;color:var(--mint2);margin-bottom:3px;}
+  .reveal .offer-msg{font-size:12.5px;font-weight:700;color:#fff;line-height:1.4;}
+  .reveal .hist{margin-top:8px;font-size:10px;font-weight:800;color:var(--amber);background:rgba(246,196,83,.12);border:1px solid rgba(246,196,83,.32);border-radius:7px;padding:4px 9px;display:inline-block;}
 
-  .bread{margin-top:auto;display:flex;flex-wrap:wrap;gap:5px;padding-top:8px;}
-  .bread .bc{font-size:.58rem;font-weight:800;color:#64748b;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:.16rem .45rem;}
-  .bread .bc.deep.done,.bread .bc.deep.cur{color:#fff;background:rgba(220,38,38,.35);border-color:#f87171;}
-  .bread .bc.ease.done,.bread .bc.ease.cur{color:#fff;background:rgba(22,163,74,.35);border-color:#4ade80;}
-  .bread .bc.cur{box-shadow:0 0 0 2px rgba(255,255,255,.25);}
+  .bread{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:11px;}
+  .bread .bc{font-size:9.5px;font-weight:800;color:var(--faint);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:3px 8px;}
+  .bread .bc.deep.done,.bread .bc.deep.cur{color:#fff;background:rgba(255,90,106,.28);border-color:rgba(255,90,106,.5);}
+  .bread .bc.ease.done,.bread .bc.ease.cur{color:#fff;background:rgba(52,211,153,.26);border-color:rgba(52,211,153,.5);}
+  .bread .bc.cur{box-shadow:0 0 0 2px rgba(255,255,255,.18);}
 
-  .ctrl{flex:none;display:flex;align-items:center;justify-content:center;gap:10px;padding:8px;background:#0c1224;}
-  .btn{font-size:.92rem;font-weight:800;color:#fff;background:var(--pp);border:none;border-radius:10px;padding:.55rem 1.3rem;cursor:pointer;box-shadow:0 4px 14px rgba(124,58,237,.5);transition:.15s;}
-  .btn:hover{background:#6d28d9;transform:translateY(-1px);} .btn.ghost{background:#334155;box-shadow:none;}
-  .foot{flex:none;min-height:32px;display:flex;align-items:center;justify-content:center;text-align:center;padding:5px 12px;font-size:.8rem;font-weight:800;color:#fff;background:rgba(124,58,237,.96);} .foot b{color:#fde68a;}
+  .foot{position:relative;text-align:center;font-size:12.5px;font-weight:800;color:#fff;padding:10px 18px;line-height:1.45;
+    background:linear-gradient(90deg,rgba(124,77,255,.92),rgba(45,212,191,.78));}
+  .foot b{color:#fff7cf;}
+
+  .ctrl{display:flex;gap:8px;justify-content:center;margin-top:6px;}
+  .btn{font-size:13px;font-weight:800;border:none;border-radius:9px;padding:9px 18px;cursor:pointer;font-family:inherit;}
+  .btn.go{color:#fff;background:linear-gradient(90deg,#7c4dff,#9d6bff);box-shadow:0 8px 22px -8px rgba(124,77,255,.7);}
+  .btn.gh{color:#cfd3f2;background:#1b1f3e;border:1px solid var(--line);}
+
+  @media (prefers-reduced-motion: reduce){ .crisis .pct{animation:none;} }
 </style>
 </head>
 <body>
-  <h1>🎬 번아웃이 쌓인 하루, 회복을 먼저 건네는 AI</h1>
-  <p class="sub">KT는 <b>기지국 위치·통화·트래픽 패턴</b>으로 — 말하기 전에 <b>번아웃 누적을 감지</b>하고, 심화를 누그러뜨릴 <b>회복</b>을 먼저 건넵니다. 의도는 <b>심화 → 완화</b>로 갈립니다.</p>
+  <div class="shell">
+    <div class="eyebrow"><span class="k">AX Tech Connect 2026</span> · <span class="c">번아웃 케어</span></div>
+    <h2 class="h-title">번아웃이 쌓인 하루, <span class="hl">회복을 먼저</span> 건네는 AI</h2>
+    <p class="h-sub">지친 하루의 끝, 말하지 않아도 KT는 <span class="hl">고객의 상황</span>을 실시간으로 파악하여 번아웃이 쌓인 순간의 <span class="hl">의도</span>를 먼저 읽어내어 음악·홈·휴식으로 <span class="hl">회복</span>을 먼저 건넵니다.</p>
 
-  <div id="stage" class="stage">
-    <div class="badge">👤 같은 직장인 · 번아웃 누적 → 회복까지 · <b>여정에 따라 변하는 의도</b></div>
-    <div class="profile">📇 과거 특성 · 30대 1인가구 · 잦은 야근 · 지니뮤직 애청(잔잔한 시티팝)</div>
-
-    <div class="tl" id="tl">
-      <div class="node" data-n="0"><span class="pt"></span>🏢 야근<span class="t">목 21:30</span></div>
-      <div class="node" data-n="1"><span class="pt"></span>🌆 퇴근길<span class="t">목 22:10</span></div>
-      <div class="node" data-n="2"><span class="pt"></span>🏠 저녁·집<span class="t">목 22:40</span></div>
-      <div class="node" data-n="3"><span class="pt"></span>🌙 심야<span class="t">금 01:30</span></div>
-      <div class="node" data-n="4"><span class="pt"></span>🔄 주말 전환<span class="t">토 오전</span></div>
-      <div class="node" data-n="5"><span class="pt"></span>🌱 일상 회복<span class="t">토 오후</span></div>
-    </div>
-
-    <div class="main">
-      <div class="col">
-        <span class="ctag">🙍 직장인의 며칠</span>
-        <div class="scene">
-          <span class="ctx-emoji" id="ctxEmoji">🏢</span>
-          <span class="ctx-label" id="ctxLabel">행동 대기 중</span>
-          <div class="person"><svg viewBox="0 0 120 100" width="78">
-            <ellipse cx="60" cy="46" rx="19" ry="20" fill="#f2c6a0"/><path d="M41 44 Q40 25 60 25 Q80 25 79 44 Q73 36 60 36 Q47 36 41 44 Z" fill="#3b2f2a"/>
-            <path d="M51 47 Q56 50 61 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M62 47 Q67 50 72 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <path d="M53 59 Q60 56 67 59" stroke="#7a5b48" stroke-width="1.9" fill="none" stroke-linecap="round"/>
-            <path d="M32 100 Q30 76 60 76 Q90 76 88 100 Z" fill="#6c7a95"/></svg></div>
+    <div class="stage" id="stage">
+      <div class="card">
+        <div class="mood" id="mood"></div>
+        <div class="card-head">
+          <div class="brand"><span class="dot"></span> <b>KT Context Engine · 번아웃 감지·회복 유도</b></div>
+          <span class="elapsed" id="elapsed">실시간</span>
         </div>
-        <div class="jlog-head">🧭 통신 데이터 시그널 (실시간 누적)</div>
-        <div class="jlog" id="jlog"></div>
-      </div>
 
-      <div class="col">
-        <span class="ctag">⚙️ KT 엔진 — 번아웃 감지 · 회복 유도</span>
-        <div class="detect" id="detect"><span class="lab">👁 방금 포착한 통신 시그널</span><span id="detectTxt">—</span></div>
-        <div class="gauge-lab"><span>🔥 <b>번아웃 누적도</b> (기지국·통화·트래픽 기반)</span><span id="gval">0%</span></div>
-        <div class="gauge"><div class="fill" id="fill"></div><div class="thr"></div></div>
-        <div class="reveal" id="reveal">
-          <span class="hit deep" id="rHit">⚠️ 번아웃 심화</span>
-          <div class="rl">⚡ 지금 의도</div>
-          <div class="ri" id="rIntent">—</div>
-          <div class="offer">
-            <div class="offer-head"><span id="aIc">🎁</span> <span id="aKind">선제 제안</span></div>
-            <div class="offer-msg" id="aMsg">—</div>
+        <div class="traits">
+          <span class="chip">30대 1인가구</span>
+          <span class="chip am">잦은 야근</span>
+          <span class="chip cp">지니뮤직 애청 · 잔잔한 시티팝</span>
+        </div>
+
+        <div class="timeline" id="tl">
+          <div class="tl-line"></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🏢 야근</span><span class="sub">금 21:30</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🌆 퇴근길</span><span class="sub">금 22:10</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🏠 저녁·집</span><span class="sub">금 22:40</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🌙 심야</span><span class="sub">토 01:30</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🔄 주말 전환</span><span class="sub">토 오전</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🌱 일상 회복</span><span class="sub">토 오후</span></div>
+        </div>
+
+        <div class="body">
+          <!-- LEFT: 고객의 하루 -->
+          <div class="panel">
+            <p class="panel-title">🙍 고객의 하루 <span class="tag" id="dayTag">대기 중</span></p>
+            <div class="scene">
+              <span class="emo" id="ctxEmoji">🏢</span>
+              <span class="ctxlab" id="ctxLabel">행동 대기 중</span>
+              <svg class="person" viewBox="0 0 120 100" width="64"><ellipse cx="60" cy="46" rx="19" ry="20" fill="#f2c6a0"/><path d="M41 44 Q40 25 60 25 Q80 25 79 44 Q73 36 60 36 Q47 36 41 44 Z" fill="#3b2f2a"/><path d="M51 47 Q56 50 61 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M62 47 Q67 50 72 47" stroke="#3a2a1e" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M53 59 Q60 56 67 59" stroke="#7a5b48" stroke-width="1.9" fill="none" stroke-linecap="round"/><path d="M32 100 Q30 76 60 76 Q90 76 88 100 Z" fill="#6c7a95"/></svg>
+            </div>
+            <div class="loghead">🧭 통신 데이터 시그널 (실시간 누적)</div>
+            <div class="jlog" id="jlog"></div>
           </div>
-          <div class="hist" id="aHist">📚 —</div>
+
+          <!-- RIGHT: KT 엔진 -->
+          <div class="panel">
+            <p class="panel-title">⚙️ KT 엔진 — 번아웃 감지 <span class="tag">기지국·통화·트래픽</span></p>
+
+            <div class="g-lab">😮‍💨 번아웃 누적도 <span class="vt">(가상)</span> <span class="pct" id="gval">0%</span></div>
+            <div class="bar" id="barWrap"><i id="fill"></i></div>
+
+            <div class="reveal" id="reveal">
+              <span class="hit deep" id="rHit">⚠️ 번아웃 심화</span>
+              <div class="rl">⚡ 지금 의도</div>
+              <div class="ri" id="rIntent">—</div>
+              <div class="offer">
+                <div class="offer-head"><span id="aIc">🎁</span> <span id="aKind">선제 제안</span></div>
+                <div class="offer-msg" id="aMsg">—</div>
+              </div>
+              <div class="hist" id="aHist">📚 —</div>
+            </div>
+            <div class="bread" id="bread"></div>
+          </div>
         </div>
-        <div class="bread" id="bread"></div>
+
+        <div class="foot" id="foot">번아웃이 깊어지기 전, KT가 먼저 알아채고 회복을 건넵니다 — 말하지 않아도, <b>나의 힘듦을 알아주고 함께 이겨내는 경험</b></div>
       </div>
     </div>
 
     <div class="ctrl">
-      <button class="btn" id="nextBtn" onclick="next()">▶ 여정 시작</button>
-      <button class="btn ghost" id="resetBtn" onclick="reset()">↻ 처음부터</button>
-      <button class="btn" id="pauseBtn" style="display:none" onclick="togglePause()">⏸ 정지</button>
+      <button class="btn go" onclick="parent.postMessage('story-start-demo','*')">▶ 시나리오 체험형 시연 시작</button>
+      <button class="btn gh" id="pauseBtn" style="display:none" onclick="togglePause()">⏸ 정지</button>
+      <button class="btn gh" onclick="parent.postMessage('story-close','*')">✕ 닫기</button>
     </div>
-    <div class="foot" id="foot">사내 행동은 볼 수 없어도 — 기지국·통화·트래픽 패턴으로 KT는 번아웃을 먼저 알아챕니다.</div>
-  </div>
-  <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
-    <button onclick="parent.postMessage('story-start-demo','*')" style="font-size:.92rem;font-weight:800;color:#fff;background:#7c3aed;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">▶ 시나리오 체험형 시연 시작</button>
-    <button onclick="parent.postMessage('story-close','*')" style="font-size:.92rem;font-weight:700;color:#334155;background:#e2e8f0;border:none;border-radius:9px;padding:.55rem 1.1rem;cursor:pointer;">✕ 닫기</button>
   </div>
 
   <script>
     const $=s=>document.querySelector(s);
-    // phase: 'deep'(번아웃 심화) | 'ease'(번아웃 완화/회복)  ·  bn: 번아웃 누적도(0~100)  ·  tone: 게이지 색
-    const STEPS=[
-      {tint:'office', emoji:'🏢', ctx:'야근 · 사무실', phase:'deep', bn:50, tone:'amber',
-       signals:[['목 21:30','📍 사무실 셀에 야간 체류 — 이번 주 3번째 야근'],['—','🌙 어젯밤 01:00까지 데이터 활동'],['—','📵 지인 통화·메시지 2주째 감소']],
-       hit:'⚠️ 번아웃 누적 감지', intent:'번아웃 누적',
-       act:{ic:'🔍', kind:'KT 엔진 · 회복 타이밍 모니터링',
-            msg:'야근 3회·야간 활동 누적이 감지됐어요. 섣부른 제안 대신, 지금은 무리하지 않게 회복 타이밍을 살핍니다.',
-            hist:'기지국 위치·야간 트래픽·통화 빈도 → Fatigue Load ↑'}},
-
-      {tint:'dusk', emoji:'🌆', ctx:'늦은 퇴근길 · 무기력', phase:'deep', bn:64, tone:'amber',
-       signals:[['목 22:10','📡 사무실→집 셀 핸드오버(늦은 퇴근)'],['목 22:12','📉 이동 중 활동량 낮음 · 음악앱 미실행']],
-       hit:'⚠️ 번아웃 심화', intent:'조용한 위로가 필요',
-       act:{ic:'🎵', kind:'지니뮤직',
-            msg:'늦은 퇴근, 오늘 많이 지치셨죠. 신나는 곡 대신 마음을 가라앉히는 조용한 플레이리스트를 준비했어요.',
-            hist:'평소 청취 취향 · 잔잔한 시티팝/R&B'}},
-
-      {tint:'home', emoji:'🏠', ctx:'저녁 · 집(불 안 켬)', phase:'deep', bn:80, tone:'red',
-       signals:[['목 22:40','🏠 자택 셀 도착 · 거실 IoT 미사용(조명 OFF 지속)'],['목 22:55','🍽 배달앱 열었다 닫음 — 식사 의욕 낮음']],
-       hit:'⚠️ 번아웃 심화', intent:'동굴속 휴식',
-       act:{ic:'🛋️', kind:'기가지니 · 홈IoT',
-            msg:'집 도착하셨네요. “동굴 모드”로 커튼 닫고 조명 어둡게 — 아무것도 안 해도 되는 공간을 만들어 둘게요. 저녁은 가볍게, 배달 쿠폰도 함께요.',
-            hist:'귀가 후 무활동 패턴 · Isolation ↑ → 동굴속 휴식 의도'}},
-
-      {tint:'night', emoji:'🌙', ctx:'심야 · 잠 못 듦', phase:'deep', bn:93, tone:'red',
-       signals:[['금 01:30','📺 OTT 심야 스트리밍 · 폰 무한 스크롤'],['금 02:10','📈 야간 트래픽 급증 · 활동량 새벽까지']],
-       hit:'⚠️ 번아웃 심화(심층)', intent:'늦은 밤 디지털 활동',
-       act:{ic:'🌙', kind:'지니뮤직 · 지니TV',
-            msg:'잠이 안 오시는군요. 보던 콘텐츠 이어보기 후 수면 사운드로 전환해 드릴게요. 새벽 폰 사용을 줄이는 게 내일을 위한 회복이에요.',
-            hist:'야간 트래픽 급증 · Sleep Disturbance ↑'}},
-
-      {tint:'recover', emoji:'🔄', ctx:'주말 오전 · 회복 동기', phase:'ease', bn:66, tone:'green',
-       signals:[['토 10:40','🧘 명상앱·🏃 운동앱 트래픽 발생'],['토 11:00','📡 집 밖 셀로 이동 시작(외출 신호)']],
-       hit:'🌱 회복 유도', intent:'심리·감정 회복',
-       act:{ic:'🌱', kind:'지니뮤직 · 제휴 혜택',
-            msg:'조금씩 회복 신호가 보여요. 마음을 쉬게 할 힐링·명상 콘텐츠와, 가벼운 산책을 위한 운동 제휴 혜택을 함께 건넬게요.',
-            hist:'명상·운동 앱 트래픽 · 외출 이동 → Recovery Motivation ↑'}},
-
-      {tint:'bright', emoji:'🌱', ctx:'주말 오후 · 일상 회복', phase:'ease', bn:42, tone:'green',
-       signals:[['토 16:00','📞 지인 통화 재개 · 메시지 빈도 회복'],['토 16:20','📡 주말 외출 셀 패턴(나들이)']],
-       hit:'🌱 회복 안착', intent:'일상 회복',
-       act:{ic:'☕', kind:'MyKT 멤버십',
-            msg:'한 주를 잘 버티셨어요. 오랜만에 지인과 만날 카페 멤버십 혜택과 주말 안부 일정을 준비했어요. 일상으로 돌아오는 작은 계기예요.',
-            hist:'통화 재개 · 주말 외출 → Isolation ↓ · 번아웃 누적도 하락'}},
+    const MOOD={office:'#5b7bb0',dusk:'#8b5cf6',home:'#7c3aed',night:'#3b2f6b',recover:'#2dd4bf',bright:'#34d399'};
+    const TONE={amber:'linear-gradient(90deg,#f6c453,#ffd97a)',red:'linear-gradient(90deg,#ff5a6a,#ff8a93)',green:'linear-gradient(90deg,#34d399,#5eead4)'};
+    const PCT={amber:'#f6c453',red:'#ff8a93',green:'#5eead4'};
+    const BEATS=[
+      {tint:'office',emoji:'🏢',ctx:'야근 · 사무실',time:'금 21:30',phase:'deep',bn:50,tone:'amber',
+       signals:[['','🌙 어젯밤 01:00까지 데이터 활동'],['','📵 지인 통화·메시지 2주째 감소'],['21:30','📍 사무실 셀에 야간 체류 — 이번 주 3번째 야근']],
+       hit:'⚠️ 번아웃 누적 감지',intent:'번아웃 누적',
+       act:{ic:'🔍',kind:'KT 엔진 · 회복 타이밍 모니터링',msg:'야근 3회·야간 활동 누적이 감지됐어요. 섣부른 제안 대신, 무리하지 않게 회복 타이밍을 살핍니다.',hist:'기지국 위치·야간 트래픽·통화 빈도 → 피로 누적 ↑'}},
+      {tint:'dusk',emoji:'🌆',ctx:'늦은 퇴근길 · 무기력',time:'금 22:10',phase:'deep',bn:64,tone:'amber',
+       signals:[['22:10','📡 사무실→집 셀 핸드오버(늦은 퇴근)'],['22:12','📉 이동 중 활동량 낮음 · 음악앱 미실행']],
+       hit:'⚠️ 번아웃 심화',intent:'조용한 위로가 필요',
+       act:{ic:'🎵',kind:'지니뮤직',msg:'늦은 퇴근, 오늘 많이 지치셨죠. 신나는 곡 대신 마음을 가라앉히는 조용한 플레이리스트를 준비했어요.',hist:'평소 청취 취향 · 잔잔한 시티팝/R&B'}},
+      {tint:'home',emoji:'🏠',ctx:'저녁 · 집(불 안 켬)',time:'금 22:40',phase:'deep',bn:80,tone:'red',
+       signals:[['22:40','🏠 자택 셀 도착 · 거실 IoT 미사용(조명 OFF 지속)'],['22:55','🍽 배달앱 열었다 닫음 — 식사 의욕 낮음']],
+       hit:'⚠️ 번아웃 심화',intent:'동굴속 휴식',
+       act:{ic:'🛋️',kind:'기가지니 · 홈IoT',msg:'집 도착하셨네요. “동굴 모드”로 커튼 닫고 조명 어둡게 — 아무것도 안 해도 되는 공간을 만들어 둘게요. 저녁은 가볍게, 배달 쿠폰도 함께요.',hist:'귀가 후 무활동 패턴 · 고립감 ↑'}},
+      {tint:'night',emoji:'🌙',ctx:'심야 · 잠 못 듦',time:'토 01:30',phase:'deep',bn:93,tone:'red',
+       signals:[['01:30','📺 OTT 심야 스트리밍 · 폰 무한 스크롤'],['02:10','📈 야간 트래픽 급증 · 활동량 새벽까지']],
+       hit:'⚠️ 번아웃 심화(심층)',intent:'늦은 밤 디지털 활동',
+       act:{ic:'🌙',kind:'지니뮤직 · 지니TV',msg:'잠이 안 오시는군요. 보던 콘텐츠 이어보기 후 수면 사운드로 전환해 드릴게요. 새벽 폰 사용을 줄이는 게 내일을 위한 회복이에요.',hist:'야간 트래픽 급증 · 불면 ↑'}},
+      {tint:'recover',emoji:'🔄',ctx:'주말 오전 · 회복 동기',time:'토 오전',phase:'ease',bn:66,tone:'green',
+       signals:[['10:40','🧘 명상앱·🏃 운동앱 트래픽 발생'],['11:00','📡 집 밖 셀로 이동 시작(외출 신호)']],
+       hit:'🌱 회복 유도',intent:'심리·감정 회복',
+       act:{ic:'🌱',kind:'지니뮤직 · 제휴 혜택',msg:'조금씩 회복 신호가 보여요. 마음을 쉬게 할 힐링·명상 콘텐츠와, 가벼운 산책을 위한 운동 제휴 혜택을 함께 건넬게요.',hist:'명상·운동 앱 트래픽 · 외출 이동 → 회복 동기 ↑'}},
+      {tint:'bright',emoji:'🌱',ctx:'주말 오후 · 일상 회복',time:'토 오후',phase:'ease',bn:42,tone:'green',
+       signals:[['16:00','📞 지인 통화 재개 · 메시지 빈도 회복'],['16:20','📡 주말 외출 셀 패턴(나들이)']],
+       hit:'🌱 회복 안착',intent:'일상 회복',
+       act:{ic:'☕',kind:'MyKT 멤버십',msg:'한 주를 잘 버티셨어요. 오랜만에 지인과 만날 카페 멤버십 혜택과 주말 안부 일정을 준비했어요. 일상으로 돌아오는 작은 계기예요.',hist:'통화 재개 · 주말 외출 → 고립감 ↓'}},
     ];
-    const TONE={amber:'linear-gradient(90deg,#f59e0b,#fbbf24)',red:'linear-gradient(90deg,#dc2626,#f87171)',green:'linear-gradient(90deg,#16a34a,#4ade80)'};
-    let idx=-1, timers=[], gaugeTimer=null, curBn=0;
+
+    let idx=-1, curBn=0, timers=[], gt=null;
     const at=(t,fn)=>timers.push(setTimeout(fn,t));
 
-    function reset(){
-      timers.forEach(clearTimeout);timers=[];if(gaugeTimer)clearInterval(gaugeTimer);
-      idx=-1; curBn=0;
-      $('#stage').className='stage';
-      $('#jlog').innerHTML=''; $('#ctxEmoji').textContent='🏢'; $('#ctxLabel').textContent='행동 대기 중';
-      $('#detect').classList.remove('show'); $('#detectTxt').textContent='—';
-      $('#fill').style.width='0%'; $('#fill').style.background=TONE.amber; $('#gval').textContent='0%';
-      $('#reveal').classList.remove('show'); $('#rIntent').textContent='—'; $('#aMsg').textContent='—'; $('#aIc').textContent='🎁'; $('#aKind').textContent='선제 제안'; $('#aHist').textContent='📚 —';
-      document.querySelectorAll('.tl .node').forEach(n=>n.classList.remove('on','done'));
-      $('#nextBtn').textContent='▶ 여정 시작'; $('#nextBtn').disabled=false;
-      $('#foot').innerHTML='사내 행동은 볼 수 없어도 — 기지국·통화·트래픽 패턴으로 KT는 번아웃을 먼저 알아챕니다.';
-      renderBread();
+    function gaugeTo(target){
+      if(gt)clearInterval(gt);
+      const fill=$('#fill'),val=$('#gval');const up=target>=curBn;
+      gt=setInterval(()=>{
+        curBn+=up?3:-3;
+        if((up&&curBn>=target)||(!up&&curBn<=target)){curBn=target;clearInterval(gt);}
+        fill.style.width=curBn+'%';val.textContent=Math.round(curBn)+'%';
+      },30);
     }
     function renderBread(){
-      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#64748b">의도 여정:</span>'+
-        STEPS.map((s,i)=>`<span class="bc ${s.phase} ${i<idx?'done':''} ${i===idx?'cur':''}">${i+1}. ${s.intent.replace(/ \(.*\)/,'')}</span>`).join(' ');
+      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">의도 여정:</span>'+
+        BEATS.map((s,i)=>`<span class="bc ${s.phase} ${i<idx?'done':''} ${i===idx?'cur':''}">${i+1}. ${s.intent}</span>`).join(' ');
     }
-    function gaugeTo(target){
-      if(gaugeTimer)clearInterval(gaugeTimer);
-      const fill=$('#fill'),val=$('#gval');const up=target>=curBn;
-      gaugeTimer=setInterval(()=>{
-        curBn+=up?3:-3;
-        if((up&&curBn>=target)||(!up&&curBn<=target)){curBn=target;clearInterval(gaugeTimer);}
-        fill.style.width=curBn+'%';val.textContent=Math.round(curBn)+'%';
-      },35);
-    }
-    function next(){
-      if(idx>=STEPS.length-1){reset();return;}
-      idx++; const s=STEPS[idx];
-      timers.forEach(clearTimeout);timers=[];
-      document.querySelectorAll('.tl .node').forEach((n,i)=>{n.classList.toggle('on',i===idx);n.classList.toggle('done',i<idx);});
-      $('#stage').className='stage '+s.tint;
-      $('#ctxEmoji').textContent=s.emoji; $('#ctxLabel').textContent=s.ctx;
-      // 시그널 누적 (좌) + 감지(우)
-      s.signals.forEach(([t,txt],i)=>at(i*250,()=>{
-        const r=document.createElement('div');r.className='jrow';r.innerHTML=`<span class="jt">${t}</span> ${txt}`;
-        $('#jlog').appendChild(r); $('#jlog').scrollTop=$('#jlog').scrollHeight;
-      }));
-      $('#detect').classList.remove('show'); $('#reveal').classList.remove('show');
-      $('#detectTxt').textContent=s.signals.map(x=>x[1]).join('  ·  ');
-      at(300,()=>$('#detect').classList.add('show'));
-      // 번아웃 게이지(색 포함) → 적중 리빌
-      at(700,()=>{ $('#fill').style.background=TONE[s.tone]; gaugeTo(s.bn); });
-      at(1700,()=>{
-        const hit=$('#rHit'); hit.textContent=s.hit; hit.className='hit '+s.phase;
-        $('#rIntent').textContent=s.intent;
-        $('#aIc').textContent=s.act.ic; $('#aKind').textContent=s.act.kind; $('#aMsg').textContent=s.act.msg;
-        $('#aHist').textContent='📚 근거 · '+s.act.hist;
-        void $('#reveal').offsetWidth; $('#reveal').classList.add('show');
-        renderBread();
-      });
-      if(idx===STEPS.length-1){
-        $('#nextBtn').textContent='✓ 회복까지 완료 · 다시 보기';
-        at(2200,()=>$('#foot').innerHTML='번아웃 <b>심화</b>를 먼저 감지하고, KT는 <b>회복</b>을 먼저 건넸습니다 — 편의 제공을 넘어선 웰빙 파트너.');
-      }else{
-        $('#nextBtn').textContent='▶ 다음 행동';
-      }
+    function reset(){
+      timers.forEach(clearTimeout);timers=[];if(gt)clearInterval(gt);
+      idx=-1;curBn=0;
+      $('#stage').className='stage';$('#mood').style.background='linear-gradient(90deg,var(--purple),var(--mint))';
+      $('#jlog').innerHTML='';$('#ctxEmoji').textContent='🏢';$('#ctxLabel').textContent='행동 대기 중';$('#dayTag').textContent='대기 중';
+      $('#elapsed').textContent='실시간';
+      $('#fill').style.width='0%';$('#fill').style.background=TONE.amber;$('#gval').textContent='0%';$('#gval').style.color=PCT.amber;
+      $('#barWrap').classList.remove('crisis');
+      $('#reveal').classList.remove('show');$('#rIntent').textContent='—';$('#aMsg').textContent='—';$('#aIc').textContent='🎁';$('#aKind').textContent='선제 제안';$('#aHist').textContent='📚 —';
+      document.querySelectorAll('#tl .node').forEach(n=>n.classList.remove('active','done'));
+      $('#foot').innerHTML='번아웃이 깊어지기 전, KT가 먼저 알아채고 회복을 건넵니다 — 말하지 않아도, <b>나의 힘듦을 알아주고 함께 이겨내는 경험</b>';
+      $('#pauseBtn').textContent='⏸ 정지';
       renderBread();
     }
+    function next(){ if(idx>=BEATS.length-1){reset();render();return;} idx++; render(); }
+    function render(){
+      const b=BEATS[idx]; if(!b)return;
+      timers.forEach(clearTimeout);timers=[];
+      $('#stage').className='stage '+b.tint;
+      $('#mood').style.background=`linear-gradient(90deg,${MOOD[b.tint]},${b.phase==='ease'?'#5eead4':'#ff8a93'})`;
+      $('#elapsed').textContent=b.time;
+      $('#ctxEmoji').textContent=b.emoji;$('#ctxLabel').textContent=b.ctx;$('#dayTag').textContent=b.ctx;
+      document.querySelectorAll('#tl .node').forEach((n,i)=>{n.classList.toggle('active',i===idx);n.classList.toggle('done',i<idx);});
+      // 누적: 기존 행동은 past(축약)로 강등, 현재 행동은 풀사이즈로 추가 (리셋 안 함)
+      $('#jlog').querySelectorAll('.sig').forEach(r=>r.classList.add('past'));
+      const day=b.time.split(' ')[0];
+      b.signals.forEach(([t,tx],i)=>at(i*240,()=>{
+        const r=document.createElement('div');r.className='sig';r.innerHTML=`<span class="t">${t?day+' '+t:'·'}</span> ${tx}`;
+        $('#jlog').appendChild(r);$('#jlog').scrollTop=$('#jlog').scrollHeight;
+      }));
+      $('#reveal').classList.remove('show');
+      // gauge
+      $('#barWrap').classList.toggle('crisis',b.tone==='red');
+      at(600,()=>{ $('#fill').style.background=TONE[b.tone];$('#gval').style.color=PCT[b.tone]; gaugeTo(b.bn); });
+      // reveal
+      at(1500,()=>{
+        const hit=$('#rHit');hit.textContent=b.hit;hit.className='hit '+b.phase;
+        $('#rIntent').textContent=b.intent;
+        $('#aIc').textContent=b.act.ic;$('#aKind').textContent=b.act.kind;$('#aMsg').textContent=b.act.msg;$('#aHist').textContent='📚 근거 · '+b.act.hist;
+        void $('#reveal').offsetWidth;$('#reveal').classList.add('show');
+        renderBread();
+      });
+      // if(idx===BEATS.length-1) at(2000,()=>$('#foot').innerHTML='번아웃이 깊어지기 전, KT가 먼저 알아채고 회복을 건넵니다 — 말하지 않아도, <b>나의 힘듦을 알아주고 함께 이겨내는 경험</b>');
+      renderBread();
+    }
+
     reset();
-    // 자동재생 모드(?auto): 행동 자동 진행 → [다음 행동] 대신 [정지/재생] 토글
-    let autoTimer=null, paused=false;
-    function autoTick(){
+    let autoTimer=null,paused=false;
+    function tick(){
       if(paused)return;
-      if(idx>=STEPS.length-1){
-        autoTimer=setTimeout(()=>{ if(paused)return; reset(); autoTimer=setTimeout(autoTick,1200); },3800);
-      }else{
-        next(); autoTimer=setTimeout(autoTick,3300);
-      }
+      if(idx>=BEATS.length-1){ autoTimer=setTimeout(()=>{if(paused)return;reset();autoTimer=setTimeout(tick,1000);},3800); }
+      else { next(); autoTimer=setTimeout(tick,3300); }
     }
     function togglePause(){
-      paused=!paused;
-      const b=document.getElementById('pauseBtn');
-      if(paused){ if(autoTimer)clearTimeout(autoTimer); b.textContent='▶ 재생'; }
-      else{ b.textContent='⏸ 정지'; autoTick(); }
+      paused=!paused;const b=$('#pauseBtn');
+      if(paused){if(autoTimer)clearTimeout(autoTimer);b.textContent='▶ 재생';}
+      else{b.textContent='⏸ 정지';tick();}
     }
     if(new URLSearchParams(location.search).has('auto')){
-      document.getElementById('nextBtn').style.display='none';
-      document.getElementById('resetBtn').style.display='none';
-      document.getElementById('pauseBtn').style.display='';
-      autoTimer=setTimeout(autoTick,1000);
+      $('#pauseBtn').style.display='';
+      autoTimer=setTimeout(tick,800);
+    } else {
+      next(); $('#stage').style.cursor='pointer'; $('#stage').addEventListener('click',()=>next());
     }
   </script>
 </body>
