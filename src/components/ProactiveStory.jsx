@@ -3,16 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 // 시나리오 ↔ 서사형 스토리보드 매핑 (public/*.html)
 export const STORY_MAP = {
   'cs-myk-v3': [
-    { label: '114 누르기 10초 전',          src: '/story-cs-outage.html' },
-    { label: '말하기 전에 해결하는 요금 불만', src: '/story-scenarios.html?embed=1#B' },
-    { label: '우리 아이 AI 보호자',          src: '/story-scenarios.html?embed=1#C' },
+    { label: '데이터 끊긴 그 순간, 먼저 채우는 AI', src: '/story-cs-fld-bnf.html' },
   ],
   'bundle-v3': [
     { label: '고객보다 먼저 찾는 결합 기회',       src: '/story-scenarios.html?embed=1#D' },
     { label: '짐은 아직 안 왔는데, 인터넷은 도착', src: '/story-scenarios.html?embed=1#E' },
   ],
   'worker-v3': [
-    { label: '당신의 저녁을 읽는 AI',        src: '/story-journey-evening.html?auto=1' },
+    { label: '번아웃이 쌓인 하루, 회복을 먼저 건네는 AI', src: '/story-journey-evening.html?auto=1' },
   ],
 };
 
