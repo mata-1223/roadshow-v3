@@ -15,8 +15,8 @@
   body{
     margin:0;
     /* 스토리 팝업(StoryOverlay)은 항상 BASE 1000×760을 채움.
-       원본 콘텐츠 총높이 ~1341px를 760에 맞춰(×0.566) 다른 스토리와 동일 크기로 표시 */
-    zoom:0.566;
+       원본 콘텐츠 총높이 ~1159px를 760에 맞춰(×0.656) 다른 스토리와 동일 크기로 표시 */
+    zoom:0.656;
     background:
       radial-gradient(1100px 560px at 50% -8%,#222a63 0%,#10142f 52%,#0a0d20 100%),
       #0a0d20;
@@ -315,14 +315,14 @@
           </div>
 
           <span class="chip-live"><i></i> 실시간 셀 모니터링</span>
-          <span class="chip-hot">⚠ 셀 혼잡 96%</span>
           <span class="chip-crowd">⚾ 수원kt위즈파크 · 관중 15,000+</span>
         </div>
 
         <div class="traits">
           <span class="chip kt">장기고객 12년</span>
+          <span class="chip cp">KT 멤버십 혜택 야구 티켓 구매</span>
           <span class="chip">정액 5GB·속도제한형</span>
-          <span class="chip cp">데이터 리필 쿠폰 미사용 11개월</span>
+          <span class="chip">데이터 리필 쿠폰 미사용 11개월</span>
         </div>
 
         <div class="sig">
@@ -330,7 +330,7 @@
           <span class="val v-red">1%</span>
         </div>
         <div class="sig">
-          <div><span class="nm">데이터 속도제한(QoS) 적용</span><span class="src">PCRF / 정책</span></div>
+          <div><span class="nm">데이터 속도제한(QoS) 적용</span><span class="src">정책</span></div>
           <span class="val v-red">1Mbps 진입</span>
         </div>
         <!-- <div class="sig">
@@ -347,9 +347,9 @@
         </div>
 
         <div class="intent">
-          <div class="row">추론 Intent — 데이터 답답 → 추가구매·이탈 임박 <span class="pct" id="pct">91%</span></div>
+          <div class="row">추론 의도 — 데이터 답답 → 추가구매·이탈 임박 <span class="pct" id="pct">91%</span></div>
           <div class="bar"><i id="gauge"></i></div>
-          <div class="confirm">⚡ Intent 확정 — 데이터 리필 쿠폰 선제 안내 적합 高</div>
+          <div class="confirm">⚡ 의도 확정 — 데이터 리필 쿠폰 선제 안내 적합 高</div>
         </div>
       </div>
 
@@ -418,8 +418,8 @@
                     </div>
                   </div>
                   <div class="modal-body">
-                    <h5>데이터 2GB, 지금 바로 채워요</h5>
-                    <p>버튼 한 번이면 속도가 다시 빨라져요.<br>경기 끝까지 끊김 없이 즐기세요.</p>
+                    <h5>만료 임박한 데이터 리필 쿠폰으로<br>지금 데이터 리필하실 수 있어요</h5>
+                    <p>경기 끝까지 끊김 없이 즐기세요.</p>
                     <div class="m-actions">
                       <button class="btn-apply" id="applyBtn">지금 충전</button>
                       <button class="btn-later" id="laterBtn">나중에</button>
@@ -437,19 +437,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- channels -->
-    <div class="channels">
-      <div class="ctxdb">
-        <div style="font-size:20px">🗄️</div>
-        <div class="t">고객 Context<br>자산 DB</div>
-        <div class="s"><span class="dot" style="width:6px;height:6px;box-shadow:none"></span> 적재됨</div>
-      </div>
-      <div class="ch"><div class="t">📲 앱 푸시</div><div class="d">데이터 리필 쿠폰 1탭 안내</div></div>
-      <div class="ch"><div class="t">🤖 AI Agent</div><div class="d">리필 쿠폰 자동 안내·적용</div></div>
-      <div class="ch"><div class="t">🎧 상담사 콘솔</div><div class="d">인입 시 사용 가능 쿠폰 자동 표출</div></div>
-      <div class="ch"><div class="t">🏬 매장</div><div class="d">방문 시 데이터 혜택 안내</div></div>
     </div>
 
     <div class="banner">
@@ -479,7 +466,7 @@
     // engine intent resolved
     document.getElementById('gauge').style.width='18%';
     document.getElementById('pct').textContent='18%';
-    document.querySelector('.intent .row').firstChild.textContent='Intent 해소 — 선제 대응 완료 ';
+    document.querySelector('.intent .row').firstChild.textContent='의도 해소 — 선제 대응 완료 ';
   });
   laterBtn.addEventListener('click',function(){
     document.getElementById('overlay').classList.add('hide');
