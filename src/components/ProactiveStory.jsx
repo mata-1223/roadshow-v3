@@ -6,8 +6,8 @@ export const STORY_MAP = {
     { label: '데이터 끊긴 그 순간, 먼저 채우는 AI', src: '/story-cs-fld-bnf.html' },
   ],
   'bundle-v3': [
-    { label: '고객보다 먼저 찾는 결합 기회',       src: '/story-scenarios.html?embed=1#D' },
-    { label: '짐은 아직 안 왔는데, 인터넷은 도착', src: '/story-scenarios.html?embed=1#E' },
+    { label: '고객보다 먼저 찾는 결합 기회',       src: '/story-bundle-newlywed-v2.html?auto=1' },
+    { label: '이삿짐도 아직 안 챙겼는데, 인터넷은 이미 준비 완료', src: '/story-bundle-move-v2.html?auto=1' },
   ],
   'worker-v3': [
     { label: '번아웃이 쌓인 하루, 회복을 먼저 건네는 AI', src: '/story-journey-evening.html?auto=1' },
