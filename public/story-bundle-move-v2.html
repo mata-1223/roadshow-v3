@@ -139,8 +139,8 @@
         <div class="timeline" id="tl">
           <div class="tl-line"></div>
           <div class="node"><span class="pt"></span><span class="lbl">🏠 기준</span><span class="sub">현 거주지</span></div>
-          <div class="node"><span class="pt"></span><span class="lbl">🏘 이사 탐색</span><span class="sub">D-21</span></div>
-          <div class="node"><span class="pt"></span><span class="lbl">📦 이사 준비</span><span class="sub">D-14</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🏘 이사 탐색</span><span class="sub">D-120</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">📦 이사 준비</span><span class="sub">D-30</span></div>
           <div class="node"><span class="pt"></span><span class="lbl">🎯 이전 니즈</span><span class="sub">D-10</span></div>
           <div class="node"><span class="pt"></span><span class="lbl">📨 선제 제안</span><span class="sub">D-7</span></div>
           <div class="node"><span class="pt"></span><span class="lbl">✅ 예약 완료</span><span class="sub">D-3</span></div>
@@ -195,11 +195,11 @@
        signals:[['KFM','🏠 모바일 단독 가입 · 인터넷/IPTV 미보유'],['KFM','📇 현 거주지(청구지) 장기 동일']],
        hit:'🛰 관측 시작',intent:'기준 — 현 거주지·단독 가입',
        act:{ic:'🛰',kind:'KT 엔진 · 관측',msg:'현재는 모바일만 이용 중이고 거주지 변화가 없는 상태예요. 삶의 변화 신호를 살펴봅니다.',hist:'KFM 계약·청구 — 변화 전 기준선'}},
-      {tint:'s2',emoji:'🏘',ctx:'이사 탐색 정황',time:'D-21',phase:'scan',bn:40,tone:'amber',
+      {tint:'s2',emoji:'🏘',ctx:'이사 탐색 정황',time:'D-180',phase:'scan',bn:40,tone:'amber',
        signals:[['SGI','🏘 부동산·이사·인테리어 앱 트래픽 급증'],['SGI','📍 신규 지역 낮 시간대 단기·반복 방문(집 보기)']],
        hit:'🔍 이사 탐색 감지',intent:'이사 탐색 정황',
        act:{ic:'🔍',kind:'KT 엔진 · 모니터링',msg:'요즘 새 동네를 자주 둘러보시는 것 같아요. 아직 단정하지 않고 변화를 지켜봅니다.',hist:'앱 사용 통계(SGI)·기지국 위치(SGI) → 이사 탐색'}},
-      {tint:'s3',emoji:'📦',ctx:'이사 준비 단계',time:'D-14',phase:'scan',bn:65,tone:'green',
+      {tint:'s3',emoji:'📦',ctx:'이사 준비 단계',time:'D-30',phase:'scan',bn:65,tone:'green',
        signals:[['KDAP','📞 부동산 중개·이사업체 번호로 통화 증가']],
        hit:'📦 이사 준비 신호',intent:'이사 준비 단계',
        act:{ic:'📦',kind:'KT 엔진 · 추론',msg:'이사 준비가 본격화되는 신호가 보여요. 새 집 통신 환경을 미리 준비할 수 있게 살핍니다.',hist:'통화 상대 번호 업종 분류(KDAP) → 이사 준비'}},
