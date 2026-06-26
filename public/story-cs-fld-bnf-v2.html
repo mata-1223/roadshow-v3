@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>데이터 끊긴 그 순간 — KT Context Engine (v2)</title>
+<style>
+  :root{
+    --txt:#eef0ff; --muted:#a6acd4; --faint:#727aa6;
+    --purple:#8b5cf6; --purple2:#b39bff; --mint:#2dd4bf; --mint2:#5eead4;
+    --green:#34d399; --amber:#f6c453; --red:#ff5a6a; --kt:#ff3b46;
+    --panel:rgba(255,255,255,.035); --line:rgba(255,255,255,.09);
+  }
+  *{box-sizing:border-box;margin:0;}
+  body{
+    /* 다른 시나리오(신혼·이사·번아웃)와 동일 규격: 1000폭 + zoom 보정으로 팝업(BASE 1000×760)을 동일하게 채움 */
+    zoom:0.86;
+    background:radial-gradient(1100px 560px at 50% -8%,#222a63 0%,#10142f 52%,#0a0d20 100%),#0a0d20;
+    color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:4px 14px;
+  }
+  .shell{width:1000px;max-width:100%;margin:0 auto;}
+
+  .eyebrow{display:flex;align-items:center;gap:9px;font-size:11.5px;letter-spacing:.06em;font-weight:800;margin-bottom:6px;text-transform:uppercase;}
+  .eyebrow .k{color:var(--mint2);} .eyebrow .c{color:var(--purple2);}
+  .h-title{font-size:26px;line-height:1.14;font-weight:900;letter-spacing:-.02em;margin:0 0 5px;text-align:center;}
+  .h-title .hl{background:linear-gradient(100deg,var(--mint2),var(--purple2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .h-sub{font-size:12px;color:var(--muted);text-align:center;max-width:880px;margin:0 auto 6px;line-height:1.42;}
+  .h-sub .hl{color:#fff;font-weight:700;}
+
+  .card{position:relative;border-radius:22px;overflow:hidden;
+    background:linear-gradient(165deg,rgba(35,40,82,.9),rgba(20,23,52,.92));
+    border:1px solid rgba(139,120,255,.22);
+    box-shadow:0 40px 90px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);}
+  .card::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(600px 200px at 18% 0%,rgba(45,212,191,.10),transparent 60%),radial-gradient(600px 220px at 88% 0%,rgba(139,92,246,.12),transparent 60%);}
+  .mood{height:3px;width:100%;background:linear-gradient(90deg,var(--purple),var(--mint));}
+
+  .card-head{position:relative;display:flex;align-items:center;gap:10px;padding:8px 20px;border-bottom:1px solid var(--line);font-size:13px;font-weight:800;}
+  .card-head .brand{display:flex;align-items:center;gap:9px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.16),0 0 12px var(--green);}
+  .card-head .brand b{background:linear-gradient(90deg,#fff,#cfd0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .card-head .elapsed{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--purple2);font-weight:800;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.3);padding:4px 10px;border-radius:999px;font-size:11px;}
+
+  /* timeline */
+  .timeline{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:36px;padding:10px 26px 2px;}
+  .tl-line{position:absolute;left:12%;right:12%;top:25px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.55;}
+  .node{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:2;}
+  .node .pt{width:14px;height:14px;border-radius:50%;background:var(--mint);border:3px solid #11142f;box-shadow:0 0 0 3px rgba(45,212,191,.25);}
+  .node.active .pt{background:var(--purple);box-shadow:0 0 0 6px rgba(139,92,246,.3),0 0 18px var(--purple);}
+  .node .lbl{font-size:11px;font-weight:800;margin-top:10px;color:#e7e9ff;white-space:nowrap;}
+  .node .sub{font-size:9px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums;}
+
+  .body{position:relative;display:grid;grid-template-columns:1.16fr 1fr;gap:16px;padding:8px 20px 2px;}
+  .panel{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;}
+  .panel-title{font-size:12px;font-weight:800;color:#dfe2ff;margin:0 0 10px;display:flex;align-items:center;gap:8px;}
+  .panel-title .tag{margin-left:auto;font-size:9.5px;color:var(--faint);font-weight:700;background:rgba(255,255,255,.05);padding:3px 8px;border-radius:6px;}
+
+  /* ===== STADIUM RADAR MAP ===== */
+  .map{position:relative;height:212px;border-radius:13px;overflow:hidden;margin-bottom:9px;
+    background:
+      radial-gradient(150px 120px at 50% 52%,rgba(255,90,90,.30),transparent 66%),
+      radial-gradient(circle at 16% 14%,rgba(139,92,246,.16),transparent 44%),
+      radial-gradient(circle at 88% 86%,rgba(45,212,191,.12),transparent 42%),
+      linear-gradient(180deg,#0b1030,#0c1228);
+    border:1px solid rgba(255,255,255,.08);}
+  .map .grid{position:absolute;inset:0;
+    background-image:linear-gradient(rgba(124,150,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(124,150,255,.06) 1px,transparent 1px);
+    background-size:28px 24px;
+    -webkit-mask-image:radial-gradient(circle at 50% 52%,#000 35%,transparent 82%);
+    mask-image:radial-gradient(circle at 50% 52%,#000 35%,transparent 82%);}
+  .map svg{position:absolute;inset:0;width:100%;height:100%;}
+  .rings{position:absolute;left:50%;top:52%;}
+  .rings span{position:absolute;left:0;top:0;border:1.5px solid rgba(255,110,120,.5);border-radius:50%;transform:translate(-50%,-50%);animation:pulse 3s ease-out infinite;}
+  .rings span:nth-child(2){animation-delay:1s;}
+  .rings span:nth-child(3){animation-delay:2s;}
+  @keyframes pulse{0%{width:54px;height:46px;opacity:.7}100%{width:300px;height:168px;opacity:0}}
+  .sweep{position:absolute;left:50%;top:52%;width:208px;height:208px;transform:translate(-50%,-50%);border-radius:50%;
+    background:conic-gradient(from 0deg,rgba(45,212,191,.22),transparent 28%);
+    -webkit-mask-image:radial-gradient(circle,#000 60%,transparent 72%);mask-image:radial-gradient(circle,#000 60%,transparent 72%);
+    animation:spin 6s linear infinite;opacity:.55;mix-blend-mode:screen;}
+  @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+  .map .chip-live{position:absolute;left:11px;top:11px;display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;color:#bff3ea;background:rgba(7,18,16,.5);border:1px solid rgba(45,212,191,.3);padding:4px 9px;border-radius:999px;z-index:6;backdrop-filter:blur(3px);}
+  .map .chip-live i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);animation:blink 1.4s infinite;}
+  .map .chip-crowd{position:absolute;left:11px;bottom:11px;font-size:9.5px;font-weight:800;color:#ffe7b0;background:rgba(40,28,6,.5);border:1px solid rgba(246,196,83,.4);padding:4px 9px;border-radius:999px;z-index:6;backdrop-filter:blur(3px);}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  /* customer marker */
+  .cust{position:absolute;left:62%;top:34%;transform:translate(-50%,-100%);z-index:7;text-align:center;}
+  .cust .av{width:24px;height:24px;border-radius:50%;margin:0 auto;background:linear-gradient(135deg,var(--mint),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+  .cust .av::after{content:"";position:absolute;left:50%;top:22px;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #fff;}
+  .cust .nm{margin-top:7px;font-size:9px;font-weight:900;color:#fff;background:rgba(139,92,246,.85);padding:2px 7px;border-radius:6px;white-space:nowrap;box-shadow:0 3px 8px rgba(0,0,0,.4);}
+  .cust .ping{position:absolute;left:50%;top:12px;width:24px;height:24px;border-radius:50%;border:2px solid var(--mint);transform:translate(-50%,-50%);animation:ping 1.8s ease-out infinite;}
+  @keyframes ping{0%{opacity:.8;width:10px;height:10px}100%{opacity:0;width:50px;height:50px}}
+
+  /* traits */
+  .traits{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
+  .chip{font-size:11px;font-weight:700;color:#ddd8ff;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.3);border-radius:999px;padding:5px 10px;}
+  .chip.kt{color:#ffd6da;background:rgba(255,59,70,.13);border-color:rgba(255,59,70,.32);}
+  .chip.cp{color:#bff3ea;background:rgba(45,212,191,.14);border-color:rgba(45,212,191,.34);}
+
+  /* signal rows */
+  .sig{display:flex;align-items:center;gap:11px;padding:5px 4px;border-top:1px solid rgba(255,255,255,.06);}
+  .sig:first-of-type{border-top:none;}
+  .sig .nm{font-size:12px;color:#e9eaff;font-weight:700;}
+  .sig .src{display:block;font-size:9.5px;color:var(--faint);font-weight:700;margin-top:2px;letter-spacing:.02em;}
+  .sig .val{margin-left:auto;font-size:13px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .v-red{color:#ff7a86}.v-amber{color:var(--amber)}.v-green{color:var(--mint2)}.v-purple{color:var(--purple2)}
+
+  .intent{margin:0 0 11px;}
+  .intent .row{display:flex;align-items:center;font-size:11.5px;color:#dfe2ff;font-weight:800;margin-bottom:6px;}
+  .intent .row .pct{margin-left:auto;font-size:17px;color:var(--purple2);font-weight:900;font-variant-numeric:tabular-nums;}
+  .bar{height:10px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;}
+  .bar>i{display:block;height:100%;width:91%;border-radius:6px;background:linear-gradient(90deg,#7c4dff,#b39bff,#5eead4);transition:width .7s ease;box-shadow:0 0 14px rgba(139,92,246,.5);}
+  .confirm{margin-top:7px;text-align:center;font-size:11.5px;font-weight:900;color:#fff;background:linear-gradient(90deg,#7c4dff,#9d6bff);border-radius:10px;padding:7px;box-shadow:0 8px 22px -8px rgba(124,77,255,.7);}
+
+  /* ===== CUSTOMER / PHONE ===== */
+  .customer{background:linear-gradient(170deg,rgba(45,212,191,.05),rgba(40,30,60,.05));border-color:rgba(45,212,191,.16);}
+  .ctx-chips{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;}
+  .ctx{font-size:11px;font-weight:700;color:#bff3ea;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.26);border-radius:999px;padding:5px 10px;}
+  .scene{display:flex;justify-content:center;padding-top:2px;}
+
+  .phone{position:relative;width:228px;background:linear-gradient(#05070f,#0a0e1c);border:1px solid rgba(255,255,255,.14);border-radius:32px;padding:9px;box-shadow:0 30px 60px -22px rgba(0,0,0,.8),inset 0 0 0 2px rgba(255,255,255,.03);}
+  .notch{position:absolute;left:50%;top:13px;transform:translateX(-50%);width:72px;height:16px;background:#05070f;border-radius:0 0 14px 14px;z-index:9;}
+  .screen{background:#0c1024;border-radius:24px;overflow:hidden;position:relative;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:9px 15px 6px;font-size:10px;color:#cfd3f2;font-weight:800;font-variant-numeric:tabular-nums;}
+  .statusbar .net{display:flex;align-items:center;gap:5px;}
+  .statusbar .net b{color:#ff8a93;}
+  .app-head{display:flex;align-items:center;gap:8px;padding:10px 13px;background:linear-gradient(120deg,#0ea98f,#2dd4bf 55%,#5eead4);position:relative;overflow:hidden;}
+  .app-head::after{content:"";position:absolute;right:-30px;top:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.16);}
+  .app-head .logo{font-size:14px;font-weight:900;color:#fff;letter-spacing:.01em;text-shadow:0 1px 2px rgba(4,60,52,.4);z-index:2;}
+  .app-head .av{margin-left:auto;width:24px;height:24px;border-radius:50%;background:#06463d;color:#aef7e8;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;}
+  .app-head .bell{color:#063d36;font-size:13px;z-index:2;}
+
+  .app-body{padding:9px 11px 26px;transition:filter .35s;}
+  .app-body.dim{filter:blur(2.5px) brightness(.5);}
+  .greet{font-size:11px;color:#aab0d8;margin-bottom:9px;}
+  .greet b{color:#fff;font-weight:800;}
+
+  .data-card{background:linear-gradient(160deg,#1a2042,#141834);border:1px solid rgba(255,255,255,.08);border-radius:15px;padding:11px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden;}
+  .data-card .glow{position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(255,90,106,.25),transparent 70%);}
+  .gauge{position:relative;width:64px;height:64px;flex-shrink:0;}
+  .gauge svg{transform:rotate(-90deg);}
+  .gauge .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .gauge .ctr .big{font-size:12px;font-weight:900;color:#fff;line-height:1;}
+  .gauge .ctr .small{font-size:8px;color:#9aa0c8;margin-top:2px;}
+  .data-info{flex:1;min-width:0;}
+  .data-info .lab{font-size:10.5px;color:#9aa0c8;font-weight:700;}
+  .data-info .pill{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:10px;font-weight:900;padding:4px 9px;border-radius:999px;}
+  .pill.bad{color:#ff97a1;background:rgba(255,90,106,.14);border:1px solid rgba(255,90,106,.32);}
+  .pill.ok{color:#7debc8;background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.34);}
+  .data-info .note{font-size:9.5px;color:#7c83ac;margin-top:7px;}
+
+  .menu{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;}
+  .menu .m{border-radius:12px;padding:9px 3px 8px;text-align:center;font-size:9px;color:#e7e9ff;font-weight:700;border:1px solid rgba(255,255,255,.07);}
+  .menu .m .e{display:flex;width:28px;height:28px;margin:0 auto 5px;border-radius:9px;align-items:center;justify-content:center;font-size:14px;}
+  .m1 .e{background:linear-gradient(135deg,#5b6cff,#8b9bff);}
+  .m2 .e{background:linear-gradient(135deg,#ff8a4c,#ffb347);}
+  .m3 .e{background:linear-gradient(135deg,#2dd4bf,#5eead4);color:#063d36;}
+  .m4 .e{background:linear-gradient(135deg,#a855f7,#c084fc);}
+
+  /* ===== COUPON MODAL ===== */
+  .overlay{position:absolute;inset:0;background:rgba(4,7,16,.62);display:flex;align-items:flex-start;justify-content:center;padding:20px 12px 14px;border-radius:24px;z-index:8;transition:opacity .3s;backdrop-filter:blur(1px);}
+  .overlay.hide{opacity:0;pointer-events:none;}
+  .modal{position:relative;width:100%;background:linear-gradient(180deg,#211a44,#171436);border:1px solid rgba(139,92,246,.4);border-radius:18px;overflow:hidden;box-shadow:0 26px 50px -16px rgba(0,0,0,.8);}
+  .modal-top{position:relative;padding:11px 14px 7px;background:linear-gradient(120deg,rgba(124,77,255,.4),rgba(45,212,191,.28));text-align:center;}
+  .modal-top .spark{position:absolute;font-size:11px;opacity:.9;}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:900;color:#fff;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:4px 10px;}
+  /* coupon ticket */
+  .ticket{display:flex;margin:9px 13px 4px;border-radius:12px;background:linear-gradient(110deg,#7c4dff,#9d6bff 48%,#2dd4bf);position:relative;box-shadow:0 12px 26px -12px rgba(124,77,255,.7);}
+  .ticket::before,.ticket::after{content:"";position:absolute;left:62%;width:13px;height:13px;border-radius:50%;background:#1a163a;transform:translateX(-50%);}
+  .ticket::before{top:-6px;}.ticket::after{bottom:-6px;}
+  .ticket .stub{width:62%;padding:12px 11px;position:relative;}
+  .ticket .stub .amt{font-size:27px;font-weight:900;color:#fff;line-height:.95;letter-spacing:-.02em;}
+  .ticket .stub .unit{font-size:11px;font-weight:800;color:#ffffffcc;margin-left:2px;}
+  .ticket .stub .nm{font-size:10px;font-weight:800;color:#ffffffe6;margin-top:6px;}
+  .ticket .perf{position:absolute;left:62%;top:8px;bottom:8px;border-left:2px dashed rgba(255,255,255,.55);transform:translateX(-50%);}
+  .ticket .side{flex:1;padding:12px 9px;display:flex;flex-direction:column;justify-content:center;text-align:center;}
+  .ticket .side .ico{font-size:17px;}
+  .ticket .side .d9{margin-top:5px;font-size:9.5px;font-weight:900;color:#fff;background:rgba(0,0,0,.22);border-radius:6px;padding:3px 6px;}
+
+  .modal-body{padding:5px 15px 12px;text-align:center;}
+  .modal-body h5{margin:6px 0 5px;font-size:13.5px;font-weight:900;color:#fff;line-height:1.22;}
+  .modal-body p{margin:0 0 10px;font-size:10.5px;color:#aeb4dc;line-height:1.45;}
+  .m-actions{display:flex;gap:8px;}
+  .btn-apply{flex:1;position:relative;overflow:hidden;border:none;cursor:pointer;font-family:inherit;color:#fff;font-weight:900;font-size:13px;border-radius:11px;padding:8px;
+    background:linear-gradient(90deg,#7c4dff,#9d6bff);box-shadow:0 10px 22px -8px rgba(124,77,255,.75);}
+  .btn-apply::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-20deg);animation:shine 2.6s ease-in-out infinite;}
+  @keyframes shine{0%,60%{left:-60%}100%{left:130%}}
+  .btn-later{border:1px solid rgba(255,255,255,.2);background:transparent;color:#aeb4dc;font-family:inherit;font-size:12px;font-weight:800;border-radius:11px;padding:8px 13px;cursor:pointer;}
+
+  .result{display:none;margin-top:6px;}
+  .result .ok-ic{width:42px;height:42px;margin:2px auto 7px;border-radius:50%;background:linear-gradient(135deg,#34d399,#5eead4);display:flex;align-items:center;justify-content:center;font-size:20px;color:#053d2c;box-shadow:0 0 0 6px rgba(52,211,153,.18);}
+  .result .big{font-size:13.5px;font-weight:900;color:#7debc8;}
+  .result .speed{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:6px;font-size:11px;font-weight:800;color:#cfead9;}
+  .result .speed s{color:#ff8a93;text-decoration:line-through;}
+  .result .small{font-size:10px;color:#9fe6c6;margin-top:5px;}
+
+  .banner{position:relative;margin:9px 20px 10px;border-radius:13px;text-align:center;font-size:12.5px;font-weight:900;color:#fff;padding:9px 18px;line-height:1.45;
+    background:linear-gradient(90deg,rgba(124,77,255,.95),rgba(45,212,191,.85));box-shadow:0 16px 36px -16px rgba(124,77,255,.6);}
+  .banner .hl{color:#fff7cf;}
+
+  .ctrl{display:flex;gap:8px;justify-content:center;margin-top:6px;}
+  .btn{font-size:13px;font-weight:800;border:none;border-radius:9px;padding:9px 18px;cursor:pointer;font-family:inherit;}
+  .btn.go{color:#fff;background:#7c3aed;}
+  .btn.gh{color:#e5e7f5;background:#2a2f55;border:1px solid rgba(255,255,255,.12);}
+
+  @media (prefers-reduced-motion: reduce){
+    .rings span,.chip-live i,.sweep,.cust .ping,.btn-apply::after{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="eyebrow">
+    <span class="k">AX Tech Connect 2026</span> · <span class="c">현장 데이터 케어</span>
+  </div>
+  <h2 class="h-title">데이터 끊긴 <span class="hl">그 순간</span>, KT가 먼저 채워드려요</h2>
+  <p class="h-sub">야구장에서 데이터가 바닥난 바로 그때, KT가 상황을 읽고 딱 맞는 <span class="hl">데이터 리필 쿠폰</span>을 MY KT 홈 화면에서 바로 건넵니다 — 메뉴를 뒤질 필요도, 기다릴 필요도 없이.</p>
+
+  <div class="card">
+    <div class="mood"></div>
+    <div class="card-head">
+      <div class="brand"><span class="dot"></span> <b>KT Context Engine · 실시간 선제 케어</b></div>
+      <span class="elapsed">+28초 경과</span>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-line"></div>
+      <div class="node"><span class="pt"></span><span class="lbl">데이터 소진</span><span class="sub">잔여 1%</span></div>
+      <div class="node active"><span class="pt"></span><span class="lbl">KT가 먼저 감지</span><span class="sub">+8초</span></div>
+      <div class="node"><span class="pt"></span><span class="lbl">상황 분석</span><span class="sub">의도 추론</span></div>
+      <div class="node"><span class="pt"></span><span class="lbl">홈 화면 안내</span><span class="sub">앱 열자마자</span></div>
+      <div class="node"><span class="pt"></span><span class="lbl">한 번에 충전 ✓</span><span class="sub">메뉴 탐색 0</span></div>
+    </div>
+
+    <div class="body">
+      <!-- LEFT: engine -->
+      <div class="panel">
+        <p class="panel-title">🧠 KT 엔진 — 과거 특성 + 실시간 관측 <span class="tag">Batch + Real-time</span></p>
+
+        <div class="map">
+          <div class="grid"></div>
+          <div class="sweep"></div>
+          <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <radialGradient id="field" cx="50%" cy="52%" r="60%">
+                <stop offset="0%" stop-color="#1f7a4d"/><stop offset="100%" stop-color="#135536"/>
+              </radialGradient>
+              <linearGradient id="stand" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2b3260"/><stop offset="100%" stop-color="#1a1f44"/>
+              </linearGradient>
+            </defs>
+            <!-- stadium bowl -->
+            <ellipse cx="160" cy="78" rx="132" ry="60" fill="url(#stand)" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+            <ellipse cx="160" cy="78" rx="112" ry="49" fill="#10183a" stroke="rgba(124,150,255,.18)" stroke-width="1"/>
+            <!-- field -->
+            <ellipse cx="160" cy="78" rx="96" ry="41" fill="url(#field)"/>
+            <!-- outfield arc (warning track) -->
+            <path d="M74 92 A96 49 0 0 1 246 92" fill="none" stroke="rgba(180,140,90,.5)" stroke-width="3"/>
+            <!-- infield dirt diamond -->
+            <path d="M160 110 L200 86 L160 62 L120 86 Z" fill="#b9824c" opacity=".92"/>
+            <path d="M160 104 L192 86 L160 68 L128 86 Z" fill="#1f7a4d"/>
+            <!-- base paths -->
+            <path d="M160 108 L198 86 L160 64 L122 86 Z" fill="none" stroke="#f3e7d0" stroke-width="2"/>
+            <!-- bases -->
+            <rect x="156" y="106" width="8" height="8" rx="1.5" fill="#fff" transform="rotate(45 160 110)"/>
+            <rect x="194" y="83" width="7" height="7" rx="1.5" fill="#fff" transform="rotate(45 197.5 86.5)"/>
+            <rect x="156" y="61" width="7" height="7" rx="1.5" fill="#fff" transform="rotate(45 159.5 64.5)"/>
+            <rect x="119" y="83" width="7" height="7" rx="1.5" fill="#fff" transform="rotate(45 122.5 86.5)"/>
+            <!-- pitcher mound -->
+            <circle cx="160" cy="86" r="5" fill="#c79a63"/><circle cx="160" cy="86" r="2" fill="#fff"/>
+            <!-- congestion heat over stands -->
+            <ellipse cx="160" cy="78" rx="120" ry="54" fill="rgba(255,80,90,.16)"/>
+            <!-- cell towers -->
+            <g stroke="#8de0d4" stroke-width="1.6" fill="none" opacity=".85">
+              <path d="M26 48 l5 -14 l5 14" fill="#8de0d4" stroke="none"/>
+              <path d="M22 38 a12 12 0 0 1 18 0 M18 32 a18 18 0 0 1 26 0"/>
+            </g>
+            <g stroke="#8de0d4" stroke-width="1.6" fill="none" opacity=".85">
+              <path d="M289 120 l5 -14 l5 14" fill="#8de0d4" stroke="none"/>
+              <path d="M285 110 a12 12 0 0 1 18 0 M281 104 a18 18 0 0 1 26 0"/>
+            </g>
+            <!-- HOT congested tower (near customer) -->
+            <g>
+              <path d="M236 30 l6 -16 l6 16" fill="#ff5a6a"/>
+              <path d="M231 19 a14 14 0 0 1 22 0" stroke="#ff5a6a" stroke-width="2" fill="none"/>
+              <path d="M226 12 a22 22 0 0 1 32 0" stroke="#ff7a86" stroke-width="2" fill="none" opacity=".8"/>
+            </g>
+          </svg>
+
+          <div class="rings"><span></span><span></span><span></span></div>
+
+          <!-- customer marker -->
+          <div class="cust">
+            <div class="av">🙍<span class="ping"></span></div>
+            <div class="nm">고객 위치</div>
+          </div>
+
+          <span class="chip-live"><i></i> 실시간 셀 모니터링</span>
+          <span class="chip-crowd">⚾ 수원kt위즈파크 · 관중 15,000+</span>
+        </div>
+
+        <div class="traits">
+          <span class="chip kt">장기고객 12년</span>
+          <span class="chip cp">KT 멤버십 혜택 야구 티켓 구매</span>
+          <span class="chip">정액 5GB·속도제한형</span>
+          <span class="chip">데이터 리필 쿠폰 미사용 11개월</span>
+        </div>
+
+        <div class="sig">
+          <div><span class="nm">잔여 데이터 소진</span><span class="src">CDR / 네트워크 실시간</span></div>
+          <span class="val v-red">1%</span>
+        </div>
+        <div class="sig">
+          <div><span class="nm">데이터 속도제한(QoS) 적용</span><span class="src">정책</span></div>
+          <span class="val v-red">1Mbps 진입</span>
+        </div>
+        <div class="sig">
+          <div><span class="nm">위치 · 상황 정합</span><span class="src">접속 기지국 위치 · 외부 KBO 일정</span></div>
+          <span class="val v-green">경기 중 · 일치</span>
+        </div>
+        <div class="sig">
+          <div><span class="nm">데이터 리필 쿠폰 (미사용)</span><span class="src">멤버십 혜택 · 쿠폰 보유</span></div>
+          <span class="val v-purple">2GB · D-9</span>
+        </div>
+      </div>
+
+      <!-- RIGHT: 의도 추론 → 고객 선제 안내 -->
+      <div class="panel customer">
+        <p class="panel-title">⚙️ 의도 추론 → 고객 선제 안내 <span class="tag">엔진 → MY KT</span></p>
+
+        <div class="intent">
+          <div class="row">🔮 추론 의도 · 데이터 부족 → 이탈 임박 <span class="pct" id="pct">91%</span></div>
+          <div class="bar"><i id="gauge"></i></div>
+          <div class="confirm">⚡ 의도 확정 — 데이터 리필 쿠폰 선제 안내 적합 高</div>
+        </div>
+
+        <div class="scene">
+          <div class="phone">
+            <div class="notch"></div>
+            <div class="screen">
+              <div class="statusbar">
+                <span>19:32</span>
+                <span class="net" id="netState">KT 5G <b>· 속도제한</b> ▮▯▯ &nbsp;87%</span>
+              </div>
+              <div class="app-head">
+                <span class="logo">마이케이티</span>
+                <span class="bell">🔔</span>
+                <span class="av">김</span>
+              </div>
+              <div class="app-body dim" id="appBody">
+                <div class="greet">반가워요, <b>김○○ 고객님</b></div>
+                <div class="data-card">
+                  <div class="glow"></div>
+                  <div class="gauge">
+                    <svg width="64" height="64" viewBox="0 0 74 74">
+                      <circle cx="37" cy="37" r="30" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/>
+                      <circle id="ring" cx="37" cy="37" r="30" fill="none" stroke="#ff5a6a" stroke-width="7" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="186.6"/>
+                    </svg>
+                    <div class="ctr"><span class="big" id="gBig">50<small style="font-size:8px">MB</small></span><span class="small">/ 5GB</span></div>
+                  </div>
+                  <div class="data-info">
+                    <div class="lab">이번 달 데이터</div>
+                    <span class="pill bad" id="dataPill">● 잔여 1% · 속도제한</span>
+                    <div class="note" id="dataNote">속도제한 1Mbps 적용 중</div>
+                  </div>
+                </div>
+                <div class="menu">
+                  <div class="m m1"><span class="e">📊</span>요금조회</div>
+                  <div class="m m2"><span class="e">⚡</span>데이터충전</div>
+                  <div class="m m3"><span class="e">🎁</span>멤버십</div>
+                  <div class="m m4"><span class="e">🏆</span>혜택</div>
+                </div>
+              </div>
+
+              <div class="overlay" id="overlay">
+                <div class="modal">
+                  <div class="modal-top">
+                    <span class="spark" style="left:14px;top:8px">✨</span>
+                    <span class="spark" style="right:16px;top:14px">✨</span>
+                    <span class="badge">🎁 오래 함께한 고객님께</span>
+                  </div>
+                  <div class="ticket">
+                    <div class="stub">
+                      <div><span class="amt">2</span><span class="unit">GB</span></div>
+                      <div class="nm">데이터 리필 쿠폰</div>
+                    </div>
+                    <div class="perf"></div>
+                    <div class="side">
+                      <div class="ico">🎟️</div>
+                      <div class="d9">D-9 만료</div>
+                    </div>
+                  </div>
+                  <div class="modal-body">
+                    <h5>만료 임박한 데이터 리필 쿠폰으로<br>지금 데이터 리필하실 수 있어요</h5>
+                    <p>경기 끝까지 끊김 없이 즐기세요.</p>
+                    <div class="m-actions">
+                      <button class="btn-apply" id="applyBtn">지금 충전</button>
+                      <button class="btn-later" id="laterBtn">나중에</button>
+                    </div>
+                    <div class="result" id="result">
+                      <div class="ok-ic">✓</div>
+                      <div class="big">충전 완료 · 2GB 추가</div>
+                      <div class="speed"><s>1Mbps 제한</s> → <span>정상 속도 회복</span></div>
+                      <div class="small">앱 열자마자 한 번에 해결</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner">
+      데이터가 끊긴 그 순간, KT가 먼저 알아채고 <span class="hl">딱 필요한 데이터</span>를 건넵니다 — <span class="hl">찾지 않아도, 기다리지 않아도</span> 되는 경험
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <button class="btn go" onclick="parent.postMessage('story-start-demo','*')">▶ 시나리오 체험형 시연 시작</button>
+    <button class="btn gh" onclick="parent.postMessage('story-close','*')">✕ 닫기</button>
+  </div>
+</div>
+
+<script>
+  var applyBtn=document.getElementById('applyBtn');
+  var laterBtn=document.getElementById('laterBtn');
+  var C=188.5; // 2*pi*30
+  applyBtn.addEventListener('click',function(){
+    document.getElementById('result').style.display='block';
+    document.querySelector('.m-actions').style.display='none';
+    document.querySelector('.modal-body h5').style.display='none';
+    document.querySelector('.modal-body p').style.display='none';
+    // phone data gauge -> 2.05GB (~41%) green
+    var ring=document.getElementById('ring');
+    ring.style.transition='stroke-dashoffset .8s ease, stroke .5s';
+    ring.style.stroke='#34d399';
+    ring.setAttribute('stroke-dashoffset', (C*(1-0.41)).toFixed(1));
+    document.getElementById('gBig').innerHTML='2.05<small style="font-size:8px">GB</small>';
+    var pill=document.getElementById('dataPill'); pill.textContent='● 정상 속도'; pill.className='pill ok';
+    document.getElementById('dataNote').textContent='속도제한 해제 · 5G 정상';
+    document.getElementById('netState').innerHTML='KT 5G ▮▮▮ &nbsp;87%';
+    // engine intent resolved
+    document.getElementById('gauge').style.width='18%';
+    document.getElementById('pct').textContent='18%';
+    document.querySelector('.intent .row').firstChild.textContent='의도 해소 — 선제 대응 완료 ';
+  });
+  laterBtn.addEventListener('click',function(){
+    document.getElementById('overlay').classList.add('hide');
+    document.getElementById('appBody').classList.remove('dim');
+  });
+</script>
+</body>
+</html>
