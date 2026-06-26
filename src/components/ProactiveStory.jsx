@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 // 시나리오 ↔ 서사형 스토리보드 매핑 (public/*.html)
 export const STORY_MAP = {
   'cs-myk-v3': [
-    { label: '데이터 끊긴 그 순간, 먼저 채우는 AI', src: '/story-cs-fld-bnf.html' },
+    { label: '데이터 끊긴 그 순간, 먼저 채우는 AI', src: '/story-cs-fld-bnf-v3.html?auto=1' },
   ],
   'bundle-v3': [
     { label: '고객보다 먼저 찾는 결합 기회',       src: '/story-bundle-newlywed-v2.html?auto=1' },

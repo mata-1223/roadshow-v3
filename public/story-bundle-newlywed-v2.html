@@ -52,17 +52,17 @@
   .chip{font-size:11px;font-weight:700;color:#ddd8ff;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.3);border-radius:999px;padding:5px 10px;}
   .chip.cp{color:#bff3ea;background:rgba(45,212,191,.14);border-color:rgba(45,212,191,.34);}
 
-  .timeline{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:12px 22px 6px;}
-  .tl-line{position:absolute;left:9%;right:9%;top:31px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
+  .timeline{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:36px;padding:12px 22px 6px;}
+  .tl-line{position:absolute;left:9%;right:9%;top:18px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
   .node{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:2;opacity:.5;transition:.3s;}
   .node.active,.node.done{opacity:1;}
   .node .pt{width:14px;height:14px;border-radius:50%;background:#2a3350;border:3px solid #11142f;box-shadow:0 0 0 3px rgba(124,150,255,.12);transition:.3s;}
   .node.active .pt{background:var(--mint);box-shadow:0 0 0 6px rgba(45,212,191,.3),0 0 16px var(--mint);}
   .node.done .pt{background:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.25);}
-  .node .lbl{font-size:11px;font-weight:800;margin-top:8px;color:#e7e9ff;white-space:nowrap;}
+  .node .lbl{font-size:11px;font-weight:800;margin-top:15px;color:#e7e9ff;white-space:nowrap;}
   .node .sub{font-size:9px;color:var(--faint);margin-top:2px;}
 
-  .body{position:relative;display:grid;grid-template-columns:1.05fr 1.1fr;gap:16px;padding:10px 20px 4px;height:410px;}
+  .body{position:relative;display:grid;grid-template-columns:1.05fr 1.1fr;gap:16px;padding:10px 20px 4px;height:356px;}
   .panel{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
   .panel-title{font-size:12px;font-weight:800;color:#dfe2ff;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
   .panel-title .tag{margin-left:auto;font-size:9.5px;color:var(--faint);font-weight:700;background:rgba(255,255,255,.05);padding:3px 8px;border-radius:6px;}
@@ -87,7 +87,7 @@
   .bar{position:relative;height:12px;border-radius:7px;background:rgba(255,255,255,.08);overflow:visible;}
   .bar>i{display:block;height:100%;width:0;border-radius:7px;background:linear-gradient(90deg,#34d399,#5eead4);transition:width .1s,background .5s;box-shadow:0 0 14px rgba(52,211,153,.4);}
 
-  .reveal{margin-top:13px;position:relative;border-radius:13px;padding:12px;background:linear-gradient(135deg,rgba(45,212,191,.16),rgba(20,23,52,.5));border:1px solid rgba(45,212,191,.3);opacity:0;transform:scale(.96);transition:.1s;}
+  .reveal{margin-top:22px;position:relative;border-radius:13px;padding:12px;background:linear-gradient(135deg,rgba(45,212,191,.16),rgba(20,23,52,.5));border:1px solid rgba(45,212,191,.3);opacity:0;transform:scale(.96);transition:.1s;}
   .reveal.show{animation:pop .4s cubic-bezier(.2,.8,.3,1.3) forwards;}
   @keyframes pop{to{opacity:1;transform:none;}}
   .reveal .hit{position:absolute;top:-10px;left:14px;font-size:9.5px;font-weight:900;padding:3px 9px;border-radius:999px;white-space:nowrap;}
@@ -100,7 +100,7 @@
   .reveal .offer-msg{font-size:12.5px;font-weight:700;color:#fff;line-height:1.4;}
   .reveal .hist{margin-top:8px;font-size:10px;font-weight:800;color:var(--amber);background:rgba(246,196,83,.12);border:1px solid rgba(246,196,83,.32);border-radius:7px;padding:4px 9px;display:inline-block;}
 
-  .bread{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:11px;}
+  .bread{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:2px 20px 2px;}
   .bread .bc{font-size:9.5px;font-weight:800;color:var(--faint);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:3px 8px;}
   .bread .bc.scan.done,.bread .bc.scan.cur{color:#fff;background:rgba(120,110,200,.3);border-color:rgba(179,155,255,.5);}
   .bread .bc.ease.done,.bread .bc.ease.cur{color:#fff;background:rgba(52,211,153,.26);border-color:rgba(52,211,153,.5);}
@@ -170,10 +170,10 @@
               </div>
               <div class="hist" id="aHist">📚 —</div>
             </div>
-            <div class="bread" id="bread"></div>
           </div>
         </div>
 
+        <div class="bread" id="bread"></div>
         <div class="foot" id="foot">고객이 검색하기 전에 — KT가 새 출발의 순간을 먼저 읽고, <b>두 사람의 시작에 맞춘 결합을 함께 건넵니다</b></div>
       </div>
     </div>
@@ -227,7 +227,7 @@
         fill.style.width=curBn+'%';val.textContent=Math.round(curBn)+'%'; },30);
     }
     function renderBread(){
-      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">의도 여정:</span>'+
+      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">고객 여정:</span>'+
         BEATS.map((s,i)=>`<span class="bc ${s.phase} ${i<idx?'done':''} ${i===idx?'cur':''}">${i+1}. ${s.intent}</span>`).join(' ');
     }
     function reset(){

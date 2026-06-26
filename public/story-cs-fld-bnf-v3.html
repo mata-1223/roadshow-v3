@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>스토리보드 v3 — 데이터 끊긴 그 순간 (KT Context Engine · 시간형)</title>
+<style>
+  :root{
+    --txt:#eef0ff; --muted:#a6acd4; --faint:#727aa6;
+    --purple:#8b5cf6; --purple2:#b39bff; --mint:#2dd4bf; --mint2:#5eead4;
+    --green:#34d399; --amber:#f6c453; --red:#ff5a6a; --kt:#ff3b46;
+    --panel:rgba(255,255,255,.035); --line:rgba(255,255,255,.09);
+  }
+  *{box-sizing:border-box;margin:0;}
+  body{
+    /* 형제 시나리오와 동일 규격: 1000폭 + zoom 보정으로 팝업(BASE 1000×760) 채움 */
+    zoom:0.84;
+    background:radial-gradient(1100px 560px at 50% -8%,#222a63 0%,#10142f 52%,#0a0d20 100%),#0a0d20;
+    color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    -webkit-font-smoothing:antialiased;padding:4px 14px;
+  }
+  .shell{width:1000px;max-width:100%;margin:0 auto;}
+
+  .eyebrow{display:flex;align-items:center;gap:9px;font-size:11.5px;letter-spacing:.06em;font-weight:800;margin-bottom:6px;text-transform:uppercase;}
+  .eyebrow .k{color:var(--mint2);} .eyebrow .c{color:var(--purple2);}
+  .h-title{font-size:26px;line-height:1.14;font-weight:900;letter-spacing:-.02em;margin:0 0 5px;text-align:center;}
+  .h-title .hl{background:linear-gradient(100deg,var(--mint2),var(--purple2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .h-sub{font-size:12px;color:var(--muted);text-align:center;max-width:880px;margin:0 auto 7px;line-height:1.42;}
+  .h-sub .hl{color:#fff;font-weight:700;}
+
+  .stage{position:relative;border-radius:26px;padding:8px 10px;transition:background 1s;}
+  .stage.calm  {background:radial-gradient(760px 260px at 50% -6%,rgba(124,150,255,.24),transparent 70%);}
+  .stage.arrive{background:radial-gradient(760px 260px at 50% -6%,rgba(45,212,191,.30),transparent 70%);}
+  .stage.stream{background:radial-gradient(760px 260px at 50% -6%,rgba(246,196,83,.30),transparent 70%);}
+  .stage.crisis{background:radial-gradient(760px 300px at 50% -6%,rgba(255,90,106,.40),transparent 72%);}
+  .stage.relief{background:radial-gradient(760px 260px at 50% -6%,rgba(52,211,153,.32),transparent 70%);}
+
+  .card{position:relative;border-radius:22px;overflow:hidden;
+    background:linear-gradient(165deg,rgba(35,40,82,.92),rgba(20,23,52,.94));
+    border:1px solid rgba(139,120,255,.22);
+    box-shadow:0 40px 90px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);}
+  .card::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(600px 200px at 18% 0%,rgba(45,212,191,.10),transparent 60%),radial-gradient(600px 220px at 88% 0%,rgba(139,92,246,.12),transparent 60%);}
+  .mood{height:3px;width:100%;background:linear-gradient(90deg,var(--purple),var(--mint));transition:background 1s;}
+
+  .card-head{position:relative;display:flex;align-items:center;gap:10px;padding:9px 20px;border-bottom:1px solid var(--line);font-size:13px;font-weight:800;}
+  .card-head .brand{display:flex;align-items:center;gap:9px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.16),0 0 12px var(--green);}
+  .card-head .brand b{background:linear-gradient(90deg,#fff,#cfd0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .card-head .elapsed{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--purple2);font-weight:800;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.3);padding:4px 10px;border-radius:999px;font-size:11px;}
+
+  .traits{display:flex;flex-wrap:wrap;gap:7px;padding:8px 20px 0;}
+  .chip{font-size:11px;font-weight:700;color:#ddd8ff;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.3);border-radius:999px;padding:5px 10px;}
+  .chip.kt{color:#ffd6da;background:rgba(255,59,70,.13);border-color:rgba(255,59,70,.32);}
+  .chip.cp{color:#bff3ea;background:rgba(45,212,191,.14);border-color:rgba(45,212,191,.34);}
+
+  .timeline{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:36px;padding:11px 26px 4px;}
+  .tl-line{position:absolute;left:11%;right:11%;top:16px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
+  .node{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:2;opacity:.5;transition:.3s;}
+  .node.active,.node.done{opacity:1;}
+  .node .pt{width:14px;height:14px;border-radius:50%;background:#2a3350;border:3px solid #11142f;box-shadow:0 0 0 3px rgba(124,150,255,.12);transition:.3s;}
+  .node.active .pt{background:var(--purple);box-shadow:0 0 0 6px rgba(139,92,246,.3),0 0 16px var(--purple);}
+  .node.done .pt{background:var(--mint);box-shadow:0 0 0 3px rgba(45,212,191,.25);}
+  .node .lbl{font-size:11px;font-weight:800;margin-top:11px;color:#e7e9ff;white-space:nowrap;}
+  .node .sub{font-size:9px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums;}
+
+  .body{position:relative;display:grid;grid-template-columns:1.06fr 1fr;gap:16px;padding:9px 20px 4px;height:410px;}
+  .panel{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:11px 12px;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+  .panel-title{font-size:12px;font-weight:800;color:#dfe2ff;margin:0 0 9px;display:flex;align-items:center;gap:8px;}
+  .panel-title .tag{margin-left:auto;font-size:9.5px;color:var(--faint);font-weight:700;background:rgba(255,255,255,.05);padding:3px 8px;border-radius:6px;}
+
+  /* ===== STADIUM RADAR MAP (scene) ===== */
+  .map{position:relative;height:150px;border-radius:13px;overflow:hidden;margin-bottom:9px;flex:none;
+    background:
+      radial-gradient(150px 120px at 50% 52%,rgba(255,90,90,.30),transparent 66%),
+      radial-gradient(circle at 16% 14%,rgba(139,92,246,.16),transparent 44%),
+      radial-gradient(circle at 88% 86%,rgba(45,212,191,.12),transparent 42%),
+      linear-gradient(180deg,#0b1030,#0c1228);
+    border:1px solid rgba(255,255,255,.08);}
+  .map .grid{position:absolute;inset:0;
+    background-image:linear-gradient(rgba(124,150,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(124,150,255,.06) 1px,transparent 1px);
+    background-size:28px 24px;
+    -webkit-mask-image:radial-gradient(circle at 50% 52%,#000 35%,transparent 82%);
+    mask-image:radial-gradient(circle at 50% 52%,#000 35%,transparent 82%);}
+  .map svg{position:absolute;inset:0;width:100%;height:100%;}
+  .rings{position:absolute;left:50%;top:52%;}
+  .rings span{position:absolute;left:0;top:0;border:1.5px solid rgba(255,110,120,.5);border-radius:50%;transform:translate(-50%,-50%);animation:pulse 3s ease-out infinite;}
+  .rings span:nth-child(2){animation-delay:1s;}
+  .rings span:nth-child(3){animation-delay:2s;}
+  @keyframes pulse{0%{width:50px;height:44px;opacity:.7}100%{width:240px;height:150px;opacity:0}}
+  .sweep{position:absolute;left:50%;top:52%;width:200px;height:200px;transform:translate(-50%,-50%);border-radius:50%;
+    background:conic-gradient(from 0deg,rgba(45,212,191,.22),transparent 28%);
+    -webkit-mask-image:radial-gradient(circle,#000 60%,transparent 72%);mask-image:radial-gradient(circle,#000 60%,transparent 72%);
+    animation:spin 6s linear infinite;opacity:.55;mix-blend-mode:screen;}
+  @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+  .map .chip-live{position:absolute;left:11px;top:10px;display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;color:#bff3ea;background:rgba(7,18,16,.5);border:1px solid rgba(45,212,191,.3);padding:4px 9px;border-radius:999px;z-index:6;backdrop-filter:blur(3px);}
+  .map .chip-live i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);animation:blink 1.4s infinite;}
+  .map .ctxlab{position:absolute;top:10px;right:11px;font-size:10px;font-weight:800;color:#e2e8f0;background:rgba(0,0,0,.4);padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.1);z-index:6;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .cust{position:absolute;left:62%;top:34%;transform:translate(-50%,-100%);z-index:7;text-align:center;}
+  .cust .av{width:24px;height:24px;border-radius:50%;margin:0 auto;background:linear-gradient(135deg,var(--mint),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+  .cust .av::after{content:"";position:absolute;left:50%;top:22px;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid #fff;}
+  .cust .nm{margin-top:7px;font-size:9px;font-weight:900;color:#fff;background:rgba(139,92,246,.85);padding:2px 7px;border-radius:6px;white-space:nowrap;box-shadow:0 3px 8px rgba(0,0,0,.4);}
+  .cust .ping{position:absolute;left:50%;top:12px;width:24px;height:24px;border-radius:50%;border:2px solid var(--mint);transform:translate(-50%,-50%);animation:ping 1.8s ease-out infinite;}
+  @keyframes ping{0%{opacity:.8;width:10px;height:10px}100%{opacity:0;width:50px;height:50px}}
+
+  .loghead{font-size:10px;font-weight:800;color:var(--faint);letter-spacing:.03em;margin-bottom:7px;text-transform:uppercase;}
+  .jlog{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow-y:auto;}
+  .sig{display:flex;align-items:center;gap:9px;font-size:11.5px;color:#e9eaff;font-weight:700;background:rgba(255,255,255,.04);border:1px solid var(--line);border-left:2px solid var(--mint);border-radius:9px;padding:7px 9px;animation:slin .35s ease;transition:font-size .4s,padding .4s,opacity .4s;flex:none;}
+  .sig .t{font-family:inherit;font-variant-numeric:tabular-nums;font-size:9px;font-weight:800;color:var(--faint);flex:none;min-width:58px;}
+  .sig.past{font-size:9.5px;padding:4px 9px;opacity:.5;border-left-color:rgba(45,212,191,.25);background:rgba(255,255,255,.022);}
+  .sig.past .t{font-size:8px;min-width:50px;}
+  @keyframes slin{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
+
+  /* RIGHT: gauge + intent + phone */
+  .g-lab{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:#dfe2ff;margin-bottom:6px;}
+  .bar{position:relative;height:11px;border-radius:7px;background:rgba(255,255,255,.08);overflow:visible;}
+  .bar>i{display:block;height:100%;width:0;border-radius:7px;background:linear-gradient(90deg,#7c4dff,#b39bff);transition:width .1s,background .5s;box-shadow:0 0 14px rgba(139,92,246,.4);}
+  .g-lab .pct{margin-left:auto;font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--purple2);}
+  .crisis-g .pct{animation:gpulse .9s ease-in-out infinite;}
+  @keyframes gpulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+  .evh{margin:8px 0 9px;font-size:10px;font-weight:800;color:#dfe2ff;line-height:1.35;}
+  .evh b{color:#fff;}
+  .evh .hi{margin-top:4px;font-size:9.5px;font-weight:800;color:var(--amber);background:rgba(246,196,83,.12);border:1px solid rgba(246,196,83,.3);border-radius:7px;padding:3px 8px;display:inline-block;}
+
+  .scene{display:flex;justify-content:center;margin-top:auto;}
+  .phone{position:relative;width:222px;background:linear-gradient(#05070f,#0a0e1c);border:1px solid rgba(255,255,255,.14);border-radius:30px;padding:8px;box-shadow:0 30px 60px -22px rgba(0,0,0,.8),inset 0 0 0 2px rgba(255,255,255,.03);}
+  .notch{position:absolute;left:50%;top:12px;transform:translateX(-50%);width:64px;height:14px;background:#05070f;border-radius:0 0 12px 12px;z-index:9;}
+  .screen{background:#0c1024;border-radius:23px;overflow:hidden;position:relative;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 13px 5px;font-size:9px;color:#cfd3f2;font-weight:800;font-variant-numeric:tabular-nums;}
+  .statusbar .net{display:flex;align-items:center;gap:5px;}
+  .statusbar .net b{color:#ff8a93;}
+  .app-head{display:flex;align-items:center;gap:7px;padding:8px 12px;background:linear-gradient(120deg,#0ea98f,#2dd4bf 55%,#5eead4);position:relative;overflow:hidden;}
+  .app-head::after{content:"";position:absolute;right:-30px;top:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.16);}
+  .app-head .logo{font-size:13px;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(4,60,52,.4);z-index:2;}
+  .app-head .av{margin-left:auto;width:22px;height:22px;border-radius:50%;background:#06463d;color:#aef7e8;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:2;}
+  .app-head .bell{color:#063d36;font-size:12px;z-index:2;}
+
+  .app-body{padding:9px 11px 30px;transition:filter .35s;}
+  .app-body.dim{filter:blur(2.5px) brightness(.5);}
+  .greet{font-size:10px;color:#aab0d8;margin-bottom:8px;}
+  .greet b{color:#fff;font-weight:800;}
+  .data-card{background:linear-gradient(160deg,#1a2042,#141834);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;display:flex;align-items:center;gap:11px;position:relative;overflow:hidden;}
+  .data-card .glow{position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(255,90,106,.25),transparent 70%);}
+  .gauge{position:relative;width:58px;height:58px;flex-shrink:0;}
+  .gauge svg{transform:rotate(-90deg);}
+  .gauge .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .gauge .ctr .big{font-size:11px;font-weight:900;color:#fff;line-height:1;}
+  .gauge .ctr .small{font-size:7.5px;color:#9aa0c8;margin-top:2px;}
+  .data-info{flex:1;min-width:0;}
+  .data-info .lab{font-size:10px;color:#9aa0c8;font-weight:700;}
+  .data-info .pill{display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:9.5px;font-weight:900;padding:4px 9px;border-radius:999px;}
+  .pill.bad{color:#ff97a1;background:rgba(255,90,106,.14);border:1px solid rgba(255,90,106,.32);}
+  .pill.warn{color:#ffd97a;background:rgba(246,196,83,.14);border:1px solid rgba(246,196,83,.34);}
+  .pill.ok{color:#7debc8;background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.34);}
+  .data-info .note{font-size:9px;color:#7c83ac;margin-top:6px;}
+  .menu{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px;}
+  .menu .m{border-radius:11px;padding:8px 3px 7px;text-align:center;font-size:8.5px;color:#e7e9ff;font-weight:700;border:1px solid rgba(255,255,255,.07);}
+  .menu .m .e{display:flex;width:26px;height:26px;margin:0 auto 5px;border-radius:8px;align-items:center;justify-content:center;font-size:13px;}
+  .m1 .e{background:linear-gradient(135deg,#5b6cff,#8b9bff);}
+  .m2 .e{background:linear-gradient(135deg,#ff8a4c,#ffb347);}
+  .m3 .e{background:linear-gradient(135deg,#2dd4bf,#5eead4);color:#063d36;}
+  .m4 .e{background:linear-gradient(135deg,#a855f7,#c084fc);}
+
+  /* coupon modal */
+  .overlay{position:absolute;inset:0;background:rgba(4,7,16,.62);display:flex;align-items:flex-start;justify-content:center;padding:12px 9px 10px;border-radius:23px;z-index:8;transition:opacity .35s;backdrop-filter:blur(1px);}
+  .overlay.hide{opacity:0;pointer-events:none;}
+  .modal{position:relative;width:100%;background:linear-gradient(180deg,#211a44,#171436);border:1px solid rgba(139,92,246,.4);border-radius:17px;overflow:hidden;box-shadow:0 26px 50px -16px rgba(0,0,0,.8);}
+  .modal-top{position:relative;padding:9px 13px 6px;background:linear-gradient(120deg,rgba(124,77,255,.4),rgba(45,212,191,.28));text-align:center;}
+  .modal-top .spark{position:absolute;font-size:10px;opacity:.9;}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:900;color:#fff;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px 9px;}
+  .ticket{display:flex;margin:9px 12px 4px;border-radius:11px;background:linear-gradient(110deg,#7c4dff,#9d6bff 48%,#2dd4bf);position:relative;box-shadow:0 12px 26px -12px rgba(124,77,255,.7);}
+  .ticket::before,.ticket::after{content:"";position:absolute;left:62%;width:12px;height:12px;border-radius:50%;background:#1a163a;transform:translateX(-50%);}
+  .ticket::before{top:-6px;}.ticket::after{bottom:-6px;}
+  .ticket .stub{width:62%;padding:11px 10px;position:relative;}
+  .ticket .stub .amt{font-size:25px;font-weight:900;color:#fff;line-height:.95;letter-spacing:-.02em;}
+  .ticket .stub .unit{font-size:11px;font-weight:800;color:#ffffffcc;margin-left:2px;}
+  .ticket .stub .nm{font-size:9.5px;font-weight:800;color:#ffffffe6;margin-top:5px;}
+  .ticket .perf{position:absolute;left:62%;top:8px;bottom:8px;border-left:2px dashed rgba(255,255,255,.55);transform:translateX(-50%);}
+  .ticket .side{flex:1;padding:11px 8px;display:flex;flex-direction:column;justify-content:center;text-align:center;}
+  .ticket .side .ico{font-size:16px;}
+  .ticket .side .d9{margin-top:5px;font-size:9px;font-weight:900;color:#fff;background:rgba(0,0,0,.22);border-radius:6px;padding:3px 6px;}
+  .modal-body{padding:5px 11px 12px;text-align:center;}
+  .modal-body h5{margin:6px 0 5px;font-size:10.5px;font-weight:900;color:#fff;line-height:1.32;}
+  .modal-body p{margin:0 0 9px;font-size:9.5px;color:#aeb4dc;line-height:1.4;}
+  .m-actions{display:flex;gap:7px;}
+  .btn-apply{flex:1;position:relative;overflow:hidden;border:none;font-family:inherit;color:#fff;font-weight:900;font-size:12px;border-radius:10px;padding:8px;
+    background:linear-gradient(90deg,#7c4dff,#9d6bff);box-shadow:0 10px 22px -8px rgba(124,77,255,.75);}
+  .btn-apply::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-20deg);animation:shine 2.6s ease-in-out infinite;}
+  @keyframes shine{0%,60%{left:-60%}100%{left:130%}}
+  .btn-later{border:1px solid rgba(255,255,255,.2);background:transparent;color:#aeb4dc;font-family:inherit;font-size:11px;font-weight:800;border-radius:10px;padding:8px 12px;}
+  .result{display:none;margin-top:5px;}
+  .result .ok-ic{width:38px;height:38px;margin:2px auto 6px;border-radius:50%;background:linear-gradient(135deg,#34d399,#5eead4);display:flex;align-items:center;justify-content:center;font-size:18px;color:#053d2c;box-shadow:0 0 0 6px rgba(52,211,153,.18);}
+  .result .big{font-size:12.5px;font-weight:900;color:#7debc8;}
+  .result .speed{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:5px;font-size:10px;font-weight:800;color:#cfead9;}
+  .result .speed s{color:#ff8a93;text-decoration:line-through;}
+  .result .small{font-size:9px;color:#9fe6c6;margin-top:4px;}
+
+  .bread{display:flex;flex-wrap:wrap;gap:5px;padding:2px 20px 2px;align-items:center;}
+  .bread .bc{font-size:9.5px;font-weight:800;color:var(--faint);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:3px 8px;}
+  .bread .bc.rise.done,.bread .bc.rise.cur{color:#fff;background:rgba(124,110,200,.3);border-color:rgba(179,155,255,.5);}
+  .bread .bc.ease.done,.bread .bc.ease.cur{color:#fff;background:rgba(52,211,153,.26);border-color:rgba(52,211,153,.5);}
+  .bread .bc.cur{box-shadow:0 0 0 2px rgba(255,255,255,.18);}
+
+  .foot{position:relative;text-align:center;font-size:12.5px;font-weight:800;color:#fff;padding:9px 18px;line-height:1.4;margin-top:4px;
+    background:linear-gradient(90deg,rgba(124,77,255,.92),rgba(45,212,191,.8));}
+  .foot b{color:#fff7cf;}
+
+  .ctrl{display:flex;gap:8px;justify-content:center;margin-top:6px;}
+  .btn{font-size:13px;font-weight:800;border:none;border-radius:9px;padding:9px 18px;cursor:pointer;font-family:inherit;}
+  .btn.go{color:#fff;background:linear-gradient(90deg,#7c4dff,#9d6bff);box-shadow:0 8px 22px -8px rgba(124,77,255,.7);}
+  .btn.gh{color:#cfd3f2;background:#1b1f3e;border:1px solid var(--line);}
+
+  @media (prefers-reduced-motion: reduce){
+    .rings span,.chip-live i,.sweep,.cust .ping,.btn-apply::after,.crisis-g .pct{animation:none;}
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="eyebrow"><span class="k">AX Tech Connect 2026</span> · <span class="c">현장 데이터 케어</span></div>
+    <h2 class="h-title">데이터 끊긴 <span class="hl">그 순간</span>, KT가 먼저 채워드려요</h2>
+    <p class="h-sub">티켓 구매부터 경기 승부처까지 — KT는 <span class="hl">통신 데이터</span>로 고객의 상황과 의도를 실시간으로 읽어, 데이터가 끊기기 전에 <span class="hl">데이터 리필 쿠폰</span>을 먼저 건넵니다.</p>
+
+    <div class="stage" id="stage">
+      <div class="card">
+        <div class="mood" id="mood"></div>
+        <div class="card-head">
+          <div class="brand"><span class="dot"></span> <b>KT Context Engine · 실시간 선제 케어</b></div>
+          <span class="elapsed" id="elapsed">대기</span>
+        </div>
+
+        <div class="traits">
+          <span class="chip kt">장기고객 12년</span>
+          <span class="chip cp">KT 멤버십 혜택 야구 티켓 구매</span>
+          <span class="chip">정액 5GB·속도제한형</span>
+          <span class="chip">데이터 리필 쿠폰 미사용 11개월 · D-9</span>
+        </div>
+
+        <div class="timeline" id="tl">
+          <div class="tl-line"></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🎟 티켓 구매</span><span class="sub">D-7</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🏟 야구장 도착</span><span class="sub">18:00</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">📺 경쟁팀 중계</span><span class="sub">18:30</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">⚠ 데이터 소진</span><span class="sub">20:30</span></div>
+          <div class="node"><span class="pt"></span><span class="lbl">🎁 리필 제안</span><span class="sub">20:31</span></div>
+        </div>
+
+        <div class="body">
+          <!-- LEFT: 현장 관측 -->
+          <div class="panel">
+            <p class="panel-title">🛰 현장 관측 — 위치·트래픽 <span class="tag">Batch + Real-time</span></p>
+            <div class="map">
+              <div class="grid"></div>
+              <div class="sweep"></div>
+              <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <radialGradient id="field" cx="50%" cy="52%" r="60%">
+                    <stop offset="0%" stop-color="#1f7a4d"/><stop offset="100%" stop-color="#135536"/>
+                  </radialGradient>
+                  <linearGradient id="stand" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#2b3260"/><stop offset="100%" stop-color="#1a1f44"/>
+                  </linearGradient>
+                </defs>
+                <ellipse cx="160" cy="78" rx="132" ry="60" fill="url(#stand)" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+                <ellipse cx="160" cy="78" rx="112" ry="49" fill="#10183a" stroke="rgba(124,150,255,.18)" stroke-width="1"/>
+                <ellipse cx="160" cy="78" rx="96" ry="41" fill="url(#field)"/>
+                <path d="M74 92 A96 49 0 0 1 246 92" fill="none" stroke="rgba(180,140,90,.5)" stroke-width="3"/>
+                <path d="M160 110 L200 86 L160 62 L120 86 Z" fill="#b9824c" opacity=".92"/>
+                <path d="M160 104 L192 86 L160 68 L128 86 Z" fill="#1f7a4d"/>
+                <path d="M160 108 L198 86 L160 64 L122 86 Z" fill="none" stroke="#f3e7d0" stroke-width="2"/>
+                <rect x="156" y="106" width="8" height="8" rx="1.5" fill="#fff" transform="rotate(45 160 110)"/>
+                <rect x="194" y="83" width="7" height="7" rx="1.5" fill="#fff" transform="rotate(45 197.5 86.5)"/>
+                <rect x="156" y="61" width="7" height="7" rx="1.5" fill="#fff" transform="rotate(45 159.5 64.5)"/>
+                <rect x="119" y="83" width="7" height="7" rx="1.5" fill="#fff" transform="rotate(45 122.5 86.5)"/>
+                <circle cx="160" cy="86" r="5" fill="#c79a63"/><circle cx="160" cy="86" r="2" fill="#fff"/>
+                <ellipse cx="160" cy="78" rx="120" ry="54" fill="rgba(255,80,90,.16)"/>
+                <g stroke="#8de0d4" stroke-width="1.6" fill="none" opacity=".85">
+                  <path d="M26 48 l5 -14 l5 14" fill="#8de0d4" stroke="none"/>
+                  <path d="M22 38 a12 12 0 0 1 18 0 M18 32 a18 18 0 0 1 26 0"/>
+                </g>
+                <g stroke="#8de0d4" stroke-width="1.6" fill="none" opacity=".85">
+                  <path d="M289 120 l5 -14 l5 14" fill="#8de0d4" stroke="none"/>
+                  <path d="M285 110 a12 12 0 0 1 18 0 M281 104 a18 18 0 0 1 26 0"/>
+                </g>
+                <g>
+                  <path d="M236 30 l6 -16 l6 16" fill="#ff5a6a"/>
+                  <path d="M231 19 a14 14 0 0 1 22 0" stroke="#ff5a6a" stroke-width="2" fill="none"/>
+                  <path d="M226 12 a22 22 0 0 1 32 0" stroke="#ff7a86" stroke-width="2" fill="none" opacity=".8"/>
+                </g>
+              </svg>
+              <div class="rings"><span></span><span></span><span></span></div>
+              <div class="cust"><div class="av">🙍<span class="ping"></span></div><div class="nm">고객 위치</div></div>
+              <span class="chip-live"><i></i> 실시간 셀 모니터링</span>
+              <span class="ctxlab" id="ctxLabel">관측 대기 중</span>
+            </div>
+            <div class="loghead">🧭 통신 데이터 시그널 (실시간 누적)</div>
+            <div class="jlog" id="jlog"></div>
+          </div>
+
+          <!-- RIGHT: 의도 추론 + 고객 폰 -->
+          <div class="panel">
+            <p class="panel-title">⚙️ 의도 추론 → 고객 선제 안내 <span class="tag">엔진 → MY KT</span></p>
+            <div class="g-lab"><span id="glab">🔮 추론 의도 · 관측 시작</span> <span class="pct" id="gval">0%</span></div>
+            <div class="bar" id="barWrap"><i id="fill"></i></div>
+
+            <div class="evh"><div id="evIntent">⚡ —</div><div class="hi" id="evHist">📚 —</div></div>
+
+            <div class="scene">
+              <div class="phone">
+                <div class="notch"></div>
+                <div class="screen">
+                  <div class="statusbar">
+                    <span>19:32</span>
+                    <span class="net" id="netState">KT 5G ▮▮▮ &nbsp;87%</span>
+                  </div>
+                  <div class="app-head">
+                    <span class="logo">마이케이티</span>
+                    <span class="bell">🔔</span>
+                    <span class="av">김</span>
+                  </div>
+                  <div class="app-body" id="appBody">
+                    <div class="greet">반가워요, <b>김○○ 고객님</b></div>
+                    <div class="data-card">
+                      <div class="glow"></div>
+                      <div class="gauge">
+                        <svg width="58" height="58" viewBox="0 0 74 74">
+                          <circle cx="37" cy="37" r="30" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="7"/>
+                          <circle id="ring" cx="37" cy="37" r="30" fill="none" stroke="#34d399" stroke-width="7" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="0"/>
+                        </svg>
+                        <div class="ctr"><span class="big" id="gBig">5.0<small style="font-size:7px">GB</small></span><span class="small">/ 5GB</span></div>
+                      </div>
+                      <div class="data-info">
+                        <div class="lab">실시간 데이터</div>
+                        <span class="pill ok" id="dataPill">● 잔여 100% · 정상</span>
+                        <div class="note" id="dataNote">5G 정상 속도</div>
+                      </div>
+                    </div>
+                    <div class="menu">
+                      <div class="m m1"><span class="e">📊</span>요금조회</div>
+                      <div class="m m2"><span class="e">⚡</span>데이터충전</div>
+                      <div class="m m3"><span class="e">🎁</span>멤버십</div>
+                      <div class="m m4"><span class="e">🏆</span>혜택</div>
+                    </div>
+                  </div>
+
+                  <div class="overlay hide" id="overlay">
+                    <div class="modal">
+                      <div class="modal-top">
+                        <span class="spark" style="left:14px;top:7px">✨</span>
+                        <span class="spark" style="right:16px;top:12px">✨</span>
+                        <span class="badge">🎁 오래 함께한 고객님께</span>
+                      </div>
+                      <div class="ticket">
+                        <div class="stub">
+                          <div><span class="amt">2</span><span class="unit">GB</span></div>
+                          <div class="nm">데이터 리필 쿠폰</div>
+                        </div>
+                        <div class="perf"></div>
+                        <div class="side"><div class="ico">🎟️</div><div class="d9">D-9 만료</div></div>
+                      </div>
+                      <div class="modal-body">
+                        <h5 id="mH5">만료 임박한 데이터 리필 쿠폰으로<br>지금 데이터 리필하실 수 있어요</h5>
+                        <p id="mP">경기 끝까지 끊김 없이 즐기세요.</p>
+                        <div class="m-actions" id="mActions">
+                          <button class="btn-apply">지금 충전</button>
+                          <button class="btn-later">나중에</button>
+                        </div>
+                        <div class="result" id="result">
+                          <div class="ok-ic">✓</div>
+                          <div class="big">충전 완료 · 2GB 추가</div>
+                          <div class="speed"><s>1Mbps 제한</s> → <span>정상 속도 회복</span></div>
+                          <div class="small">앱 열자마자 한 번에 해결</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bread" id="bread"></div>
+        <div class="foot" id="foot">데이터가 끊긴 그 순간, KT가 먼저 알아채고 <b>딱 필요한 데이터</b>를 건넵니다 — 찾지 않아도, 기다리지 않아도 되는 경험</div>
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <button class="btn go" onclick="parent.postMessage('story-start-demo','*')">▶ 시나리오 체험형 시연 시작</button>
+      <button class="btn gh" id="pauseBtn" style="display:none" onclick="togglePause()">⏸ 정지</button>
+      <button class="btn gh" onclick="parent.postMessage('story-close','*')">✕ 닫기</button>
+    </div>
+  </div>
+
+  <script>
+    const $=s=>document.querySelector(s);
+    const C=188.5; // 2*pi*30
+    const MOOD={calm:'#7c96ff',arrive:'#2dd4bf',stream:'#f6c453',crisis:'#ff5a6a',relief:'#34d399'};
+    const TONE={purple:'linear-gradient(90deg,#7c4dff,#b39bff)',amber:'linear-gradient(90deg,#f6c453,#ffd97a)',red:'linear-gradient(90deg,#ff5a6a,#ff8a93)',green:'linear-gradient(90deg,#34d399,#5eead4)'};
+    const PCT={purple:'#b39bff',amber:'#f6c453',red:'#ff8a93',green:'#5eead4'};
+    const BEATS=[
+      {tint:'calm',time:'D-7 18:00',phase:'rise',bn:5,tone:'purple',
+       ctx:'D-7 · 멤버십 야구 티켓 구매',
+       glab:'🔮 추론 의도 · 데이터 충전',
+       signals:[['D-7 18:00','🎟 KT 멤버십 할인으로 kt wiz 홈경기 티켓 구매'],['D-7','🎁 장기고객 데이터 리필 쿠폰 미사용 · D-9 만료 임박']],
+       intent:'야구 관람 예정 — 관측 시작',hist:'KT 멤버십 야구 티켓 구매 · 미사용 리필 쿠폰 보유',
+       phone:{pct:0.87,color:'#34d399',big:'4.35',unit:'GB',pill:'● 잔여 87% · 정상',pillc:'ok',note:'5G 정상 속도',net:'KT 5G ▮▮▮ &nbsp;87%',coupon:false}},
+      {tint:'arrive',time:'경기당일 18:00',phase:'rise',bn:25,tone:'green',
+       ctx:'18:00 · 수원kt위즈파크 도착',
+       glab:'🔮 추론 의도 · 데이터 충전',
+       signals:[['18:00','📍 접속 기지국 = 수원kt위즈파크 · 위치 정합'],['18:05','🏟 경기장 체류 시작 · 관중 밀집 셀']],
+       intent:'야구장 도착 — 관람 시작',hist:'접속 기지국 위치 · 외부 KBO 일정 일치',
+       phone:{pct:0.7,color:'#34d399',big:'3.5',unit:'GB',pill:'● 잔여 70% · 정상',pillc:'ok',note:'5G 정상 속도',net:'KT 5G ▮▮▮ &nbsp;87%',coupon:false}},
+      {tint:'stream',time:'경기당일 18:30',phase:'rise',bn:40,tone:'amber',
+       ctx:'18:30 · 경쟁팀 경기 중계 시청',
+       glab:'🔮 추론 의도 · 데이터 충전',
+       signals:[['18:30','📺 타 구장 경쟁팀 경기 실시간 중계 스트리밍 시작'],['19:30','데이터 소진 임박']],
+       intent:'경쟁팀 경기 몰입 시청 — 데이터 급감',hist:'대용량 스트리밍 트래픽 → 잔여 데이터 급감',
+       phone:{pct:0.3,color:'#f6c453',big:'1.5',unit:'GB',pill:'● 잔여 30% · 빠른 소진',pillc:'warn',note:'스트리밍 데이터 급증',net:'KT 5G ▮▮▯ &nbsp;86%',coupon:false}},
+      {tint:'crisis',time:'경기당일 20:30',phase:'rise',bn:95,tone:'red',
+       ctx:'20:30 · 승부처 · 데이터 소진 임박',
+       glab:'🔮 추론 의도 · 데이터 충전',
+       signals:[['20:30','🔥 경쟁팀 경기 승부처 · 실시간 스트리밍 지속'],['20:30','⚠ 잔여 데이터 1% · QoS 속도제한 진입 임박']],
+       intent:'끊김 없이 보고 싶다 — 이탈·불만 임박',hist:'CDR 실시간 잔여 1% · QoS 1Mbps 임박',
+       phone:{pct:0.01,color:'#ff5a6a',big:'50',unit:'MB',pill:'● 잔여 1% · 속도제한',pillc:'bad',note:'속도제한 1Mbps 진입 임박',net:'KT 5G ▮▯▯ &nbsp;85%',coupon:false}},
+      {tint:'relief',time:'경기당일 20:31',phase:'ease',bn:20,tone:'green',
+       ctx:'20:31 · 리필 완료 · 관람 지속',
+       glab:'✅ 의도 해소 · 선제 대응 완료',
+       signals:[['20:31','🎁 미사용 데이터 리필 쿠폰 선제 안내 → MY KT 홈'],['20:31','✅ 고객 사용 → 데이터 리필 · 끊김 없이 관람 지속']],
+       intent:'말하기 전에 충전 — 데이터 리필이 도착',hist:'장기고객 미사용 쿠폰 활용 · 검색 전 선제 리필',
+       phone:{pct:0.41,color:'#34d399',big:'2.05',unit:'GB',pill:'● 정상 속도',pillc:'ok',note:'속도제한 해제 · 5G 정상',net:'KT 5G ▮▮▮ &nbsp;85%',coupon:true}},
+    ];
+
+    let idx=-1, curBn=0, timers=[], gt=null;
+    const at=(t,fn)=>timers.push(setTimeout(fn,t));
+    function gaugeTo(target){
+      if(gt)clearInterval(gt);
+      const fill=$('#fill'),val=$('#gval');const up=target>=curBn;
+      gt=setInterval(()=>{ curBn+=up?3:-3;
+        if((up&&curBn>=target)||(!up&&curBn<=target)){curBn=target;clearInterval(gt);}
+        fill.style.width=curBn+'%';val.textContent=Math.round(curBn)+'%'; },30);
+    }
+    function setPhone(p){
+      $('#ring').style.stroke=p.color;
+      $('#ring').setAttribute('stroke-dashoffset',(C*(1-p.pct)).toFixed(1));
+      $('#gBig').innerHTML=p.big+'<small style="font-size:7px">'+p.unit+'</small>';
+      const pill=$('#dataPill');pill.textContent=p.pill;pill.className='pill '+p.pillc;
+      $('#dataNote').textContent=p.note;$('#netState').innerHTML=p.net;
+    }
+    function renderBread(){
+      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">고객 여정:</span>'+
+        BEATS.map((s,i)=>`<span class="bc ${s.phase} ${i<idx?'done':''} ${i===idx?'cur':''}">${i+1}. ${s.intent.split(' — ')[0]}</span>`).join(' ');
+    }
+    function reset(){
+      timers.forEach(clearTimeout);timers=[];if(gt)clearInterval(gt);
+      idx=-1;curBn=0;
+      $('#stage').className='stage';$('#mood').style.background='linear-gradient(90deg,var(--purple),var(--mint))';
+      $('#jlog').innerHTML='';$('#ctxLabel').textContent='관측 대기 중';$('#elapsed').textContent='대기';
+      $('#fill').style.width='0%';$('#fill').style.background=TONE.purple;$('#gval').textContent='0%';$('#gval').style.color=PCT.purple;
+      $('#glab').textContent='🔮 추론 의도 · 관측 시작';$('#barWrap').classList.remove('crisis-g');
+      $('#evIntent').textContent='—';$('#evHist').textContent='📚 —';
+      $('#overlay').classList.add('hide');$('#appBody').classList.remove('dim');
+      $('#result').style.display='none';$('#mActions').style.display='flex';$('#mH5').style.display='';$('#mP').style.display='';
+      setPhone(BEATS[0].phone);
+      document.querySelectorAll('#tl .node').forEach(n=>n.classList.remove('active','done'));
+      $('#pauseBtn').textContent='⏸ 정지';
+      renderBread();
+    }
+    function next(){ if(idx>=BEATS.length-1){reset();render();return;} idx++; render(); }
+    function render(){
+      const b=BEATS[idx]; if(!b)return;
+      timers.forEach(clearTimeout);timers=[];
+      $('#stage').className='stage '+b.tint;
+      $('#mood').style.background=`linear-gradient(90deg,${MOOD[b.tint]},${b.phase==='ease'?'#5eead4':'#ff8a93'})`;
+      $('#elapsed').textContent=b.time;$('#ctxLabel').textContent=b.ctx;
+      document.querySelectorAll('#tl .node').forEach((n,i)=>{n.classList.toggle('active',i===idx);n.classList.toggle('done',i<idx);});
+      // 누적 로그: 기존 행 past 강등, 현재 행 추가
+      $('#jlog').querySelectorAll('.sig').forEach(r=>r.classList.add('past'));
+      b.signals.forEach(([t,tx],i)=>at(i*240,()=>{
+        const r=document.createElement('div');r.className='sig';r.innerHTML=`<span class="t">${t}</span> ${tx}`;
+        $('#jlog').appendChild(r);$('#jlog').scrollTop=$('#jlog').scrollHeight;
+      }));
+      // 게이지 + 라벨
+      $('#barWrap').classList.toggle('crisis-g',b.tone==='red');
+      $('#glab').textContent=b.glab;
+      at(500,()=>{ $('#fill').style.background=TONE[b.tone];$('#gval').style.color=PCT[b.tone]; gaugeTo(b.bn); });
+      // 의도/근거
+      at(900,()=>{ $('#evIntent').textContent='⚡ '+b.intent; $('#evHist').textContent='📚 근거 · '+b.hist; });
+      // 폰: 쿠폰 비트면 모달, 아니면 데이터 상태만
+      if(b.phone.coupon){
+        $('#overlay').classList.remove('hide');$('#appBody').classList.add('dim');
+        $('#result').style.display='none';$('#mActions').style.display='flex';$('#mH5').style.display='';$('#mP').style.display='';
+        at(3000,()=>{ // 자동 사용 연출 — 버튼 노출 시간 충분히 확보
+          $('#result').style.display='block';$('#mActions').style.display='none';$('#mH5').style.display='none';$('#mP').style.display='none';
+          setPhone(b.phone);
+        });
+      } else {
+        $('#overlay').classList.add('hide');$('#appBody').classList.remove('dim');
+        at(700,()=>setPhone(b.phone));
+      }
+      renderBread();
+    }
+    reset();
+    let autoTimer=null,paused=false;
+    function tick(){
+      if(paused)return;
+      if(idx>=BEATS.length-1){ autoTimer=setTimeout(()=>{if(paused)return;reset();autoTimer=setTimeout(tick,1000);},6500); }
+      else { next(); autoTimer=setTimeout(tick,3400); }
+    }
+    function togglePause(){ paused=!paused;const b=$('#pauseBtn');
+      if(paused){if(autoTimer)clearTimeout(autoTimer);b.textContent='▶ 재생';} else {b.textContent='⏸ 정지';tick();} }
+    if(new URLSearchParams(location.search).has('auto')){ $('#pauseBtn').style.display='';autoTimer=setTimeout(tick,800); }
+    else { next(); $('#stage').style.cursor='pointer'; $('#stage').addEventListener('click',()=>next()); }
+  </script>
+</body>
+</html>
