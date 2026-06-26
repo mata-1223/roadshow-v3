@@ -58,7 +58,7 @@
   .chip.am{color:#ffe6ab;background:rgba(246,196,83,.14);border-color:rgba(246,196,83,.34);}
 
   .timeline{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:36px;padding:12px 22px 6px;}
-  .tl-line{position:absolute;left:9%;right:9%;top:31px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
+  .tl-line{position:absolute;left:9%;right:9%;top:18px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
   .node{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:2;opacity:.5;transition:.3s;}
   .node.active,.node.done{opacity:1;}
   .node .pt{width:14px;height:14px;border-radius:50%;background:#2a3350;border:3px solid #11142f;box-shadow:0 0 0 3px rgba(124,150,255,.12);transition:.3s;}
@@ -68,7 +68,7 @@
   .node .sub{font-size:9px;color:var(--faint);margin-top:2px;font-variant-numeric:tabular-nums;}
 
   /* 카드 높이 고정 — 행동이 누적돼도 높이가 변하지 않도록 body 높이 고정 */
-  .body{position:relative;display:grid;grid-template-columns:1.05fr 1.1fr;gap:16px;padding:10px 20px 4px;height:410px;}
+  .body{position:relative;display:grid;grid-template-columns:1.05fr 1.1fr;gap:16px;padding:10px 20px 4px;height:356px;}
   .panel{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 13px;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
   .panel-title{font-size:12px;font-weight:800;color:#dfe2ff;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
   .panel-title .tag{margin-left:auto;font-size:9.5px;color:var(--faint);font-weight:700;background:rgba(255,255,255,.05);padding:3px 8px;border-radius:6px;}
@@ -120,7 +120,7 @@
   .reveal .offer-msg{font-size:12.5px;font-weight:700;color:#fff;line-height:1.4;}
   .reveal .hist{margin-top:8px;font-size:10px;font-weight:800;color:var(--amber);background:rgba(246,196,83,.12);border:1px solid rgba(246,196,83,.32);border-radius:7px;padding:4px 9px;display:inline-block;}
 
-  .bread{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto;padding-top:11px;}
+  .bread{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:2px 20px 2px;}
   .bread .bc{font-size:9.5px;font-weight:800;color:var(--faint);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:3px 8px;}
   .bread .bc.deep.done,.bread .bc.deep.cur{color:#fff;background:rgba(255,90,106,.28);border-color:rgba(255,90,106,.5);}
   .bread .bc.ease.done,.bread .bc.ease.cur{color:#fff;background:rgba(52,211,153,.26);border-color:rgba(52,211,153,.5);}
@@ -198,10 +198,10 @@
               </div>
               <div class="hist" id="aHist">📚 —</div>
             </div>
-            <div class="bread" id="bread"></div>
           </div>
         </div>
 
+        <div class="bread" id="bread"></div>
         <div class="foot" id="foot">번아웃이 깊어지기 전, KT가 먼저 알아채고 회복을 건넵니다 — 말하지 않아도, <b>나의 힘듦을 알아주고 함께 이겨내는 경험</b></div>
       </div>
     </div>
@@ -258,7 +258,7 @@
       },30);
     }
     function renderBread(){
-      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">의도 여정:</span>'+
+      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">고객 여정:</span>'+
         BEATS.map((s,i)=>`<span class="bc ${s.phase} ${i<idx?'done':''} ${i===idx?'cur':''}">${i+1}. ${s.intent}</span>`).join(' ');
     }
     function reset(){

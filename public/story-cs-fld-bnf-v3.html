@@ -55,7 +55,7 @@
   .chip.cp{color:#bff3ea;background:rgba(45,212,191,.14);border-color:rgba(45,212,191,.34);}
 
   .timeline{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:36px;padding:11px 26px 4px;}
-  .tl-line{position:absolute;left:11%;right:11%;top:26px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
+  .tl-line{position:absolute;left:11%;right:11%;top:16px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--mint),var(--purple));opacity:.5;}
   .node{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:2;opacity:.5;transition:.3s;}
   .node.active,.node.done{opacity:1;}
   .node .pt{width:14px;height:14px;border-radius:50%;background:#2a3350;border:3px solid #11142f;box-shadow:0 0 0 3px rgba(124,150,255,.12);transition:.3s;}
@@ -197,7 +197,7 @@
   .result .speed s{color:#ff8a93;text-decoration:line-through;}
   .result .small{font-size:9px;color:#9fe6c6;margin-top:4px;}
 
-  .bread{display:flex;flex-wrap:wrap;gap:5px;padding:8px 20px 2px;align-items:center;}
+  .bread{display:flex;flex-wrap:wrap;gap:5px;padding:2px 20px 2px;align-items:center;}
   .bread .bc{font-size:9.5px;font-weight:800;color:var(--faint);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:3px 8px;}
   .bread .bc.rise.done,.bread .bc.rise.cur{color:#fff;background:rgba(124,110,200,.3);border-color:rgba(179,155,255,.5);}
   .bread .bc.ease.done,.bread .bc.ease.cur{color:#fff;background:rgba(52,211,153,.26);border-color:rgba(52,211,153,.5);}
@@ -429,7 +429,7 @@
        ctx:'20:31 · 리필 완료 · 관람 지속',
        glab:'✅ 의도 해소 · 선제 대응 완료',
        signals:[['20:31','🎁 미사용 데이터 리필 쿠폰 선제 안내 → MY KT 홈'],['20:31','✅ 고객 사용 → 데이터 리필 · 끊김 없이 관람 지속']],
-       intent:'말하기 전에 — 데이터 리필이 도착',hist:'장기고객 미사용 쿠폰 활용 · 검색 전 선제 리필',
+       intent:'말하기 전에 충전 — 데이터 리필이 도착',hist:'장기고객 미사용 쿠폰 활용 · 검색 전 선제 리필',
        phone:{pct:0.41,color:'#34d399',big:'2.05',unit:'GB',pill:'● 정상 속도',pillc:'ok',note:'속도제한 해제 · 5G 정상',net:'KT 5G ▮▮▮ &nbsp;85%',coupon:true}},
     ];
 
@@ -450,7 +450,7 @@
       $('#dataNote').textContent=p.note;$('#netState').innerHTML=p.net;
     }
     function renderBread(){
-      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">의도 여정:</span>'+
+      $('#bread').innerHTML='<span class="bc" style="background:none;border:none;color:#727aa6">고객 여정:</span>'+
         BEATS.map((s,i)=>`<span class="bc ${s.phase} ${i<idx?'done':''} ${i===idx?'cur':''}">${i+1}. ${s.intent.split(' — ')[0]}</span>`).join(' ');
     }
     function reset(){
