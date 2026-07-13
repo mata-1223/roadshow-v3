@@ -7,13 +7,11 @@ import SystemStatusPanel from '../components/SystemStatusPanel.jsx';
 import DBViewerPanel from '../components/DBViewerPanel.jsx';
 import DemoStepper from '../components/DemoStepper.jsx';
 import TopBar from '../components/TopBar.jsx';
-import { StoryOverlay } from '../components/ProactiveStory.jsx';
 
 export default function WelcomePage() {
   const navigate = useNavigate();
   const { setSession, setScenario, reset } = useSessionStore();
   const [busy, setBusy] = useState(false);
-  const [storyScn, setStoryScn] = useState(null);  // 클릭한 시나리오의 스토리 팝업
 
   async function start(scn) {
     if (!scn.active || busy) return;
@@ -59,7 +57,7 @@ export default function WelcomePage() {
               <button
                 key={scn.key}
                 className={`scenario-card ${scn.active ? '' : 'disabled'}`}
-                onClick={() => scn.active && setStoryScn(scn)}
+                onClick={() => scn.active && start(scn)}
                 disabled={!scn.active || busy}
               >
                 <span className="scn-main">
@@ -70,7 +68,7 @@ export default function WelcomePage() {
                   {scn.desc && <span className="scn-desc">{scn.desc}</span>}
                 </span>
                 {scn.active
-                  ? <span className="scn-go">🎬 스토리 보기</span>
+                  ? <span className="scn-go">▶ 체험 시작</span>
                   : <span className="scn-soon">준비 중</span>}
               </button>
             ))}
@@ -90,15 +88,6 @@ export default function WelcomePage() {
         </div>
 
       </div>
-
-      {storyScn && (
-        <StoryOverlay
-          scenarioId={storyScn.id}
-          title={storyScn.name}
-          onClose={() => setStoryScn(null)}
-          onStart={() => start(storyScn)}
-        />
-      )}
 
       <style>{`
         .welcome-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
