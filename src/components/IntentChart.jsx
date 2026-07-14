@@ -199,6 +199,19 @@ export default function IntentChart({ topN, actionsData, l1Zones, bundleProfile 
                     border: 1px solid var(--border); background: #fff; border-radius: 50%; cursor: pointer;
                     font-size: 0.9rem; color: var(--muted); line-height: 1; }
         .rx-close:hover { background: #f1f5f9; color: var(--fg); }
+        @media (max-width: 640px) {
+          .row { padding: 0.5rem 0.7rem; }
+          .meta { gap: 0.5rem; flex-wrap: wrap; }
+          .info { min-width: 0; }
+          .score { font-size: 1.1rem; }
+          .ax-modal { padding: 1.1rem 1rem; }
+          .ax-modal h2 { font-size: 1.2rem; }
+          .ax-modal .caption { font-size: 0.88rem; }
+          .ax-modal .ac-match { font-size: 1rem; padding: 0.6rem 0.8rem; }
+          .ax-modal .ac-iname { font-size: 1.1rem; }
+          .ax-modal .phone-push { width: 200px; }
+          .ax-modal .ac-msg, .ax-modal .ab-msg { font-size: 0.95rem; }
+        }
       `}</style>
     </div>
   );

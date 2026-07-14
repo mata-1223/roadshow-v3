@@ -52,6 +52,13 @@ export default function DemoStepper({ current = 1 }) {
         .sp-line { flex: 1; height: 2px; min-width: 1.2rem; margin: 0 0.6rem; border-radius: 2px; background: var(--border); }
         .sp.done .sp-line { background: var(--primary); opacity: 0.5; }
         @media (max-width: 900px) { .sp-tx small { display: none; } }
+        @media (max-width: 640px) {
+          .stepper { padding: 1rem 0 0.5rem; }
+          .sp-tx, .sp-group { display: none; }
+          .sp.gstart { margin-left: 0.5rem; padding-left: 0.5rem; }
+          .sp-num { width: 26px; height: 26px; font-size: 0.85rem; }
+          .sp-line { min-width: 0.4rem; margin: 0 0.3rem; }
+        }
       `}</style>
     </div>
   );

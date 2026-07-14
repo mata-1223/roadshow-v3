@@ -132,6 +132,10 @@ export default function DBViewerPanel({
         .db-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
         .db-table tr:hover { background: #f8fafc; }
         .db-empty { text-align: center; color: var(--muted); padding: 1.5rem 1rem; font-size: 0.85rem; }
+        @media (max-width: 640px) {
+          .db-panel { padding: 0.9rem; }
+          .db-table-wrap { max-height: 45vh; }
+        }
       `}</style>
     </div>
   );

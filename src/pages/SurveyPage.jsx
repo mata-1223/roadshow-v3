@@ -193,6 +193,17 @@ export default function SurveyPage() {
                       border-top: 2px solid var(--border); display: flex; justify-content: center; }
         .submit { font-size: 1.2rem; padding: 1rem 2rem; min-width: 320px; }
         @media (max-width: 1024px) { .survey-grid { grid-template-columns: 1fr; } .right-col { position: static; } }
+        @media (max-width: 640px) {
+          .header { flex-wrap: wrap; gap: 0.4rem 0.8rem; }
+          .header h2 { margin: 0; white-space: nowrap; font-size: clamp(1.05rem, 5.2vw, 1.5rem); }
+          .submit { min-width: 0; width: 100%; font-size: 1.05rem; padding: 0.9rem 1rem; }
+          .progress { flex-wrap: wrap; white-space: nowrap; }
+          .progress .bar { flex: 1; width: auto; min-width: 120px; }
+          .preset-selwrap { min-width: 0; }
+          .intro-ok { min-width: 0; width: 100%; }
+          .intro-modal { padding: 1.6rem 1.2rem 1.4rem; }
+          .intro-title { font-size: 1.25rem; }
+        }
       `}</style>
     </div>
   );
