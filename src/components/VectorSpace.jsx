@@ -337,6 +337,12 @@ export default function VectorSpace({
         .vd-chip-ko { font-size: 0.72rem; color: #94a3b8; }
         .vd-situation { margin-top: 1rem; font-size: 0.88rem; color: #cbd5e1; line-height: 1.55;
                         background: #0f172a; border-left: 3px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 0.6rem 0.8rem; }
+        @media (max-width: 640px) {
+          .vs-zone-label { font-size: 30px; stroke-width: 5px; }
+          .vs-top-label { font-size: 26px; stroke-width: 5px; }
+          .vs-customer-label { font-size: 30px; stroke-width: 5px; }
+          .vs-legend { font-size: 0.8rem; gap: 0.5rem; }
+        }
       `}</style>
     </div>
   );

@@ -87,6 +87,14 @@ export default function SystemStatusPanel({ states = {}, title = '시스템 구�
         }
         .sys-box.active .sys-state { color: var(--primary); }
         .sys-box.done   .sys-state { color: #16a34a; }
+        @media (max-width: 640px) {
+          .sys-panel { padding: 0.9rem; }
+          .sys-row { gap: 0.4rem; }
+          .sys-box { padding: 0.55rem 0.5rem; }
+          .sys-label { font-size: 0.82rem; }
+          .sys-desc { font-size: 0.62rem; }
+          .sys-state { position: static; margin-top: 0.15rem; }
+        }
       `}</style>
     </div>
   );

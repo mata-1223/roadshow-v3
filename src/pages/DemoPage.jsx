@@ -325,6 +325,17 @@ export default function DemoPage() {
         .hname { font-weight: 500; }
         @media (max-width: 1400px) { .demo-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 1024px) { .demo-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) {
+          .demo-page { height: auto; min-height: 100vh; overflow: visible; }
+          .col-input, .col-infer { overflow: visible; padding-right: 0; }
+          .col { height: auto; }
+          .col-head { position: static; margin: -0.8rem -0.8rem 0.4rem; }
+          .demo-grid { gap: 0.8rem; }
+          /* 패널 제목: 폰에선 축소 + 줄바꿈 허용(고객 의도 Top 5 등) */
+          .col-infer h2, .behavior-block h2 { font-size: 1.2rem; }
+          .col-infer h2 { flex-wrap: wrap; gap: 0.3rem 0.5rem; }
+          .top5-right { margin-left: 0; }
+        }
       `}</style>
     </div>
   );

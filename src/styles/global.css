@@ -78,3 +78,12 @@ h3 { font-size: 1.3rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--muted
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ── 모바일(폰) tier: 헤딩·여백 축소 ── */
+@media (max-width: 640px) {
+  h1 { font-size: 1.9rem; }
+  h2 { font-size: 1.4rem; }
+  h3 { font-size: 1.15rem; }
+  .container { padding: 0.7rem 0.9rem; }
+  .btn { padding: 0.8rem 1.1rem; border-radius: 10px; }
+}

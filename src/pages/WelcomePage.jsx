@@ -128,6 +128,10 @@ export default function WelcomePage() {
         .qr-text b { font-size: clamp(1rem, 1.1vw, 1.2rem); }
         .qr-text span { color: var(--muted); font-size: 0.9rem; line-height: 1.4; }
         @media (max-width: 1024px) { .welcome-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) {
+          .vp-quote { white-space: normal; line-height: 1.45; }
+          .qr-img { width: 104px; height: 104px; }
+        }
       `}</style>
     </div>
   );
